@@ -300,6 +300,42 @@ img.mdr-img-missing { min-width: 4em; min-height: 2em; background: var(--mdr-cod
   border-radius: 3px;
 }
 
+/* ---------- Mermaid diagrams ---------- */
+/*
+ * .mdr-mermaid holds the diagram source in pre.mdr-mermaid-code. The page script draws it into a
+ * .mdr-mermaid-svg before the source and adds .mdr-mermaid-drawn (source hidden), or adds
+ * .mdr-mermaid-failed with a .mdr-mermaid-error message (source stays visible). Without the
+ * script the source shows as a code block.
+ * A changed diagram's row (.mdr-mermaid-row) starts with details.mdr-mermaid-source, whose
+ * .mdr-mermaid-lines hold the source line diff; while it is open the drawings are hidden.
+ */
+.mdr-mermaid { overflow-x: auto; }
+.mdr-mermaid > pre.mdr-mermaid-code { margin: 0.3em 0; }
+.mdr-mermaid.mdr-mermaid-drawn > pre.mdr-mermaid-code { display: none; }
+.mdr-mermaid-svg { padding: 0.4em 0; text-align: center; }
+.mdr-mermaid-svg > svg { max-width: 100%; height: auto; }
+.mdr-mermaid-error {
+  margin-top: 0.3em;
+  padding: 0.2em 0.6em;
+  color: var(--mdr-removed-marker);
+  font-family: var(--mdr-mono);
+  font-size: 0.85em;
+  white-space: pre-wrap;
+}
+.mdr-sbs .mdr-mermaid-row > details.mdr-mermaid-source { grid-column: 1 / -1; }
+details.mdr-mermaid-source > summary {
+  margin: 2px 0;
+  cursor: pointer;
+  color: var(--mdr-link);
+  font-size: 0.85em;
+  user-select: none;
+}
+.mdr-mermaid-row:has(> details.mdr-mermaid-source[open]) > .mdr-side,
+.mdr-mermaid-row:has(> details.mdr-mermaid-source[open]) > .mdr-mermaid-pair { display: none; }
+/* In the merged view the old drawing is dimmed instead of struck through. */
+.mdr-merged .mdr-mermaid-old .mdr-mermaid.mdr-removed { text-decoration: none; }
+.mdr-merged .mdr-mermaid-old .mdr-mermaid-svg { opacity: 0.6; }
+
 /* ---------- Per-block action buttons ---------- */
 /*
  * <div class="mdr-actions"><button class="mdr-revert" data-block-id="…">…</button></div>

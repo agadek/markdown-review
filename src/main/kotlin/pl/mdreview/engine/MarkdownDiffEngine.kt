@@ -15,7 +15,7 @@ import org.commonmark.ext.footnotes.FootnoteDefinition
 class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
 
     fun diff(left: String, right: String): MarkdownDiff =
-        diff(BlockExtractor.extract(left), BlockExtractor.extract(right))
+        diff(BlockExtractor.extract(left, options.mermaidDiagrams), BlockExtractor.extract(right, options.mermaidDiagrams))
 
     fun diff(left: List<Block>, right: List<Block>): MarkdownDiff {
         val leftKeys = left.map(::compareKey)
@@ -163,6 +163,8 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
             BlockKind.ALERT -> return MIN_SCORE
             // Footnotes are identified by their label.
             BlockKind.FOOTNOTE -> return if (footnoteLabel(l) == footnoteLabel(r)) s + 1.0 else 0.0
+            // A diagram is compared as a whole: the only diagram of the same type on each side is the same diagram.
+            BlockKind.MERMAID -> if (bothLone && diagramType(l) == diagramType(r)) return maxOf(s, MIN_SCORE)
             // A renamed heading at the same level, with no other heading around, is the same heading.
             BlockKind.HEADING -> if (bothLone && l.level == r.level) return maxOf(s, MIN_SCORE)
             else -> Unit
@@ -173,6 +175,11 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
 
     private fun firstCell(block: Block): String =
         block.rawText.trim().removePrefix("|").substringBefore('|').trim()
+
+    /** First word of a diagram's source: `flowchart`, `sequenceDiagram`, `pie`, ... */
+    private fun diagramType(block: Block): String =
+        block.plainText.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() && !it.startsWith("%%") }
+            ?.substringBefore(' ').orEmpty()
 
     private fun footnoteLabel(block: Block): String? = (block.node as? FootnoteDefinition)?.label
 

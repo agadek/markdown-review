@@ -37,6 +37,11 @@ data class DiffOptions(
     val collapseUnchanged: Boolean = true,
     /** Keep `http(s)` image sources in raw HTML instead of blanking them (NFR-8); the page's CSP must allow them too. */
     val loadRemoteImages: Boolean = false,
+    /**
+     * Keep each ` ```mermaid ` fence as one block, emitted as an inert `.mdr-mermaid` element that the IDE
+     * layer's page script draws; off, the fence is diffed line by line like any other code block.
+     */
+    val renderMermaid: Boolean = true,
 )
 
 /**

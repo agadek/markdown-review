@@ -8,4 +8,4 @@ flowchart LR
     B --> C[Renderer]
 ```
 
-The diagram above is a plain code block today.
+The diagram above is drawn in the rendered view.

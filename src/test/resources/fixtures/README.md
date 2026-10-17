@@ -36,4 +36,5 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 24-footnotes | added, removed and changed footnote definitions, references |
 | 25-alerts | GitHub alerts: content change, type change, quote becoming an alert |
 | 26-relative-images | relative image paths resolved against each side's directory |
-| 27-mermaid | Mermaid diagram with a renamed edge label and an added node, diffed as a code block (until P2.8) |
+| 27-mermaid | Mermaid diagram with a renamed edge label and an added node: one modified diagram, line diff behind a toggle |
+| 28-mermaid-diagrams | Mermaid diagrams: unchanged, changed, removed, added, and one whose new source does not parse |

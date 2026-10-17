@@ -30,6 +30,7 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         var largeFileLines: Int = DEFAULT_LARGE_FILE_LINES
         var largeFileKilobytes: Int = DEFAULT_LARGE_FILE_KILOBYTES
         var loadRemoteImages: Boolean = false
+        var renderMermaid: Boolean = true
 
         /** The [defaultViewer] last written into IntelliJ's diff tool order, see [DefaultViewerOrder]. */
         var appliedDefaultViewer: DefaultViewer? = null
@@ -74,6 +75,11 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         get() = state.loadRemoteImages
         set(value) { state.loadRemoteImages = value }
 
+    /** Draw ` ```mermaid ` fences as diagrams (P2.8); off keeps the line-by-line code view. */
+    var renderMermaid: Boolean
+        get() = state.renderMermaid
+        set(value) { state.renderMermaid = value }
+
     var appliedDefaultViewer: DefaultViewer?
         get() = state.appliedDefaultViewer
         set(value) { state.appliedDefaultViewer = value }
@@ -82,6 +88,7 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         ignoreWhitespace = ignoreWhitespace,
         collapseUnchanged = collapseUnchanged,
         loadRemoteImages = loadRemoteImages,
+        renderMermaid = renderMermaid,
     )
 
     /**

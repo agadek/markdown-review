@@ -16,6 +16,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertEquals(20_000, settings.largeFileLines)
         assertEquals(2_048, settings.largeFileKilobytes)
         assertFalse(settings.loadRemoteImages)
+        assertTrue(settings.renderMermaid)
     }
 
     fun `test state survives serialization`() {
@@ -26,6 +27,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
             largeFileLines = 500
             largeFileKilobytes = 64
             loadRemoteImages = true
+            renderMermaid = false
             appliedDefaultViewer = DefaultViewer.TEXT
         }
         val element = XmlSerializer.serialize(settings.state)
@@ -38,6 +40,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertEquals(500, restored.largeFileLines)
         assertEquals(64, restored.largeFileKilobytes)
         assertTrue(restored.loadRemoteImages)
+        assertFalse(restored.renderMermaid)
         assertEquals(DefaultViewer.TEXT, restored.appliedDefaultViewer)
     }
 
@@ -46,10 +49,13 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
             ignoreWhitespace = true
             collapseUnchanged = false
             loadRemoteImages = true
+            renderMermaid = false
             largeFileLines = 100
             largeFileKilobytes = 3
         }
-        assertEquals(DiffOptions(ignoreWhitespace = true, collapseUnchanged = false, loadRemoteImages = true), settings.options())
+        assertEquals(DiffOptions(ignoreWhitespace = true, collapseUnchanged = false, loadRemoteImages = true, renderMermaid = false),
+            settings.options(),
+        )
         assertEquals(SizeLimit(100, 3 * 1024L), LargeFiles.limit(settings))
         assertEquals(SizeLimit.DEFAULT, LargeFiles.limit(MarkdownReviewSettings()))
         assertEquals("file: data: https: http:", HtmlPage.imgSources(true))

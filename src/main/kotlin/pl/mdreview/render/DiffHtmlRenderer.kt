@@ -13,6 +13,7 @@ import pl.mdreview.engine.BlockKind
 import pl.mdreview.engine.DiffBlock
 import pl.mdreview.engine.DiffStatus
 import pl.mdreview.engine.MarkdownDiff
+import pl.mdreview.engine.MarkdownDiffEngine
 
 data class RenderOptions(
     val mode: ViewMode = ViewMode.SIDE_BY_SIDE,
@@ -39,6 +40,7 @@ data class Labels(
     val headingLevel: (Int, Int) -> String = { from, to -> "h$from \u2192 h$to" },
     val previousUrl: (String) -> String = { url -> "Previous URL: $url" },
     val newUrl: (String) -> String = { url -> "New URL: $url" },
+    val showSourceChanges: String = "Show source changes",
 )
 
 /**
@@ -124,13 +126,18 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         return result
     }
 
-    private fun block(block: DiffBlock, index: Int): String {
+    /**
+     * One row (side by side) or item (merged). [index] is null for the rows of a diagram's source diff,
+     * which are not blocks of their own and so carry no `data-idx`.
+     */
+    private fun block(block: DiffBlock, index: Int?): String {
         val status = block.status.name.lowercase()
+        val idx = if (index == null) "" else " data-idx=\"$index\" data-block-id=\"b$index\""
+        if (isChangedDiagram(block)) return changedDiagram(block, status, idx)
         val sb = StringBuilder()
         when (options.mode) {
             ViewMode.SIDE_BY_SIDE -> {
-                sb.append("<div class=\"mdr-row blk-").append(status).append("\" data-idx=\"").append(index)
-                    .append("\" data-block-id=\"b").append(index).append("\">")
+                sb.append("<div class=\"mdr-row blk-").append(status).append("\"").append(idx).append(">")
                 val links = linkChanges(block)
                 sb.append(side("left", block.left, block.status, leftMarks(block), null, links.left))
                 sb.append(side("right", block.right, block.status, rightMarks(block, withRemoved = false), changeNote(block), links.right))
@@ -142,8 +149,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                     DiffStatus.MODIFIED -> Triple(block.right!!, "right", rightMarks(block, withRemoved = true))
                     else -> Triple(block.right!!, "right", InlineMarks.NONE)
                 }
-                sb.append("<div class=\"mdr-item blk-").append(status).append("\" data-idx=\"").append(index)
-                    .append("\" data-block-id=\"b").append(index).append("\" data-side=\"").append(side)
+                sb.append("<div class=\"mdr-item blk-").append(status).append("\"").append(idx).append(" data-side=\"").append(side)
                     .append("\" data-line=\"").append(content.source.startLine).append("\">")
                 val note = if (block.status == DiffStatus.MODIFIED) changeNote(block) else null
                 val links = if (side == "right") linkChanges(block).right else emptyMap()
@@ -152,6 +158,33 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             }
         }
         return sb.toString()
+    }
+
+    private fun isChangedDiagram(block: DiffBlock) =
+        block.status == DiffStatus.MODIFIED && block.left?.kind == BlockKind.MERMAID && block.right?.kind == BlockKind.MERMAID
+
+    /**
+     * A modified diagram: the old and the new drawing (side by side, or stacked in the merged view), and a
+     * "Show source changes" toggle that swaps them for the line diff of the diagram source. The toggle is
+     * a `<details>`, so it works without script; `diff.css` hides the drawings while it is open.
+     */
+    private fun changedDiagram(block: DiffBlock, status: String, idx: String): String {
+        val left = block.left!!
+        val right = block.right!!
+        val lines = MarkdownDiffEngine().diff(left.lines, right.lines).blocks
+        val source = "<details class=\"mdr-mermaid-source\"><summary>" + escape(options.labels.showSourceChanges) +
+            "</summary><div class=\"mdr-mermaid-lines\">" + lines.joinToString("") { block(it, null) } + "</div></details>"
+        return when (options.mode) {
+            ViewMode.SIDE_BY_SIDE -> "<div class=\"mdr-row blk-$status mdr-mermaid-row\"$idx>" + source +
+                side("left", left, block.status, InlineMarks.NONE, null, emptyMap()) +
+                side("right", right, block.status, InlineMarks.NONE, null, emptyMap()) + "</div>\n"
+            ViewMode.MERGED -> {
+                val drawings = "<div class=\"mdr-mermaid-old\">" + renderBlock(left, DiffStatus.REMOVED, side = "left") + "</div>" +
+                    renderBlock(right, DiffStatus.ADDED)
+                "<div class=\"mdr-item blk-$status mdr-mermaid-row\"$idx data-side=\"right\" data-line=\"${right.source.startLine}\">" +
+                    source + "<div class=\"mdr-mermaid-pair\">" + quote(drawings, right.context) + "</div></div>\n"
+            }
+        }
     }
 
     private fun leftMarks(block: DiffBlock) =
@@ -247,6 +280,9 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                 "<div class=\"$cls mdr-codeline$fm\"><pre><code><span class=\"mdr-line mdr-${status.name.lowercase()}\">" +
                     text.ifEmpty { "​" } + "</span></code></pre></div>"
             }
+            // Inert source for the page's diagram script, which draws it in place; shown as code without the script.
+            BlockKind.MERMAID -> "<div class=\"$cls mdr-mermaid\"><pre class=\"mdr-mermaid-code\"><code>" +
+                escape(block.plainText) + "</code></pre></div>"
             BlockKind.HTML -> "<div class=\"$cls\">" + HtmlSanitizer.sanitize(block.rawText, options.allowRemoteImages) + "</div>"
             BlockKind.LIST_ITEM -> listItem(block, cls, marks, side, note, links)
             BlockKind.ALERT -> {

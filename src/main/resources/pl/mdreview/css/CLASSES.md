@@ -76,6 +76,16 @@ Additional block classes:
 | `mdr-col-added` / `mdr-col-removed` | `td`, `th`, `col` | Cells of an added/removed column. |
 | `mdr-line` + `mdr-added` / `mdr-removed` / `mdr-modified` | `span` in `pre code` | One line of a code block or front matter. Each line is its own `span` (no `\n` between them, `display: block`). |
 
+## Mermaid diagrams
+
+| Class | Where | Meaning |
+|---|---|---|
+| `mdr-mermaid` | `div.mdr-block` with a `pre.mdr-mermaid-code` | A ` ```mermaid ` fence kept as one block. The source sits in `pre.mdr-mermaid-code`; without the page script it shows as code. |
+| `mdr-mermaid-svg` | `div` in `.mdr-mermaid`, added by the page script | The drawn diagram (Mermaid's `svg`). |
+| `mdr-mermaid-drawn` / `mdr-mermaid-failed` | on `.mdr-mermaid`, added by the page script | Drawn: the source is hidden. Failed: the source stays visible under a `.mdr-mermaid-error` with Mermaid's message. |
+| `mdr-mermaid-row` | `.mdr-row` (side by side) or `.mdr-item` (merged) of a changed diagram | Starts with `details.mdr-mermaid-source`. In the merged view the drawings sit in `.mdr-mermaid-pair`: `.mdr-mermaid-old` (the old one, dimmed), then the new one. |
+| `mdr-mermaid-source` | `details` with a `summary` ("Show source changes") | Its `.mdr-mermaid-lines` hold the source line diff as nested rows or items without `data-idx`. While open, the drawings are hidden. The page script opens it when a drawing fails. |
+
 ## Per-block actions
 
 ```html

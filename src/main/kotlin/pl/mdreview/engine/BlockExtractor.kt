@@ -46,6 +46,9 @@ object BlockExtractor {
     /** Key of the [BlockKind.CODE_FENCE] block that opens YAML front matter. */
     const val FRONT_MATTER_FENCE_KEY = "CODE_FENCE:front-matter"
 
+    /** Info string of a fence that is drawn as a Mermaid diagram. */
+    const val MERMAID_LANGUAGE = "mermaid"
+
     val extensions = listOf(
         TablesExtension.create(),
         StrikethroughExtension.create(),
@@ -60,7 +63,8 @@ object BlockExtractor {
         .includeSourceSpans(IncludeSourceSpans.BLOCKS_AND_INLINES)
         .build()
 
-    fun extract(markdown: String): List<Block> {
+    /** @param mermaidDiagrams keep ` ```mermaid ` fences whole, see [BlockKind.MERMAID]. */
+    fun extract(markdown: String, mermaidDiagrams: Boolean = true): List<Block> {
         val text = normalizeLineEndings(markdown)
         val frontMatter = findFrontMatter(text)
         val blocks = mutableListOf<Block>()
@@ -72,7 +76,7 @@ object BlockExtractor {
                 text.substring(frontMatter.endOffset)
         }
         val document = parser.parse(parseInput) as Document
-        Walker(parseInput, blocks).visitChildren(document, BlockContext())
+        Walker(parseInput, blocks, mermaidDiagrams).visitChildren(document, BlockContext())
         return blocks
     }
 
@@ -110,7 +114,7 @@ object BlockExtractor {
         return FrontMatter(blocks, end)
     }
 
-    private class Walker(val input: String, val out: MutableList<Block>) {
+    private class Walker(val input: String, var out: MutableList<Block>, val mermaidDiagrams: Boolean) {
 
         fun visitChildren(parent: Node, ctx: BlockContext) {
             var child = parent.firstChild
@@ -273,6 +277,9 @@ object BlockExtractor {
             val info = node.info.orEmpty().trim()
             val language = info.substringBefore(' ').ifEmpty { null }
             val opening = spans.firstOrNull()
+            val diagram = mermaidDiagrams && language.equals(MERMAID_LANGUAGE, ignoreCase = true) && opening != null
+            val parent = out
+            if (diagram) out = mutableListOf()
             if (opening != null) {
                 out += Block(
                     kind = BlockKind.CODE_FENCE,
@@ -285,6 +292,22 @@ object BlockExtractor {
                 )
             }
             visitCodeLines(node, node.literal, spans.drop(1), language, ctx)
+            if (diagram) {
+                val lines = out
+                out = parent
+                val source = node.literal.removeSuffix("\n")
+                out += Block(
+                    kind = BlockKind.MERMAID,
+                    // Like code, a diagram is compared exactly except for trailing whitespace on its lines.
+                    key = keyPrefix(BlockKind.MERMAID, ctx) + source.lines().joinToString("\n") { it.trimEnd() },
+                    plainText = source,
+                    rawText = raw(spans),
+                    source = range(spans),
+                    context = ctx,
+                    language = language,
+                    lines = lines,
+                )
+            }
         }
 
         private fun visitCodeLines(node: Node, literal: String, spans: List<SourceSpan>, language: String?, ctx: BlockContext) {

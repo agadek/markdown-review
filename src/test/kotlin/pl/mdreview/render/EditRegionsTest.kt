@@ -227,9 +227,38 @@ class EditRegionsTest {
         /**
          * Fixtures whose sides stay different after every change is reverted, because the difference is not in
          * any block: syntax the diff treats as equal (05: setext vs ATX heading), whitespace it ignores (12, 16), a
-         * table's column alignment (07) and a link reference definition (09). They must still end with no change
-         * left that the buttons could revert.
+         * table's column alignment (07), a link reference definition (09), the hard break syntax (34) and the
+         * thematic break syntax (35). They must still end with no change left that the buttons could revert.
          */
-        val NOT_EXACT = setOf("05-headings", "07-tables", "09-links-images", "12-whitespace-only", "16-whitespace-only-file")
+        val NOT_EXACT = setOf(
+            "05-headings", "07-tables", "09-links-images", "12-whitespace-only", "16-whitespace-only-file",
+            "34-hard-line-breaks", "35-thematic-breaks",
+        )
+    }
+
+    @Test
+    fun `details content, summary and whole group revert and apply`() {
+        val body = "<details>\n<summary>More</summary>\n\nFirst.\n\nLast.\n\n</details>\n"
+        val cases = listOf(
+            "Intro.\n\n$body\nEnd.\n" to "Intro.\n\n${body.replace("Last.", "Last, changed.")}\nEnd.\n",
+            "Intro.\n\n$body\nEnd.\n" to "Intro.\n\n${body.replace("Last.\n\n", "Last.\n\nAdded.\n\n")}\nEnd.\n",
+            "Intro.\n\n$body\nEnd.\n" to "Intro.\n\n${body.replace("More", "Much more")}\nEnd.\n",
+            "Intro.\n\nEnd.\n" to "Intro.\n\n$body\nEnd.\n",
+            "Intro.\n\n$body\nEnd.\n" to "Intro.\n\nEnd.\n",
+        )
+        for ((left, right) in cases) {
+            assertEquals(left, revertAll(left, right) { it.first() }, right)
+            assertEquals(left, revertAll(left, right) { it.last() }, right)
+            assertEquals(right, applyAll(left, right), right)
+        }
+    }
+
+    @Test
+    fun `html comments and html blocks revert`() {
+        val left = "# T\n\n<!-- note -->\n\n<div align=\"center\">Hi</div>\n\nText.\n"
+        val right = "# T\n\n<!-- new note -->\n\n<div align=\"left\">Hi there</div>\n\n<!-- added -->\n\nText.\n"
+        assertEquals(left, revertAll(left, right) { it.first() })
+        assertEquals(left, revertAll(left, right) { it.last() })
+        assertEquals(right, applyAll(left, right))
     }
 }

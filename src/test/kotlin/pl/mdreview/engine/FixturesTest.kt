@@ -210,8 +210,10 @@ class FixturesTest {
         val old = read("12-whitespace-only", "old.md")
         val new = read("12-whitespace-only", "new.md")
         assertFalse(MarkdownDiffEngine(DiffOptions(ignoreWhitespace = true)).diff(old, new).hasChanges)
-        // A soft break turning into a hard break is accepted as equal too.
-        assertFalse(MarkdownDiffEngine(DiffOptions(ignoreWhitespace = false)).diff(old, new).hasChanges)
+        // Without ignoring whitespace, the soft break that became a hard break (trailing spaces) is the one change.
+        val changes = MarkdownDiffEngine(DiffOptions(ignoreWhitespace = false)).diff(old, new).changes
+        assertEquals(listOf(DiffStatus.MODIFIED), changes.map { it.status })
+        assertEquals(listOf("\n"), changes[0].inline.filter { it.status == DiffStatus.ADDED }.map { it.text })
     }
 
     @Test
@@ -450,5 +452,130 @@ class FixturesTest {
             listOf("REMOVED PARAGRAPH Install the plugin from", "ADDED PARAGRAPH Download the ZIP file an"),
             changesAt("38-pairing-threshold-lone", 0.7),
         )
+    }
+
+    private fun added(d: DiffBlock) = d.inline.filter { it.status == DiffStatus.ADDED }.joinToString("") { it.text }.trim()
+    private fun removed(d: DiffBlock) = d.inline.filter { it.status == DiffStatus.REMOVED }.joinToString("") { it.text }.trim()
+
+    @Test
+    fun `29 html blocks compare visible text`() {
+        val d = diff("29-html-blocks")
+        assertEquals(listOf("MODIFIED HTML Rendered Markdown diffs", "MODIFIED HTML Made with care."), changes("29-html-blocks"))
+        assertEquals("IntelliJ", removed(d.changes[0]))
+        assertEquals("JetBrains IDEs", added(d.changes[0]))
+        assertTrue(d.changes[1].inline.all { it.status == DiffStatus.EQUAL })
+        val html = html("29-html-blocks")
+        assertContains(html, "<img src=\"logo.png\" alt=\"Logo\" width=\"120\">")
+        assertContains(html, "<ins class=\"mdr-ins\">JetBrains IDEs</ins>")
+        assertContains(html, "data-change-note=\"HTML changed\"")
+    }
+
+    @Test
+    fun `30 inline html`() {
+        val d = diff("30-inline-html")
+        assertEquals(listOf("MODIFIED PARAGRAPH Press Cmd+D to open the", "MODIFIED PARAGRAPH Water is H2O and the are"), changes("30-inline-html"))
+        assertEquals("Ctrl", removed(d.changes[0]))
+        assertEquals("Cmd", added(d.changes[0]))
+        val html = html("30-inline-html")
+        assertContains(html, "<kbd><ins class=\"mdr-ins\">Cmd</ins></kbd>+<kbd>D</kbd>")
+        assertContains(html, "H<sub>2</sub>O")
+        assertContains(html, "<ins class=\"mdr-ins\">π </ins>r<sup>2</sup>")
+        assertEquals("π", added(d.changes[1]))
+    }
+
+    @Test
+    fun `31 dangerous html is sanitized`() {
+        val d = diff("31-html-sanitizer")
+        assertTrue(d.changes.all { it.status == DiffStatus.ADDED })
+        assertEquals(2, d.blocks.count { it.status == DiffStatus.EQUAL })
+        for (mode in ViewMode.entries) {
+            val html = html("31-html-sanitizer", mode).lowercase()
+            for (bad in listOf("<script", "<iframe", "onclick", "onerror", "onmouseover", "javascript:", "jav&#x61;script", "style=", "alert(")) {
+                assertFalse(bad in html, "$bad in $mode")
+            }
+            assertContains(html, "<img src=\"x.png\">")
+            assertContains(html, "<img src=\"y.png\">")
+            assertContains(html, "<a href=\"https://example.com/ok\">kept</a>")
+            assertContains(html, "<a title=\"t\">link</a>")
+            assertContains(html, "<span>span</span>")
+        }
+    }
+
+    @Test
+    fun `32 details`() {
+        val d = diff("32-details")
+        assertEquals(
+            listOf("MODIFIED PARAGRAPH The rendered viewer open", "MODIFIED HTML ShortOne-block answer, c"),
+            changes("32-details"),
+        )
+        val summaries = d.blocks.filter { it.right?.kind == BlockKind.DETAILS }
+        assertEquals(listOf("How do I open the diff?", "Is it free?"), summaries.map { it.right!!.plainText.trim() })
+        assertTrue(summaries.all { it.status == DiffStatus.EQUAL })
+        assertEquals(1, d.changes[0].right!!.context.details)
+        assertEquals("instead of", added(d.changes[0]))
+        assertTrue(d.blocks.none { it.right?.rawText?.trim() == "</details>" })
+        for (mode in ViewMode.entries) {
+            val html = html("32-details", mode)
+            assertEquals(2, Regex("<details class=\"mdr-details\"").findAll(html).count())
+            assertContains(html, "<details class=\"mdr-details\" open><summary class=\"mdr-details-summary\">")
+            assertContains(html, "<details class=\"mdr-details\"><summary class=\"mdr-details-summary\">")
+            assertContains(html, "<details open><summary>Short</summary>")
+        }
+    }
+
+    @Test
+    fun `33 html comments`() {
+        val d = diff("33-html-comments")
+        assertEquals(
+            listOf(
+                "MODIFIED HTML_COMMENT TODO: add screenshots of",
+                "ADDED HTML_COMMENT Generated section starts",
+                "MODIFIED PARAGRAPH Paragraph with  comment.",
+            ),
+            changes("33-html-comments"),
+        )
+        assertEquals("of the merged view", added(d.changes[0]))
+        assertTrue(d.changes[2].inline.all { it.status == DiffStatus.EQUAL })
+        val html = html("33-html-comments")
+        assertContains(html, "<div class=\"mdr-block mdr-modified mdr-comment\" title=\"HTML comment\"><span class=\"mdr-comment-text\">TODO: add screenshots<ins class=\"mdr-ins\"> of the merged view</ins></span>")
+        assertContains(html, "data-change-note=\"comment changed\"")
+        assertFalse(html.contains("inline note"))
+    }
+
+    @Test
+    fun `34 hard line breaks`() {
+        val d = diff("34-hard-line-breaks")
+        assertEquals(
+            listOf("MODIFIED PARAGRAPH Line one\nLine two", "MODIFIED PARAGRAPH Street 1 City", "MODIFIED PARAGRAPH First Second"),
+            changes("34-hard-line-breaks"),
+        )
+        assertEquals(listOf("\n"), d.changes[0].inline.filter { it.status == DiffStatus.ADDED }.map { it.text })
+        assertEquals(listOf("\n"), d.changes[1].inline.filter { it.status == DiffStatus.REMOVED }.map { it.text })
+        val html = html("34-hard-line-breaks")
+        assertContains(html, "Line one<ins class=\"mdr-ins mdr-ws mdr-ws-break\"></ins><br />")
+        assertContains(html, "Street 1<del class=\"mdr-del mdr-ws mdr-ws-break\"></del><br />")
+        val merged = html("34-hard-line-breaks", ViewMode.MERGED)
+        assertContains(merged, "<del class=\"mdr-del mdr-ws mdr-ws-break\"></del>")
+    }
+
+    @Test
+    fun `35 thematic breaks`() = assertEquals(
+        listOf("REMOVED THEMATIC_BREAK", "ADDED THEMATIC_BREAK", "ADDED PARAGRAPH Footer."),
+        changes("35-thematic-breaks"),
+    )
+
+    @Test
+    fun `36 emoji shortcodes`() {
+        val d = diff("36-emoji")
+        assertEquals(
+            listOf("MODIFIED PARAGRAPH Build fails \u274c and review", "MODIFIED PARAGRAPH Unknown codes stay as te"),
+            changes("36-emoji"),
+        )
+        assertEquals("passes \u2705", removed(d.changes[0]))
+        assertEquals("fails \u274c", added(d.changes[0]))
+        assertContains(d.changes[0].right!!.plainText, "welcome \ud83d\ude04.")
+        assertContains(d.changes[1].right!!.plainText, ":still_not_an_emoji: and 10:30:00")
+        assertEquals("Status \ud83d\ude80", d.blocks[0].right!!.plainText)
+        assertContains(html("36-emoji"), "<code>:smile:</code>")
     }
 }

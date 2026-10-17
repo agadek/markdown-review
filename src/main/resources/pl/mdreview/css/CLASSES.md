@@ -46,6 +46,13 @@ Additional block classes:
 | `mdr-task` | Task list item (`li` with `<input type="checkbox" disabled>`). With `mdr-meta-changed` the checkbox is outlined. |
 | `mdr-alert-title` | Title line of a GitHub alert (`p`, its own block), e.g. "Note". A changed type carries `mdr-meta-changed`. |
 | `mdr-footnote` | Footnote definition (`div`, its own block) with `id="mdr-fn-<side>-<label>"`; children `.mdr-fn-label` and `.mdr-fn-body`. |
+| `mdr-html` | Raw HTML block (`div`), sanitized; word marks on its visible text. A change only in the markup carries `mdr-meta-changed` ("HTML changed"). A single-block `<details>` inside renders `open` when the block changed. |
+| `mdr-comment` | HTML comment block (`div`, `title="HTML comment"`), child `.mdr-comment-text` drawn as `<!-- text -->`. An unchanged comment's row has the `hidden` attribute. |
+| `mdr-details-title` | Summary of a `<details>` spanning several blocks (`div`, its own block), with an empty `.mdr-details-marker` span drawing ▸ / ▾. |
+
+## HTML `<details>`
+
+A `<details>` element spanning several Markdown blocks is rendered as `<details class="mdr-details">`, `open` when anything inside changed, around its rows: the `<summary class="mdr-details-summary">` holds the `.mdr-details-title` row, the content rows follow. Unchanged rows inside fold separately (`details.mdr-fold`).
 
 ## GitHub alerts and footnotes
 

@@ -56,6 +56,7 @@ object BlockExtractor {
         AutolinkExtension.create(),
         FootnotesExtension.create(),
         AlertsExtension.create(),
+        EmojiExtension.create(),
     )
 
     private val parser: Parser = Parser.builder()
@@ -116,20 +117,87 @@ object BlockExtractor {
 
     private class Walker(val input: String, var out: MutableList<Block>, val mermaidDiagrams: Boolean) {
 
-        fun visitChildren(parent: Node, ctx: BlockContext) {
-            var child = parent.firstChild
-            while (child != null) {
-                visit(child, ctx)
-                child = child.next
+        fun visitChildren(parent: Node, ctx: BlockContext) =
+            visitNodes(generateSequence(parent.firstChild) { it.next }.toList(), ctx)
+
+        /**
+         * Visits sibling blocks. An HTML block that opens a `<details>` closed by a later sibling becomes a
+         * [BlockKind.DETAILS] block, and the blocks up to the closing one are its content.
+         */
+        private fun visitNodes(nodes: List<Node>, ctx: BlockContext) {
+            var k = 0
+            while (k < nodes.size) {
+                val node = nodes[k]
+                val close = if (node is HtmlBlock) detailsClose(nodes, k) else -1
+                if (close == -1) {
+                    visit(node, ctx)
+                    k++
+                    continue
+                }
+                out += htmlBlock(BlockKind.DETAILS, node as HtmlBlock, ctx)
+                val inner = ctx.copy(details = ctx.details + 1)
+                // An unclosed `<details>` holds the rest of its container, as in a browser.
+                val end = if (close == UNCLOSED) nodes.size else close
+                visitNodes(nodes.subList(k + 1, end), inner)
+                if (close == UNCLOSED) break
+                // Whatever the closing block holds besides `</details>` belongs to the content.
+                val closing = nodes[close] as HtmlBlock
+                val rest = closing.literal.replace(DETAILS_CLOSE, "")
+                if (rest.isNotBlank()) out += html(closing, inner, rest)
+                k = close + 1
             }
         }
+
+        /**
+         * Index of the sibling that closes the `<details>` opened by `nodes[start]`; [UNCLOSED] when nothing closes
+         * it, -1 when the block opens no `<details>` of its own.
+         */
+        private fun detailsClose(nodes: List<Node>, start: Int): Int {
+            var balance = HtmlFragment.detailsBalance((nodes[start] as HtmlBlock).literal)
+            if (balance <= 0) return -1
+            for (k in start + 1 until nodes.size) {
+                val node = nodes[k] as? HtmlBlock ?: continue
+                balance += HtmlFragment.detailsBalance(node.literal)
+                if (balance <= 0) return k
+            }
+            return UNCLOSED
+        }
+
+        /** An HTML block, or an [BlockKind.HTML_COMMENT] when it is exactly one comment. */
+        private fun html(node: HtmlBlock, ctx: BlockContext, literal: String = node.literal): Block {
+            val comment = HtmlFragment.singleComment(literal)
+            if (comment != null) {
+                return Block(
+                    kind = BlockKind.HTML_COMMENT,
+                    key = keyPrefix(BlockKind.HTML_COMMENT, ctx) + collapse(comment),
+                    plainText = comment,
+                    rawText = raw(node.sourceSpans),
+                    source = range(node.sourceSpans),
+                    context = ctx,
+                    node = node,
+                )
+            }
+            return htmlBlock(BlockKind.HTML, node, ctx, literal)
+        }
+
+        /** HTML is keyed, compared and rendered by its literal, without the quote markers around it. */
+        private fun htmlBlock(kind: BlockKind, node: HtmlBlock, ctx: BlockContext, literal: String = node.literal): Block =
+            Block(
+                kind = kind,
+                key = keyPrefix(kind, ctx) + collapse(literal),
+                plainText = HtmlFragment.visibleText(literal),
+                rawText = literal.trimEnd(),
+                source = range(node.sourceSpans),
+                context = ctx,
+                node = node,
+            )
 
         private fun visit(node: Node, ctx: BlockContext) {
             when (node) {
                 is Heading -> out += heading(node, ctx)
                 is Paragraph -> out += simple(BlockKind.PARAGRAPH, node, ctx)
-                is ThematicBreak -> out += simple(BlockKind.THEMATIC_BREAK, node, ctx)
-                is HtmlBlock -> out += simple(BlockKind.HTML, node, ctx, plain = node.literal.trimEnd())
+                is ThematicBreak -> out += thematicBreak(node, ctx)
+                is HtmlBlock -> out += html(node, ctx)
                 is BlockQuote -> visitChildren(node, ctx.copy(quoteDepth = ctx.quoteDepth + 1))
                 is ListBlock -> visitList(node, ctx)
                 is FencedCodeBlock -> visitFencedCode(node, ctx)
@@ -145,13 +213,20 @@ object BlockExtractor {
             val raw = raw(node.sourceSpans)
             return Block(
                 kind = kind,
-                key = keyPrefix(kind, ctx) + collapse(raw) + linkTargets(listOf(node)),
+                key = keyPrefix(kind, ctx) + collapse(keyText(node.sourceSpans, listOf(node))) + hardBreaks(listOf(node)) +
+                    linkTargets(listOf(node)),
                 plainText = plain ?: plainText(node),
                 rawText = raw,
                 source = range(node.sourceSpans),
                 context = ctx,
                 node = node,
             )
+        }
+
+        /** `---`, `***` and `___` draw the same line, so a thematic break is keyed by its kind alone. */
+        private fun thematicBreak(node: ThematicBreak, ctx: BlockContext): Block {
+            val block = simple(BlockKind.THEMATIC_BREAK, node, ctx)
+            return Block(block.kind, keyPrefix(BlockKind.THEMATIC_BREAK, ctx) + "---", "", block.rawText, block.source, ctx, node)
         }
 
         /**
@@ -183,7 +258,7 @@ object BlockExtractor {
             val raw = raw(node.sourceSpans)
             return Block(
                 kind = BlockKind.FOOTNOTE,
-                key = keyPrefix(BlockKind.FOOTNOTE, ctx) + collapse(raw),
+                key = keyPrefix(BlockKind.FOOTNOTE, ctx) + collapse(keyText(node.sourceSpans, content)) + hardBreaks(content),
                 plainText = content.joinToString(" ") { plainText(it) },
                 rawText = raw,
                 source = range(node.sourceSpans),
@@ -249,7 +324,8 @@ object BlockExtractor {
             val rangeSpans = listOfNotNull(start) + spans
             out += Block(
                 kind = BlockKind.LIST_ITEM,
-                key = keyPrefix(BlockKind.LIST_ITEM, ctx) + taskKey + collapse(raw) + linkTargets(content),
+                key = keyPrefix(BlockKind.LIST_ITEM, ctx) + taskKey + collapse(keyText(spans, content)) + hardBreaks(content) +
+                    linkTargets(content),
                 plainText = content.joinToString(" ") { plainText(it) },
                 rawText = raw,
                 source = range(rangeSpans),
@@ -359,6 +435,28 @@ object BlockExtractor {
 
         private fun raw(spans: List<SourceSpan>): String = spans.joinToString("\n") { slice(it) }
 
+        /**
+         * Source of [spans] for the block key, without the backslash of `\`-style hard line breaks in [nodes], so
+         * both hard break syntaxes give the same key; [hardBreaks] adds where the breaks are.
+         */
+        private fun keyText(spans: List<SourceSpan>, nodes: List<Node>): String {
+            val backslashes = mutableSetOf<Int>()
+            nodes.forEach { n ->
+                n.accept(object : AbstractVisitor() {
+                    override fun visit(hardLineBreak: HardLineBreak) {
+                        val span = hardLineBreak.sourceSpans.firstOrNull() ?: return
+                        if (input.getOrNull(span.inputIndex) == '\\') backslashes += span.inputIndex
+                    }
+                })
+            }
+            if (backslashes.isEmpty()) return raw(spans)
+            return spans.joinToString("\n") { span ->
+                val start = span.inputIndex
+                val text = slice(span)
+                buildString { text.forEachIndexed { i, c -> if (start + i !in backslashes) append(c) } }
+            }
+        }
+
         private fun range(spans: List<SourceSpan>): SourceRange {
             val first = spans.firstOrNull() ?: return SourceRange(0, 0, 0, 0)
             val last = spans.last()
@@ -373,6 +471,7 @@ object BlockExtractor {
     private fun keyPrefix(kind: BlockKind, ctx: BlockContext): String = buildString {
         append(kind.name).append(':')
         if (ctx.quoteDepth > 0) append("q").append(ctx.quoteDepth).append(':')
+        if (ctx.details > 0) append("d").append(ctx.details).append(':')
         if (kind == BlockKind.LIST_ITEM) append(if (ctx.ordered) "ol" else "ul").append(ctx.listDepth).append(':')
     }
 
@@ -398,12 +497,29 @@ object BlockExtractor {
         return if (targets.isEmpty()) "" else " ->" + targets.joinToString(" ", prefix = " ")
     }
 
-    /** Visible text of a node plus the offset of every [Text] and [Code] node within it. */
+    /**
+     * Where the hard line breaks of [nodes] are, as a key suffix: a hard break renders as a new line, so adding or
+     * removing one is a change even though whitespace is collapsed in the key.
+     */
+    fun hardBreaks(nodes: List<Node>): String {
+        val positions = nodes.flatMapIndexed { i, node ->
+            val plain = plainTextWithOffsets(node)
+            plain.offsets.filterKeys { it is HardLineBreak }.values.sorted().map { "$i.$it" }
+        }
+        return if (positions.isEmpty()) "" else " $HARD_BREAK_MARK" + positions.joinToString(",")
+    }
+
+    private const val HARD_BREAK_MARK = '\u21b5'
+
+    /** The [hardBreaks] part of a block key. */
+    val HARD_BREAKS_KEY = Regex(" $HARD_BREAK_MARK[0-9.,]+")
+
+    /** Visible text of a node plus the offset of every [Text], [Code] and [HardLineBreak] node within it. */
     class PlainText(val text: String, val offsets: Map<Node, Int>)
 
     /**
-     * Visible text of a node, as the renderer emits it: [Text] and [Code] literals, line breaks as
-     * spaces, a space between table cells, footnote references as `[^label]`. Image alt text is
+     * Visible text of a node, as the renderer emits it: [Text] and [Code] literals, soft line breaks as
+     * spaces, hard line breaks as `\n`, a space between table cells, footnote references as `[^label]`. Image alt text is
      * skipped because the HTML renderer writes it into an attribute.
      */
     fun plainTextWithOffsets(node: Node): PlainText {
@@ -421,7 +537,10 @@ object BlockExtractor {
             }
 
             override fun visit(softLineBreak: SoftLineBreak) { sb.append(' ') }
-            override fun visit(hardLineBreak: HardLineBreak) { sb.append(' ') }
+            override fun visit(hardLineBreak: HardLineBreak) {
+                offsets[hardLineBreak] = sb.length
+                sb.append('\n')
+            }
             override fun visit(image: Image) = Unit
 
             override fun visit(customNode: CustomNode) {
@@ -442,4 +561,8 @@ object BlockExtractor {
     private val whitespace = Regex("\\s+")
 
     fun collapse(text: String): String = text.replace(whitespace, " ").trim()
+
+    private const val UNCLOSED = -2
+
+    private val DETAILS_CLOSE = Regex("</details\\s*>", RegexOption.IGNORE_CASE)
 }

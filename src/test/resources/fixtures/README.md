@@ -38,5 +38,13 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 26-relative-images | relative image paths resolved against each side's directory |
 | 27-mermaid | Mermaid diagram with a renamed edge label and an added node: one modified diagram, line diff behind a toggle |
 | 28-mermaid-diagrams | Mermaid diagrams: unchanged, changed, removed, added, and one whose new source does not parse |
+| 29-html-blocks | changed HTML blocks: visible text and attribute-only changes |
+| 30-inline-html | inline `<kbd>`, `<sub>`, `<sup>` |
+| 31-html-sanitizer | dangerous raw HTML: `<script>`, `on*` attributes, `javascript:` URLs (NFR-8) |
+| 32-details | `<details>` spanning several blocks, and in one HTML block |
+| 33-html-comments | added and edited HTML comments, block and inline |
+| 34-hard-line-breaks | hard line breaks with trailing spaces and with a backslash |
+| 35-thematic-breaks | added, removed and syntax-only thematic breaks |
+| 36-emoji | known and unknown emoji shortcodes |
 | 37-pairing-threshold | rewritten paragraphs of different similarity, expectations at pairing thresholds 0.3 and 0.7 |
 | 38-pairing-threshold-lone | one rewritten paragraph alone on each side, which pairs at half the threshold |

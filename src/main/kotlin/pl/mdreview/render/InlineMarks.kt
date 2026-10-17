@@ -2,6 +2,9 @@ package pl.mdreview.render
 
 import org.commonmark.ext.footnotes.FootnoteReference
 import org.commonmark.node.Code
+import org.commonmark.node.HardLineBreak
+import org.commonmark.node.HtmlBlock
+import org.commonmark.node.HtmlInline
 import org.commonmark.node.Node
 import org.commonmark.node.Text
 import org.commonmark.renderer.NodeRenderer
@@ -92,6 +95,18 @@ class MarkedTextWriter(private val marks: InlineMarks, private val escape: (Stri
         return sb.toString()
     }
 
+    /**
+     * A marker for the hard line break at plain-text [offset] when the word diff marks it (an added or removed
+     * break), otherwise nothing. The caller writes the `<br>` itself.
+     */
+    fun lineBreak(offset: Int): String {
+        val sb = StringBuilder()
+        flushInsertions(sb, offset)
+        val tag = marks.marks.firstOrNull { it.start <= offset && it.end > offset }?.tag
+        if (tag != null) sb.append(breakMarker(tag))
+        return sb.toString()
+    }
+
     /** Insertions left after the last text node (for example words removed at the end of a block). */
     fun rest(): String {
         val sb = StringBuilder()
@@ -101,10 +116,14 @@ class MarkedTextWriter(private val marks: InlineMarks, private val escape: (Stri
 
     private fun open(tag: String) = "<$tag class=\"mdr-$tag\">"
 
+    private fun breakMarker(tag: String) = "<$tag class=\"mdr-$tag mdr-ws mdr-ws-break\"></$tag>"
+
     private fun flushInsertions(sb: StringBuilder, upTo: Int) {
         while (pending.isNotEmpty() && pending.first().offset <= upTo) {
             val ins = pending.removeFirst()
-            sb.append(open(ins.tag)).append(escape(ins.text)).append("</").append(ins.tag).append('>')
+            // A removed hard line break shows as a marker, not as invisible whitespace.
+            if (ins.text.isBlank() && '\n' in ins.text) sb.append(breakMarker(ins.tag))
+            else sb.append(open(ins.tag)).append(escape(ins.text)).append("</").append(ins.tag).append('>')
         }
     }
 }
@@ -152,5 +171,46 @@ internal class FootnoteReferenceRenderer(
         val offset = offsets[ref]
         if (offset == null) html.text(ref.label) else html.raw(writer.write(offset + 2, ref.label))
         html.raw("</a></sup>")
+    }
+}
+
+/**
+ * commonmark renderer for [HardLineBreak]: the `<br>`, preceded by a ↵ marker when the break itself was added or
+ * removed (`mdr-ws mdr-ws-break`).
+ */
+internal class HardBreakRenderer(
+    private val context: HtmlNodeRendererContext,
+    private val writer: MarkedTextWriter,
+    private val offsets: Map<Node, Int>,
+) : NodeRenderer {
+
+    override fun getNodeTypes(): Set<Class<out Node>> = setOf(HardLineBreak::class.java)
+
+    override fun render(node: Node) {
+        val html = context.writer
+        offsets[node]?.let { html.raw(writer.lineBreak(it)) }
+        html.tag("br", emptyMap(), true)
+        html.line()
+    }
+}
+
+/** commonmark renderer for raw HTML inside Markdown blocks: writes it through [HtmlSanitizer]. */
+internal class SanitizedHtmlRenderer(
+    private val context: HtmlNodeRendererContext,
+    private val allowRemoteImages: Boolean,
+) : NodeRenderer {
+
+    override fun getNodeTypes(): Set<Class<out Node>> = setOf(HtmlInline::class.java, HtmlBlock::class.java)
+
+    override fun render(node: Node) {
+        val html = context.writer
+        when (node) {
+            is HtmlInline -> html.raw(HtmlSanitizer.sanitize(node.literal, allowRemoteImages))
+            is HtmlBlock -> {
+                html.line()
+                html.raw(HtmlSanitizer.sanitize(node.literal, allowRemoteImages))
+                html.line()
+            }
+        }
     }
 }

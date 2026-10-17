@@ -1,0 +1,3 @@
+# Sanitizer
+
+Safe paragraph.

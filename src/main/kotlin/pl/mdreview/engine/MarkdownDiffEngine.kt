@@ -39,8 +39,9 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
         return MarkdownDiff(result)
     }
 
+    /** With [DiffOptions.ignoreWhitespace], hard line breaks (trailing spaces) are ignored too. */
     private fun compareKey(block: Block): String =
-        if (options.ignoreWhitespace) block.key.filterNot { it.isWhitespace() } else block.key
+        if (options.ignoreWhitespace) block.key.replace(BlockExtractor.HARD_BREAKS_KEY, "").filterNot { it.isWhitespace() } else block.key
 
     private fun pairWindow(removed: List<Block>, added: List<Block>, out: MutableList<DiffBlock>) {
         val pairs = findPairs(removed, added)
@@ -167,6 +168,10 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
             BlockKind.MERMAID -> if (bothLone && diagramType(l) == diagramType(r)) return maxOf(s, MIN_SCORE)
             // A renamed heading at the same level, with no other heading around, is the same heading.
             BlockKind.HEADING -> if (bothLone && l.level == r.level) return maxOf(s, MIN_SCORE)
+            // A changed summary is the same collapsible section.
+            BlockKind.DETAILS -> return maxOf(s, MIN_SCORE)
+            // The only HTML block or comment on both sides was most likely edited, even when its text was rewritten.
+            BlockKind.HTML, BlockKind.HTML_COMMENT -> if (bothLone) return maxOf(s, MIN_SCORE)
             else -> Unit
         }
         val threshold = if (lone) options.pairingThreshold / 2 else options.pairingThreshold

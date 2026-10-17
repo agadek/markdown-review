@@ -12,6 +12,7 @@ import pl.mdreview.engine.BlockExtractor
 import pl.mdreview.engine.BlockKind
 import pl.mdreview.engine.DiffBlock
 import pl.mdreview.engine.DiffStatus
+import pl.mdreview.engine.HtmlFragment
 import pl.mdreview.engine.MarkdownDiff
 import pl.mdreview.engine.MarkdownDiffEngine
 
@@ -41,6 +42,13 @@ data class Labels(
     val previousUrl: (String) -> String = { url -> "Previous URL: $url" },
     val newUrl: (String) -> String = { url -> "New URL: $url" },
     val showSourceChanges: String = "Show source changes",
+    /** Tooltip of an HTML comment row, which is only shown when the comment changed. */
+    val comment: String = "HTML comment",
+    val commentChanged: String = "comment changed",
+    /** Note for HTML whose markup changed but whose visible text did not. */
+    val markupChanged: String = "HTML changed",
+    /** Summary of a `<details>` element without a `<summary>`, as browsers show it. */
+    val details: String = "Details",
 )
 
 /**
@@ -67,23 +75,63 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         if (!diff.hasChanges) {
             body.append("<div class=\"mdr-empty\">").append(escape(options.labels.noDifferences)).append("</div>\n")
         }
-        val folds = foldRanges(diff.blocks)
-        var k = 0
-        while (k < diff.blocks.size) {
+        renderRange(diff, 0, diff.blocks.size, body)
+        body.append("</div>\n")
+        return body.toString()
+    }
+
+    /**
+     * Renders blocks [from] until [to]. A multi-block `<details>` element becomes a real collapsible element around
+     * its rows, open when anything in it changed; its summary row is the [BlockKind.DETAILS] block.
+     */
+    private fun renderRange(diff: MarkdownDiff, from: Int, to: Int, out: StringBuilder) {
+        val blocks = diff.blocks
+        var spanStart = from
+        var k = from
+        while (k < to) {
+            val opener = detailsOpener(blocks[k])
+            if (opener == null) {
+                k++
+                continue
+            }
+            renderSpan(diff, spanStart, k, out)
+            var end = k + 1
+            while (end < to && detailsDepth(blocks[end]) > opener.context.details) end++
+            val open = (k until end).any { blocks[it].isChange }
+            out.append("<details class=\"mdr-details\"").append(if (open) " open" else "")
+                .append("><summary class=\"mdr-details-summary\">")
+            out.append(block(blocks[k], k).trimEnd())
+            out.append("</summary>\n")
+            renderRange(diff, k + 1, end, out)
+            out.append("</details>\n")
+            k = end
+            spanStart = end
+        }
+        renderSpan(diff, spanStart, to, out)
+    }
+
+    private fun detailsOpener(block: DiffBlock): Block? =
+        listOfNotNull(block.left, block.right).firstOrNull { it.kind == BlockKind.DETAILS }
+
+    private fun detailsDepth(block: DiffBlock): Int = maxOf(block.left?.context?.details ?: 0, block.right?.context?.details ?: 0)
+
+    /** Blocks [from] until [to], none of which opens a `<details>`, with long unchanged runs folded. */
+    private fun renderSpan(diff: MarkdownDiff, from: Int, to: Int, out: StringBuilder) {
+        val folds = if (diff.hasChanges) foldRanges(diff.blocks, from, to) else emptyMap()
+        var k = from
+        while (k < to) {
             val fold = folds[k]
             if (fold != null) {
-                body.append("<details class=\"mdr-fold\"><summary>")
+                out.append("<details class=\"mdr-fold\"><summary>")
                     .append(escape(options.labels.unchangedBlocks(fold.last - fold.first + 1))).append("</summary>\n")
-                for (f in fold) body.append(block(diff.blocks[f], f))
-                body.append("</details>\n")
+                for (f in fold) out.append(block(diff.blocks[f], f))
+                out.append("</details>\n")
                 k = fold.last + 1
                 continue
             }
-            body.append(block(diff.blocks[k], k))
+            out.append(block(diff.blocks[k], k))
             k++
         }
-        body.append("</div>\n")
-        return body.toString()
     }
 
     /** Stylesheet for [renderBody]: `diff.css` plus layout rules, colors from the `--md-*` variables. */
@@ -104,21 +152,23 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         }
     }
 
-    /** Ranges of indices to fold, keyed by their first index. */
-    private fun foldRanges(blocks: List<DiffBlock>): Map<Int, IntRange> {
+    /**
+     * Ranges of indices in [start] until [stop] to fold, keyed by their first index. Context blocks are kept
+     * around every run except at the start and end of the document. A document without changes is shown whole.
+     */
+    private fun foldRanges(blocks: List<DiffBlock>, start: Int, stop: Int): Map<Int, IntRange> {
         if (!options.collapseUnchanged) return emptyMap()
         val result = mutableMapOf<Int, IntRange>()
-        var k = 0
-        while (k < blocks.size) {
+        var k = start
+        while (k < stop) {
             if (blocks[k].isChange) { k++; continue }
             var end = k
-            while (end + 1 < blocks.size && !blocks[end + 1].isChange) end++
+            while (end + 1 < stop && !blocks[end + 1].isChange) end++
             val atStart = k == 0
             val atEnd = end == blocks.size - 1
             val from = if (atStart) k else k + options.foldContext
             val to = if (atEnd) end else end - options.foldContext
-            // A document without changes is shown whole.
-            if (end - k + 1 > options.foldThreshold && to - from + 1 >= 2 && !(atStart && atEnd)) {
+            if (end - k + 1 > options.foldThreshold && to - from + 1 >= 2) {
                 result[from] = from..to
             }
             k = end + 1
@@ -137,7 +187,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         val sb = StringBuilder()
         when (options.mode) {
             ViewMode.SIDE_BY_SIDE -> {
-                sb.append("<div class=\"mdr-row blk-").append(status).append("\"").append(idx).append(">")
+                sb.append("<div class=\"mdr-row blk-").append(status).append("\"").append(idx).append(hidden(block)).append(">")
                 val links = linkChanges(block)
                 sb.append(side("left", block.left, block.status, leftMarks(block), null, links.left))
                 sb.append(side("right", block.right, block.status, rightMarks(block, withRemoved = false), changeNote(block), links.right))
@@ -149,7 +199,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                     DiffStatus.MODIFIED -> Triple(block.right!!, "right", rightMarks(block, withRemoved = true))
                     else -> Triple(block.right!!, "right", InlineMarks.NONE)
                 }
-                sb.append("<div class=\"mdr-item blk-").append(status).append("\"").append(idx).append(" data-side=\"").append(side)
+                sb.append("<div class=\"mdr-item blk-").append(status).append("\"").append(idx).append(hidden(block)).append(" data-side=\"").append(side)
                     .append("\" data-line=\"").append(content.source.startLine).append("\">")
                 val note = if (block.status == DiffStatus.MODIFIED) changeNote(block) else null
                 val links = if (side == "right") linkChanges(block).right else emptyMap()
@@ -186,6 +236,10 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             }
         }
     }
+
+    /** An unchanged HTML comment is invisible, like in the rendered document. */
+    private fun hidden(block: DiffBlock): String =
+        if (block.status == DiffStatus.EQUAL && block.right?.kind == BlockKind.HTML_COMMENT) " hidden" else ""
 
     private fun leftMarks(block: DiffBlock) =
         if (block.status == DiffStatus.MODIFIED) InlineMarks.left(block.inline) else InlineMarks.NONE
@@ -240,6 +294,16 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             BlockKind.ALERT -> if (l.plainText == r.plainText) null else l.plainText + " → " + r.plainText
             BlockKind.HEADING -> if (r.kind != BlockKind.HEADING || l.level == r.level) null else options.labels.headingLevel(l.level, r.level)
             else -> null
+        } ?: hiddenChange(l, r)
+    }
+
+    /** A change only in HTML comments or markup, which the rendered text does not show. */
+    private fun hiddenChange(l: Block, r: Block): String? {
+        if (l.kind == BlockKind.HTML_COMMENT || l.kind in RAW_KINDS || l.plainText != r.plainText) return null
+        return when {
+            HtmlFragment.comments(l.rawText) != HtmlFragment.comments(r.rawText) -> options.labels.commentChanged
+            l.kind == BlockKind.HTML || l.kind == BlockKind.DETAILS -> options.labels.markupChanged
+            else -> null
         }
     }
 
@@ -283,7 +347,24 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             // Inert source for the page's diagram script, which draws it in place; shown as code without the script.
             BlockKind.MERMAID -> "<div class=\"$cls mdr-mermaid\"><pre class=\"mdr-mermaid-code\"><code>" +
                 escape(block.plainText) + "</code></pre></div>"
-            BlockKind.HTML -> "<div class=\"$cls\">" + HtmlSanitizer.sanitize(block.rawText, options.allowRemoteImages) + "</div>"
+            BlockKind.HTML -> {
+                val parts = HtmlFragment.parse(block.rawText, options.allowRemoteImages, openDetails = status != DiffStatus.EQUAL)
+                "<div class=\"$cls mdr-html${noteClass(note)}\"${noteAttributes(note)}>" + markedHtml(parts, marks) + "</div>"
+            }
+            BlockKind.DETAILS -> {
+                // The summary row of a `<details>` group: the element itself wraps the group (see renderRange).
+                val parts = HtmlFragment.parse(block.rawText, options.allowRemoteImages)
+                    .filterNot { it is HtmlFragment.Markup && (it.tag == "details" || it.tag == "summary") }
+                val title = if (block.plainText.isBlank()) escape(options.labels.details) else markedHtml(parts, marks)
+                "<div class=\"$cls mdr-details-title${noteClass(note)}\"${noteAttributes(note)}>" +
+                    "<span class=\"mdr-details-marker\"></span>$title</div>"
+            }
+            BlockKind.HTML_COMMENT -> {
+                val writer = MarkedTextWriter(marks, ::escape)
+                val text = writer.write(0, block.plainText) + writer.rest()
+                "<div class=\"$cls mdr-comment\" title=\"" + escape(options.labels.comment) + "\">" +
+                    "<span class=\"mdr-comment-text\">$text</span></div>"
+            }
             BlockKind.LIST_ITEM -> listItem(block, cls, marks, side, note, links)
             BlockKind.ALERT -> {
                 val writer = MarkedTextWriter(marks, ::escape)
@@ -304,6 +385,14 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             }
             else -> "<div class=\"$cls${noteClass(note)}\"${noteAttributes(note)}>" + renderNodes(block.renderNodes, marks, side, links) + "</div>"
         }
+    }
+
+    /** Sanitized HTML with word marks on its visible text. */
+    private fun markedHtml(parts: List<HtmlFragment.Part>, marks: InlineMarks): String {
+        val writer = MarkedTextWriter(marks, ::escape)
+        var offset = 0
+        val html = HtmlSanitizer.write(parts) { text -> writer.write(offset, text).also { offset += text.length } }
+        return html + writer.rest()
     }
 
     private fun listItem(block: Block, cls: String, marks: InlineMarks, side: String, note: String?, links: Map<Node, String>): String {
@@ -337,6 +426,8 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                 .extensions(renderExtensions)
                 .nodeRendererFactory { ctx -> MarkedTextNodeRenderer(ctx, writer, offsets) }
                 .nodeRendererFactory { ctx -> FootnoteReferenceRenderer(ctx, writer, offsets) { footnoteId(side, it) } }
+                .nodeRendererFactory { ctx -> HardBreakRenderer(ctx, writer, offsets) }
+                .nodeRendererFactory { ctx -> SanitizedHtmlRenderer(ctx, options.allowRemoteImages) }
                 .attributeProviderFactory { LinkAttributeProvider(baseUri, linkNotes) }
                 .sanitizeUrls(true)
                 .build()
@@ -348,6 +439,9 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
     }
 
     companion object {
+        /** Kinds rendered from their source, where comments are text. */
+        private val RAW_KINDS = setOf(BlockKind.CODE_LINE, BlockKind.CODE_FENCE, BlockKind.FRONT_MATTER, BlockKind.MERMAID)
+
         /**
          * The parser's extensions minus footnotes: their renderer collects definitions at the end of the
          * document, while here each definition is a block of its own ([FootnoteReferenceRenderer]).

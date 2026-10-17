@@ -22,6 +22,13 @@ enum class BlockKind {
      * the fence and its source lines as [CODE_FENCE] and [CODE_LINE] blocks, for the source diff.
      */
     MERMAID,
+    /**
+     * The opening of a `<details>` element whose content spans several Markdown blocks: its summary. The content
+     * follows as blocks with a deeper [BlockContext.details]; the closing `</details>` is not a block.
+     */
+    DETAILS,
+    /** An HTML block that is exactly one comment (`<!-- ... -->`); [Block.plainText] is the comment's text. */
+    HTML_COMMENT,
 }
 
 enum class DiffStatus { EQUAL, MODIFIED, REMOVED, ADDED }
@@ -37,6 +44,8 @@ data class BlockContext(
     val number: Int? = null,
     /** Type of the GitHub alert (`NOTE`, `TIP`, ...) the block sits in; the alert is the outermost quote. */
     val alert: String? = null,
+    /** How many multi-block `<details>` elements the block sits in. */
+    val details: Int = 0,
 )
 
 /**

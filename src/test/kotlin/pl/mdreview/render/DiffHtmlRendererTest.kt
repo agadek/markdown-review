@@ -243,4 +243,56 @@ class DiffHtmlRendererTest {
         assertContains(html, "<li class=\"mdr-block mdr-modified\">")
         assertContains(html, "title=\"Previous URL: https://a.example\"")
     }
+
+    @Test
+    fun `sanitizer keeps an allowlist of tags, attributes and url schemes`() {
+        val clean = HtmlSanitizer.sanitize(
+            "<p align=\"center\" class=\"x\" style=\"color:red\" onclick=\"a()\">Hi <b>there</b></p>" +
+                "<a href=\" JaVaScRiPt:alert(1)\">a</a><a href=\"vbscript:x\">b</a><a href=\"#top\">c</a>" +
+                "<img src=\"data:image/png;base64,AA\"><img src=\"data:text/html,x\"><img src=\"https://e.com/a.png\">" +
+                "<svg><script>x()</script><circle onload=\"y()\"/></svg><form action=\"/x\"><input></form>1 < 2",
+        )
+        assertEquals(
+            "<p align=\"center\">Hi <b>there</b></p><a>a</a><a>b</a><a href=\"#top\">c</a>" +
+                "<img src=\"data:image/png;base64,AA\"><img><img src=\"\">1 &lt; 2",
+            clean,
+        )
+        assertContains(HtmlSanitizer.sanitize("<img src=\"https://e.com/a.png\">", allowRemoteImages = true), "src=\"https://e.com/a.png\"")
+    }
+
+    @Test
+    fun `inline html inside markdown is sanitized too`() {
+        val html = render("", "Text <span onclick=\"x()\">here</span> and <a href=\"javascript:y()\">link</a>.\n\n- <img src=x onerror=z()>\n")
+        assertFalse(html.contains("onclick"))
+        assertFalse(html.contains("javascript:"))
+        assertFalse(html.contains("onerror"))
+        assertContains(html, "<span>here</span>")
+    }
+
+    @Test
+    fun `details group folds its unchanged rows and stays closed without changes`() {
+        val inner = (1..8).joinToString("\n\n") { "Paragraph $it." }
+        val md = "<details>\n<summary>More</summary>\n\n$inner\n\n</details>\n\nAfter.\n"
+        val html = render(md, md.replace("After.", "After, changed."))
+        assertContains(html, "<details class=\"mdr-details\"><summary class=\"mdr-details-summary\"><div class=\"mdr-row blk-equal\" data-idx=\"0\"")
+        assertContains(html, "<span class=\"mdr-details-marker\"></span> More</div>")
+        // The unchanged rows inside the group fold on their own, keeping context rows at both ends of the group.
+        assertContains(html, "<details class=\"mdr-fold\"><summary>4 unchanged blocks</summary>")
+        val changed = render(md, md.replace("Paragraph 4.", "Paragraph four."))
+        assertContains(changed, "<details class=\"mdr-details\" open>")
+    }
+
+    @Test
+    fun `unchanged html comments are hidden rows`() {
+        val html = render("<!-- note -->\n\ntext\n", "<!-- note -->\n\ntext!\n")
+        assertContains(html, "<div class=\"mdr-row blk-equal\" data-idx=\"0\" data-block-id=\"b0\" hidden>")
+        val merged = render("<!-- note -->\n", "<!-- note -->\n\nx\n", RenderOptions(mode = ViewMode.MERGED))
+        assertContains(merged, "data-block-id=\"b0\" hidden data-side=\"right\"")
+    }
+
+    @Test
+    fun `added hard break shows a break marker`() {
+        val html = render("one\ntwo\n", "one\\\ntwo\n")
+        assertContains(html, "one<ins class=\"mdr-ins mdr-ws mdr-ws-break\"></ins><br />")
+    }
 }

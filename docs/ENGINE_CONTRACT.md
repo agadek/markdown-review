@@ -47,6 +47,13 @@ with an **Open Text Viewer** button instead.
   page script draws. A modified diagram's row (or merged item) also carries `mdr-mermaid-row` and starts with
   `details.mdr-mermaid-source`, holding the source line diff as nested rows or items with `data-side` / `data-line`
   but no `data-idx`. See `CLASSES.md`.
+- Raw HTML (NFR-8): blocks and inline HTML go through an allowlist sanitizer (`HtmlFragment`): GitHub's set of
+  tags and attributes, `http`, `https`, `mailto`, `file` and relative URLs (`data:image/*` for images); the content of
+  `<script>`, `<style>`, `<iframe>` and similar elements is dropped. Changes only in HTML markup or in an HTML comment
+  get `mdr-meta-changed` with the note `HTML changed` or `comment changed`.
+- A `<details>` spanning several blocks wraps its rows in `<details class="mdr-details">` (open when it contains a
+  change); the summary row is a block of its own with `data-idx` like any other. An unchanged HTML comment row has
+  the `hidden` attribute.
 - `blocks`: `BlockInfo(idx, status, left: LineRange?, right: LineRange?, edit: EditRegion?)` in display order;
   zero-based, end-exclusive line ranges. The IDE builds F7/Shift+F7 navigation and the "Change 3 of 12" counter from
   them.
@@ -59,6 +66,27 @@ with an **Open Text Viewer** button instead.
   A fenced code block, front matter or table added or removed as a whole is one region for all its blocks, closing
   fence or delimiter row included. `null` for equal blocks and for changes no line edit can undo, such as a block
   that changed only through a link reference definition.
+
+## Supported Markdown
+commonmark-java with these extensions: GFM tables, strikethrough, task list items, autolinks, footnotes, GitHub
+alerts, plus emoji shortcodes (`EmojiExtension`, GitHub names from `src/main/resources/pl/mdreview/emoji.txt`;
+unknown ones stay as text). Front matter is recognized before parsing. Block kinds (`BlockKind`):
+
+| Kind | Element |
+|---|---|
+| `HEADING`, `PARAGRAPH`, `LIST_ITEM`, `TABLE_ROW` | headings, paragraphs, list items, table rows |
+| `CODE_FENCE`, `CODE_LINE` | a code block's opening fence (info string) and each of its lines |
+| `THEMATIC_BREAK` | `---`, `***`, `___`; the syntax is not compared |
+| `HTML` | a raw HTML block, compared by its visible text |
+| `HTML_COMMENT` | an HTML block that is exactly one `<!-- comment -->`, compared by its text |
+| `DETAILS` | the opening of a `<details>` element that spans several blocks (its summary); its content blocks have `BlockContext.details` > 0, the closing `</details>` is not a block |
+| `FRONT_MATTER` | a line of YAML front matter |
+| `FOOTNOTE` | a footnote definition |
+| `ALERT` | the title line of a GitHub alert |
+
+Hard line breaks (two trailing spaces or `\`) are part of a block's key and appear as `\n` in its word diff, so
+adding or removing one is a change; switching between the two syntaxes is not. With `ignoreWhitespace` they are
+ignored. Math (`$...$`) is not recognized yet (P2.8).
 
 ## What the IDE does
 - Registers two viewers in IntelliJ's diff window (`diff.DiffTool`): "Rendered Markdown (side by side)" and "(merged)"; the text diff is the built-in viewer.

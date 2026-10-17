@@ -75,5 +75,19 @@ details.mdr-fold > summary { margin: 2px 0; padding: 2px 0; text-align: center; 
   color: var(--mdr-muted); background: var(--mdr-code-bg); border-radius: 3px; font-size: 0.85em; user-select: none; }
 details.mdr-fold > summary::-webkit-details-marker { display: none; }
 details.mdr-fold[open] > summary { opacity: 0.6; }
+
+/* An unchanged HTML comment is invisible, as in the rendered document. */
+.mdr-row[hidden], .mdr-item[hidden] { display: none; }
+.mdr-comment { color: var(--mdr-muted); font-family: var(--mdr-mono); font-size: 0.85em; padding: 0.15em 0; }
+.mdr-comment-text::before { content: "<!-- "; }
+.mdr-comment-text::after { content: " -->"; }
+
+/* A <details> element spanning several blocks: its summary row toggles the rows inside. */
+details.mdr-details > summary { list-style: none; cursor: pointer; }
+details.mdr-details > summary::-webkit-details-marker { display: none; }
+.mdr-details-marker::before { content: "\25B8"; display: inline-block; width: 1.2em; color: var(--mdr-muted); }
+details.mdr-details[open] > summary .mdr-details-marker::before { content: "\25BE"; }
+.mdr-details-title { font-weight: 600; }
+.mdr-html details > summary { cursor: pointer; }
 """
 }

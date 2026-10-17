@@ -1,5 +1,6 @@
 package pl.mdreview.engine
 
+import pl.mdreview.api.LineRange
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.DiffOptions as ApiDiffOptions
 import pl.mdreview.api.ViewMode
@@ -346,16 +347,59 @@ class FixturesTest {
     }
 
     @Test
-    fun `27 mermaid is diffed as a code block until P2_8`() {
-        val d = diff("27-mermaid")
+    fun `27 mermaid diagram is one modified block with its line diff behind a toggle`() {
+        assertEquals(listOf("MODIFIED MERMAID flowchart LR"), changes("27-mermaid").map { it.substringBefore("\n") })
+        for (mode in ViewMode.entries) {
+            val html = html("27-mermaid", mode)
+            assertContains(html, "<details class=\"mdr-mermaid-source\"><summary>Show source changes</summary>")
+            assertEquals(2, Regex("class=\"mdr-block mdr-\\w+ mdr-mermaid\"").findAll(html).count(), mode.name)
+            // The source diff inside the toggle: the edge line with its word diff, the added node.
+            assertContains(html, "<del class=\"mdr-del\">compare</del>")
+            assertContains(html, "C --&gt; D[JCEF preview]")
+        }
+        // Nested source rows are not blocks: data-idx stays one per engine block.
+        val rendered = CoreMarkdownDiffRenderer().render(
+            RenderRequest(read("27-mermaid", "old.md"), read("27-mermaid", "new.md"), ViewMode.SIDE_BY_SIDE, ApiDiffOptions(collapseUnchanged = false)),
+        )
+        assertEquals(rendered.blocks.size, Regex("data-idx=").findAll(rendered.bodyHtml).count())
+        assertEquals(LineRange(4, 9), rendered.changes.single().left)
+    }
+
+    @Test
+    fun `27 mermaid with rendering off is diffed as a code block`() {
+        val d = MarkdownDiffEngine(DiffOptions(mermaidDiagrams = false)).diff(read("27-mermaid", "old.md"), read("27-mermaid", "new.md"))
         assertEquals(
-            listOf("MODIFIED CODE_LINE A[Open file] -->|diff wi", "ADDED CODE_LINE C --> D[JCEF preview]"),
-            changes("27-mermaid"),
+            listOf(DiffStatus.MODIFIED to BlockKind.CODE_LINE, DiffStatus.ADDED to BlockKind.CODE_LINE),
+            d.changes.map { it.status to (it.right ?: it.left)!!.kind },
         )
         val fence = d.blocks.single { it.right?.kind == BlockKind.CODE_FENCE }
         assertEquals(DiffStatus.EQUAL, fence.status)
         val edge = d.changes[0].inline
         assertEquals(listOf("compare"), edge.filter { it.status == DiffStatus.REMOVED }.map { it.text.trim() })
         assertEquals("diff with HEAD", edge.filter { it.status == DiffStatus.ADDED }.joinToString("") { it.text }.trim())
+        val html = CoreMarkdownDiffRenderer().render(
+            RenderRequest(read("27-mermaid", "old.md"), read("27-mermaid", "new.md"), ViewMode.SIDE_BY_SIDE, ApiDiffOptions(renderMermaid = false)),
+        ).bodyHtml
+        assertFalse(html.contains("mdr-mermaid"))
+    }
+
+    @Test
+    fun `28 mermaid diagrams`() {
+        val d = diff("28-mermaid-diagrams")
+        val diagrams = d.blocks.filter { (it.right ?: it.left)!!.kind == BlockKind.MERMAID }
+            .map { it.status to (it.right ?: it.left)!!.plainText.lines().first() }
+        assertEquals(
+            listOf(
+                DiffStatus.EQUAL to "sequenceDiagram",
+                DiffStatus.MODIFIED to "flowchart TD",
+                DiffStatus.REMOVED to "pie title Languages",
+                DiffStatus.ADDED to "stateDiagram-v2",
+                DiffStatus.MODIFIED to "flowchart LR",
+            ),
+            diagrams,
+        )
+        val html = html("28-mermaid-diagrams")
+        assertEquals(2, Regex("<details class=\"mdr-mermaid-source\">").findAll(html).count())
+        assertContains(html, "X --&gt; Y --&gt;")
     }
 }

@@ -16,6 +16,11 @@ enum class BlockKind {
     FOOTNOTE,
     /** The title line of a GitHub alert (`> [!NOTE]`); the alert's content follows as quoted blocks. */
     ALERT,
+    /**
+     * A ` ```mermaid ` fence kept whole: compared as one unit and drawn as a diagram. [Block.lines] holds
+     * the fence and its source lines as [CODE_FENCE] and [CODE_LINE] blocks, for the source diff.
+     */
+    MERMAID,
 }
 
 enum class DiffStatus { EQUAL, MODIFIED, REMOVED, ADDED }
@@ -53,6 +58,8 @@ class Block(
     val language: String? = null,
     /** Heading level (1–6), 0 for other blocks. */
     val level: Int = 0,
+    /** For a [BlockKind.MERMAID] block: the blocks the fence would be split into without diagram rendering. */
+    val lines: List<Block> = emptyList(),
 ) {
     override fun toString(): String = "$kind(${key.take(40)})"
 }
@@ -76,6 +83,8 @@ data class DiffOptions(
     val ignoreWhitespace: Boolean = false,
     /** Minimum word similarity (0..1) for a removed and an added block to count as one modified block. */
     val pairingThreshold: Double = 0.5,
+    /** Keep each ` ```mermaid ` fence as one [BlockKind.MERMAID] block instead of one block per line. */
+    val mermaidDiagrams: Boolean = true,
 )
 
 class MarkdownDiff(val blocks: List<DiffBlock>) {

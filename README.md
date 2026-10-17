@@ -20,6 +20,9 @@ diff window, so it works wherever the IDE shows a diff of an `.md` file.
   individual words are highlighted.
 - **Merged view.** One column: removed parts red and struck through, added parts green. Handy for reading a large
   change quickly.
+- **Mermaid diagrams.** ` ```mermaid ` blocks are drawn as diagrams, offline, in the editor's light or dark theme.
+  A changed diagram shows the old and the new drawing side by side, with a "Show source changes" toggle for the line
+  diff of its source. A diagram that does not parse shows Mermaid's error and its source.
 - **Text diff.** IntelliJ's built-in diff is always one click away in the diff window's viewer switcher.
 - **Per-block revert** (planned, M6). Arrows next to a block move it to the other side, like in the text diff, and a
   double click lets you edit the block's raw Markdown. Changes go through the IDE document, so Undo works.
@@ -29,7 +32,7 @@ request windows. Compare any two files with **Compare Markdown Files...** from t
 Tools menu. F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.
 
 Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with (rendered side by side, rendered
-merged, or text) and holds the whitespace, collapse, large-file and remote-image options.
+merged, or text) and holds the whitespace, collapse, large-file, remote-image and Mermaid options.
 
 Status: early stage, see [PLAN.md](PLAN.md). The contract between the diff engine and the IDE layer is described in
 [docs/ENGINE_CONTRACT.md](docs/ENGINE_CONTRACT.md).
@@ -54,6 +57,9 @@ JCEF the plugin stays out of the way: the diff window keeps the text viewer.
 Developed with the help of Claude Code, with every change reviewed by the maintainer.
 
 ## License
+
+The plugin bundles [Mermaid](https://github.com/mermaid-js/mermaid) 11.17.2 (MIT License); see
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 [PolyForm Noncommercial License 1.0.0](LICENSE). Noncommercial use (personal, educational, research, nonprofit
 organizations) is allowed free of charge. Commercial use requires a separate license from the author.

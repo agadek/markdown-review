@@ -13,7 +13,8 @@ The `pl.mdreview.api` package does not depend on the IntelliJ Platform.
 ## Input
 `RenderRequest(left, right, mode, options, leftBaseUri, rightBaseUri)`: texts with `\n` line separators, `null` = the file does not exist;
 `mode` = `SIDE_BY_SIDE` or `MERGED`; `options.ignoreWhitespace` (FR-7), `options.collapseUnchanged`,
-`options.loadRemoteImages` (NFR-8, default `false`: remote `src` in raw HTML is blanked).
+`options.loadRemoteImages` (NFR-8, default `false`: remote `src` in raw HTML is blanked),
+`options.renderMermaid` (P2.8, default `true`: each ` ```mermaid ` fence is one block; `false` diffs it line by line).
 `leftBaseUri` / `rightBaseUri` (optional): URI of the directory holding each side's file, ending with `/`
 (`file:///home/me/project/docs/`). Relative image paths on that side resolve against it; `null` keeps them as written.
 Absolute URLs, root-relative paths (`/img.png`) and fragments are never rewritten.
@@ -39,6 +40,11 @@ with an **Open Text Viewer** button instead.
     merged view, `New URL: …` on the left). Links pair by text and occurrence within the block;
   - a heading whose level changed gets `mdr-meta-changed` and `data-change-note="h3 → h4"` on its block element on
     the new side, like the checkbox and alert-type notes.
+- Mermaid diagrams (P2.8, with `options.renderMermaid`): a ` ```mermaid ` fence is one block whose line range covers
+  the whole fence. Its side holds `div.mdr-block.mdr-mermaid` with the source in `pre.mdr-mermaid-code`, which the IDE's
+  page script draws. A modified diagram's row (or merged item) also carries `mdr-mermaid-row` and starts with
+  `details.mdr-mermaid-source`, holding the source line diff as nested rows or items with `data-side` / `data-line`
+  but no `data-idx`. See `CLASSES.md`.
 - `blocks`: `BlockInfo(idx, status, left: LineRange?, right: LineRange?)` in display order; zero-based, end-exclusive line
   ranges. The IDE builds F7/Shift+F7 navigation and the "Change 3 of 12" counter from them, and per-block revert in M6.
 
@@ -50,10 +56,16 @@ with an **Open Text Viewer** button instead.
 - Fills `leftBaseUri` / `rightBaseUri` from the directory of each `DocumentContent`'s local file, so images next to the
   compared file render (the page's CSP allows `file:` and `data:` images, plus `http:` / `https:` when the
   "Load remote images" setting is on, which also sets `options.loadRemoteImages`).
+- Draws Mermaid diagrams: when `bodyHtml` has a `.mdr-mermaid` block, the page inlines the bundled `mermaid.min.js`
+  (`src/main/resources/pl/mdreview/mermaid`, version and license in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md))
+  and a script that draws each block with Mermaid's `default` or `dark` theme, matching the editor scheme. Both scripts
+  carry the page's nonce, so the CSP is unchanged and nothing is loaded from the network. A diagram Mermaid cannot
+  parse shows its error and source; for a changed diagram the source line diff opens.
 - Shows the large-file notice above `LargeFiles.limit()`; its button marks the diff context so the rendered viewers
   report `canShow = false` for files above the limit, then reopens the request, which falls back to the text viewer.
 - Settings | Tools | Markdown Review (`MarkdownReviewSettings`, stored in `markdownReview.xml`): the default viewer,
-  `ignoreWhitespace`, `collapseUnchanged`, the large-file limits (lines, KB) and loading remote images.
+  `ignoreWhitespace`, `collapseUnchanged`, the large-file limits (lines, KB), loading remote images and rendering
+  Mermaid diagrams.
 - Makes the chosen default viewer the first one IntelliJ tries for Markdown diffs through the diff tool order; see
   [ADR 0001](adr/0001-default-diff-viewer.md).
 - Recognizes Markdown by extension (`md`, `markdown`, `mdown`, `mkd`) or, when the bundled Markdown plugin is enabled,

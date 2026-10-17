@@ -38,8 +38,33 @@ object HtmlPage {
             mdr.restore($restoreIdx);
             </script>
             </body></html>
-        """.trimIndent()
+        """.trimIndent().let { page ->
+            // Appended after trimIndent: the library is large and has no indentation to trim.
+            val diagrams = mermaidScripts(diff, nonce, restoreIdx)
+            if (diagrams.isEmpty()) page else page.removeSuffix("</body></html>") + diagrams + "\n</body></html>"
+        }
     }
+
+    /**
+     * The bundled `mermaid.js` and the script that draws every `.mdr-mermaid` block, only for pages
+     * that have one. Both run under the page's nonce, so the CSP needs nothing beyond `script-src 'nonce-…'`.
+     */
+    private fun mermaidScripts(diff: RenderedDiff, nonce: String, restoreIdx: Int): String {
+        if (!diff.bodyHtml.contains(MERMAID_CLASS)) return ""
+        val theme = if (isDark()) "dark" else "default"
+        return "<script nonce=\"$nonce\">" + mermaidJs + "</script>\n" +
+            "<script nonce=\"$nonce\">" + MERMAID_RUN_JS + "mdrDrawDiagrams('$theme', $restoreIdx);</script>"
+    }
+
+    /** `mermaid.min.js`, pinned in `src/main/resources/pl/mdreview/mermaid` (see THIRD_PARTY_NOTICES.md). */
+    private val mermaidJs: String by lazy {
+        val js = HtmlPage::class.java.getResourceAsStream(MERMAID_JS)?.use { it.readBytes().toString(Charsets.UTF_8) }
+            ?: error("Missing resource $MERMAID_JS")
+        // The library is inlined in a <script>; make sure no string in it ends that element early.
+        js.replace("</script", "<\\/script")
+    }
+
+    private fun isDark() = ColorUtil.isDark(EditorColorsManager.getInstance().globalScheme.defaultBackground)
 
     fun imgSources(remoteImages: Boolean) = if (remoteImages) "file: data: https: http:" else "file: data:"
 
@@ -47,7 +72,7 @@ object HtmlPage {
         val scheme = EditorColorsManager.getInstance().globalScheme
         val bg = scheme.defaultBackground
         val fg = scheme.defaultForeground
-        val dark = ColorUtil.isDark(bg)
+        val dark = isDark()
         fun diffBg(key: com.intellij.openapi.editor.colors.TextAttributesKey, fallback: Color) =
             scheme.getAttributes(key)?.backgroundColor ?: fallback
         val removed = diffBg(DiffColors.DIFF_DELETED, if (dark) Color(0x484A4A) else Color(0xD6D6D6))
@@ -79,6 +104,58 @@ object HtmlPage {
     private fun isGrey(c: Color) = maxOf(c.red, c.green, c.blue) - minOf(c.red, c.green, c.blue) < 16
 
     private fun css(c: Color) = "#" + ColorUtil.toHex(c)
+
+    private const val MERMAID_JS = "/pl/mdreview/mermaid/mermaid.min.js"
+    private const val MERMAID_CLASS = "mdr-mermaid"
+
+    /**
+     * Draws the diagrams one at a time, so a large one does not block scrolling for long. A diagram that
+     * Mermaid cannot parse keeps its source with Mermaid's message above it; for a changed diagram the
+     * row's source diff opens instead, with the message on top. Drawing changes row heights, so the
+     * restored position is applied again at the end unless the user has scrolled meanwhile.
+     */
+    private const val MERMAID_RUN_JS = """
+        function mdrDrawDiagrams(theme, restoreIdx) {
+          var moved = false;
+          ['wheel', 'keydown', 'mousedown', 'touchstart'].forEach(function(t) {
+            window.addEventListener(t, function() { moved = true; }, {once: true, passive: true});
+          });
+          var font = getComputedStyle(document.documentElement).getPropertyValue('--md-font');
+          mermaid.initialize({startOnLoad: false, securityLevel: 'strict', suppressErrorRendering: true, theme: theme, fontFamily: font});
+          var blocks = Array.prototype.slice.call(document.querySelectorAll('.mdr-mermaid'));
+          var n = 0;
+          function next() {
+            if (n >= blocks.length) { if (!moved) mdr.restore(restoreIdx); return; }
+            var el = blocks[n];
+            var id = 'mdr-mermaid-' + n++;
+            var code = el.querySelector('.mdr-mermaid-code');
+            mermaid.render(id, code.textContent).then(function(out) {
+              var box = document.createElement('div');
+              box.className = 'mdr-mermaid-svg';
+              box.innerHTML = out.svg;
+              el.insertBefore(box, code);
+              el.classList.add('mdr-mermaid-drawn');
+            }, function(err) {
+              var stray = document.getElementById('d' + id);
+              if (stray) stray.remove();
+              var msg = document.createElement('div');
+              msg.className = 'mdr-mermaid-error';
+              msg.textContent = String((err && err.message) || err);
+              el.insertBefore(msg, code);
+              el.classList.add('mdr-mermaid-failed');
+              var row = el.closest('.mdr-mermaid-row');
+              var source = row && row.querySelector(':scope > details.mdr-mermaid-source');
+              if (source) {
+                // The drawings are hidden while the source diff is open: repeat the message there.
+                var note = msg.cloneNode(true);
+                source.querySelector('summary').after(note);
+                source.open = true;
+              }
+            }).then(function() { setTimeout(next, 0); });
+          }
+          next();
+        }
+    """
 
     private const val PANEL_CSS = """
         .mdr-current, .mdr-current > [data-side] { outline: 2px solid var(--md-link); outline-offset: -2px; }

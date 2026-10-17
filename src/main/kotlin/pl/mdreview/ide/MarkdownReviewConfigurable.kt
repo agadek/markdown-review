@@ -31,6 +31,10 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
                 checkBox(MarkdownReviewBundle.message("settings.load.remote.images")).bindSelected(settings::loadRemoteImages)
                     .comment(MarkdownReviewBundle.message("settings.load.remote.images.comment"))
             }
+            row {
+                checkBox(MarkdownReviewBundle.message("settings.render.mermaid")).bindSelected(settings::renderMermaid)
+                    .comment(MarkdownReviewBundle.message("settings.render.mermaid.comment"))
+            }
         }
         group(MarkdownReviewBundle.message("settings.group.large.files")) {
             row(MarkdownReviewBundle.message("settings.large.file.lines")) {

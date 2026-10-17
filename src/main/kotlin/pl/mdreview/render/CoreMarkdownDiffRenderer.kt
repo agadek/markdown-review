@@ -18,7 +18,9 @@ import pl.mdreview.engine.SourceRange
 class CoreMarkdownDiffRenderer : MarkdownDiffRenderer {
 
     override fun render(request: RenderRequest): RenderedDiff {
-        val engine = MarkdownDiffEngine(DiffOptions(ignoreWhitespace = request.options.ignoreWhitespace))
+        val engine = MarkdownDiffEngine(
+            DiffOptions(ignoreWhitespace = request.options.ignoreWhitespace, mermaidDiagrams = request.options.renderMermaid),
+        )
         val diff = engine.diff(request.left.orEmpty(), request.right.orEmpty())
         val renderer = DiffHtmlRenderer(
             RenderOptions(

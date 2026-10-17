@@ -129,14 +129,17 @@ object BlockExtractor {
             while (k < nodes.size) {
                 val node = nodes[k]
                 val close = if (node is HtmlBlock) detailsClose(nodes, k) else -1
-                if (close < 0) {
+                if (close == -1) {
                     visit(node, ctx)
                     k++
                     continue
                 }
                 out += htmlBlock(BlockKind.DETAILS, node as HtmlBlock, ctx)
                 val inner = ctx.copy(details = ctx.details + 1)
-                visitNodes(nodes.subList(k + 1, close), inner)
+                // An unclosed `<details>` holds the rest of its container, as in a browser.
+                val end = if (close == UNCLOSED) nodes.size else close
+                visitNodes(nodes.subList(k + 1, end), inner)
+                if (close == UNCLOSED) break
                 // Whatever the closing block holds besides `</details>` belongs to the content.
                 val closing = nodes[close] as HtmlBlock
                 val rest = closing.literal.replace(DETAILS_CLOSE, "")
@@ -145,7 +148,10 @@ object BlockExtractor {
             }
         }
 
-        /** Index of the sibling that closes the `<details>` opened by `nodes[start]`, or -1. */
+        /**
+         * Index of the sibling that closes the `<details>` opened by `nodes[start]`; [UNCLOSED] when nothing closes
+         * it, -1 when the block opens no `<details>` of its own.
+         */
         private fun detailsClose(nodes: List<Node>, start: Int): Int {
             var balance = HtmlFragment.detailsBalance((nodes[start] as HtmlBlock).literal)
             if (balance <= 0) return -1
@@ -154,7 +160,7 @@ object BlockExtractor {
                 balance += HtmlFragment.detailsBalance(node.literal)
                 if (balance <= 0) return k
             }
-            return -1
+            return UNCLOSED
         }
 
         /** An HTML block, or an [BlockKind.HTML_COMMENT] when it is exactly one comment. */
@@ -555,6 +561,8 @@ object BlockExtractor {
     private val whitespace = Regex("\\s+")
 
     fun collapse(text: String): String = text.replace(whitespace, " ").trim()
+
+    private const val UNCLOSED = -2
 
     private val DETAILS_CLOSE = Regex("</details\\s*>", RegexOption.IGNORE_CASE)
 }

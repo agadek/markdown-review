@@ -14,6 +14,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataSink
 import com.intellij.openapi.actionSystem.UiDataProvider
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
@@ -25,6 +26,7 @@ import com.intellij.openapi.project.DumbAwareToggleAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.jcef.JBCefApp
 import com.intellij.util.Alarm
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.ui.components.panels.VerticalLayout
@@ -47,6 +49,7 @@ class RenderedDiffViewer(
     private val context: DiffContext,
     request: ContentDiffRequest,
     private val mode: ViewMode,
+    viewFactory: (parent: Disposable, onSourceClick: (side: String, line: Int) -> Unit) -> RenderedDiffView = ::defaultView,
 ) : FrameDiffTool.DiffViewer {
 
     private val disposable = Disposer.newDisposable("Markdown Review viewer")
@@ -55,7 +58,8 @@ class RenderedDiffViewer(
     private val baseUris = contents.map(::baseUri)
     private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, disposable)
     private val statusLabel = JBLabel(MarkdownReviewBundle.message("status.loading"))
-    private val browserPanel = MarkdownDiffPanel(disposable) { side, line ->
+    private val settings = MarkdownReviewSettings.getInstance()
+    private val browserPanel = viewFactory(disposable) { side, line ->
         ApplicationManager.getApplication().invokeLater({ navigateToSource(side, line) }, ModalityState.any())
     }
     private val root = RootPanel()
@@ -79,11 +83,11 @@ class RenderedDiffViewer(
         scheduleRender(0)
         return FrameDiffTool.ToolbarComponents().apply {
             popupActions = listOf<AnAction>(
-                OptionToggle("toggle.ignore.whitespace", { MarkdownReviewSettings.ignoreWhitespace }) {
-                    MarkdownReviewSettings.ignoreWhitespace = it
+                OptionToggle("toggle.ignore.whitespace", { settings.ignoreWhitespace }) {
+                    settings.ignoreWhitespace = it
                 },
-                OptionToggle("toggle.collapse.unchanged", { MarkdownReviewSettings.collapseUnchanged }) {
-                    MarkdownReviewSettings.collapseUnchanged = it
+                OptionToggle("toggle.collapse.unchanged", { settings.collapseUnchanged }) {
+                    settings.collapseUnchanged = it
                 },
             )
             statusPanel = statusLabel.apply { border = JBUI.Borders.empty(0, 8) }
@@ -98,7 +102,7 @@ class RenderedDiffViewer(
     }
 
     private fun render() {
-        val options = MarkdownReviewSettings.options()
+        val options = settings.options()
         ReadAction.nonBlocking<RenderedDiff?> {
             if (RenderedMarkdownDiffTool.isTooLarge(contents)) return@nonBlocking null
             val texts = documents.map { it?.let { doc -> StringUtil.convertLineSeparators(doc.text) } }
@@ -192,6 +196,11 @@ class RenderedDiffViewer(
         override fun uiDataSnapshot(sink: DataSink) {
             sink[DiffDataKeys.PREV_NEXT_DIFFERENCE_ITERABLE] = differenceIterable
         }
+    }
+
+    private companion object {
+        fun defaultView(parent: Disposable, onSourceClick: (String, Int) -> Unit): RenderedDiffView =
+            if (JBCefApp.isSupported()) MarkdownDiffPanel(parent, onSourceClick) else JcefUnavailableView()
     }
 
     private inner class OptionToggle(

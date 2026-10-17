@@ -22,13 +22,9 @@ abstract class RenderedMarkdownDiffTool(private val mode: ViewMode, private val 
     override fun getName(): String = MarkdownReviewBundle.message(nameKey)
 
     override fun canShow(context: DiffContext, request: DiffRequest): Boolean {
-        if (request !is ContentDiffRequest) return false
-        val contents = request.contents
-        if (contents.size != 2) return false
-        if (contents.any { it !is DocumentContent && it !is EmptyContent }) return false
-        if (contents.none { it is DocumentContent && isMarkdown(it) }) return false
+        if (!accepts(request)) return false
         // The user chose the text viewer from the large-file notice in this window.
-        if (context.getUserData(TEXT_VIEWER_FOR_LARGE_FILES) == true && isTooLarge(contents)) return false
+        if (context.getUserData(TEXT_VIEWER_FOR_LARGE_FILES) == true && isTooLarge((request as ContentDiffRequest).contents)) return false
         return JBCefApp.isSupported()
     }
 
@@ -36,7 +32,14 @@ abstract class RenderedMarkdownDiffTool(private val mode: ViewMode, private val 
         RenderedDiffViewer(context, request as ContentDiffRequest, mode)
 
     companion object {
-        val EXTENSIONS = setOf("md", "markdown", "mdown", "mkd")
+        /** The request part of [canShow]: two sides, each a document or missing, at least one of them Markdown. */
+        fun accepts(request: DiffRequest): Boolean {
+            if (request !is ContentDiffRequest) return false
+            val contents = request.contents
+            if (contents.size != 2) return false
+            if (contents.any { it !is DocumentContent && it !is EmptyContent }) return false
+            return contents.any { it is DocumentContent && isMarkdown(it) }
+        }
 
         /** Set on the diff context by the large-file notice's button; rendered viewers then step aside. */
         val TEXT_VIEWER_FOR_LARGE_FILES: Key<Boolean> = Key.create("MarkdownReview.textViewerForLargeFiles")
@@ -46,9 +49,9 @@ abstract class RenderedMarkdownDiffTool(private val mode: ViewMode, private val 
 
         fun isMarkdown(content: DiffContent): Boolean {
             val file = (content as? DocumentContent)?.highlightFile
-            if (file != null && file.extension?.lowercase() in EXTENSIONS) return true
+            if (file != null && MarkdownFiles.isMarkdown(file)) return true
             val type = content.contentType ?: return false
-            return type.name.equals("Markdown", ignoreCase = true) || type.defaultExtension.lowercase() in EXTENSIONS
+            return MarkdownFiles.isMarkdown(type)
         }
     }
 }

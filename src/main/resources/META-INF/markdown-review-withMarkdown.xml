@@ -1,0 +1,6 @@
+<!-- Loaded only when the bundled Markdown plugin is enabled; used to recognize its file type, never to render. -->
+<idea-plugin>
+    <extensions defaultExtensionNs="pl.mdreview">
+        <markdownFileTypeRecognizer implementation="pl.mdreview.ide.markdown.MarkdownPluginFileTypeRecognizer"/>
+    </extensions>
+</idea-plugin>

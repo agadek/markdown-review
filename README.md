@@ -28,6 +28,9 @@ The viewers work in the Commit window (Show Diff, Ctrl+D), in file history, when
 request windows. Compare any two files with **Compare Markdown Files...** from the project view context menu or the
 Tools menu. F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.
 
+Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with (rendered side by side, rendered
+merged, or text) and holds the whitespace, collapse, large-file and remote-image options.
+
 Status: early stage, see [PLAN.md](PLAN.md). The contract between the diff engine and the IDE layer is described in
 [docs/ENGINE_CONTRACT.md](docs/ENGINE_CONTRACT.md).
 
@@ -41,7 +44,10 @@ JCEF the plugin stays out of the way: the diff window keeps the text viewer.
 ```
 ./gradlew buildPlugin
 ./gradlew runIde
+./gradlew test
 ```
+
+`./gradlew test` runs the engine tests and the IDE integration tests (`BasePlatformTestCase`, headless).
 
 ## Development
 

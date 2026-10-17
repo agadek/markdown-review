@@ -17,13 +17,16 @@ import java.util.UUID
  */
 object HtmlPage {
 
-    /** @param queryJs JS expression from `JBCefJSQuery.inject("msg")`, with `msg` as the payload variable. */
-    fun build(diff: RenderedDiff, queryJs: String, restoreIdx: Int): String {
+    /**
+     * @param queryJs JS expression from `JBCefJSQuery.inject("msg")`, with `msg` as the payload variable.
+     * @param remoteImages also allow `http:` / `https:` images (NFR-8, off by default).
+     */
+    fun build(diff: RenderedDiff, queryJs: String, restoreIdx: Int, remoteImages: Boolean = false): String {
         val nonce = UUID.randomUUID().toString().replace("-", "")
         return """
             <!DOCTYPE html>
             <html><head><meta charset="utf-8">
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src file: data:; style-src 'unsafe-inline'; script-src 'nonce-$nonce'">
+            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${imgSources(remoteImages)}; style-src 'unsafe-inline'; script-src 'nonce-$nonce'">
             <style>${themeCss()}</style>
             <style>${diff.css}</style>
             <style>$PANEL_CSS</style>
@@ -37,6 +40,8 @@ object HtmlPage {
             </body></html>
         """.trimIndent()
     }
+
+    fun imgSources(remoteImages: Boolean) = if (remoteImages) "file: data: https: http:" else "file: data:"
 
     fun themeCss(): String {
         val scheme = EditorColorsManager.getInstance().globalScheme

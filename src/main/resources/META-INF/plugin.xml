@@ -1,19 +1,43 @@
 <idea-plugin>
     <id>pl.mdreview.markdown-review</id>
     <name>Markdown Review</name>
-    <vendor url="https://github.com/agadek">agadek</vendor>
+    <vendor url="https://github.com/agadek/markdown-review">agadek</vendor>
     <description><![CDATA[
-        Review changes in Markdown files in <b>rendered</b> form, inside IntelliJ's own diff window:
+        Review changes to Markdown files in <b>rendered</b> form, right inside IntelliJ's own diff window,
+        instead of reading raw markup.
         <ul>
-          <li>side-by-side rendered diff: removed blocks on red, added on green, changed words highlighted;</li>
-          <li>merged view: one column, removals struck through, additions in green;</li>
-          <li>the built-in text diff one click away;</li>
-          <li>works for local changes, history, branch comparison and pull requests,
-              plus <i>Compare Markdown Files...</i> for any two files.</li>
+          <li><b>Rendered side-by-side diff:</b> headings, paragraphs, list items, table rows and code blocks aligned
+              in rows; removed blocks on red, added on green, changed words highlighted.</li>
+          <li><b>Merged view:</b> one column, removals struck through, additions in green.</li>
+          <li><b>Text diff</b> one click away in the diff window's viewer switcher.</li>
+          <li>Works for local changes (Commit window), file history, branch comparison and pull requests, plus
+              <i>Compare Markdown Files...</i> for any two files.</li>
+          <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts.</li>
+          <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with.</li>
         </ul>
+        Requires an IDE with JCEF (the default in JetBrains Runtime); without it the text diff stays in place.
+        <br/><br/>
         Free for noncommercial use under the
         <a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial License 1.0.0</a>.
+        Commercial use requires a separate license from the author.
+        Source code and issues: <a href="https://github.com/agadek/markdown-review">github.com/agadek/markdown-review</a>.
     ]]></description>
+
+    <change-notes><![CDATA[
+        <h3>0.2.0</h3>
+        <ul>
+          <li>Settings page (Settings | Tools | Markdown Review) and a choice of the default viewer for Markdown diffs.</li>
+          <li>GitHub Flavored Markdown: task lists, strikethrough, autolinks, footnotes and alerts.</li>
+          <li>A link or image whose target changed, and a heading whose level changed, are marked as changed.</li>
+          <li>Relative images resolve against the file; remote images load only when enabled in settings.</li>
+          <li>Very large files show a notice with an Open Text Viewer button instead of rendering; the limit is set in settings.</li>
+          <li>Plugin icon.</li>
+        </ul>
+        <h3>0.1.0</h3>
+        <ul>
+          <li>First version: rendered side-by-side and merged diff viewers for Markdown files.</li>
+        </ul>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
     <!-- Only to recognize the Markdown file type for files without a .md-like extension; rendering uses commonmark. -->

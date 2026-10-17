@@ -1,0 +1,59 @@
+name: Release
+
+# Publishes a signed build to JetBrains Marketplace when a version tag is pushed.
+# v0.2.0 goes to the default (stable) channel; a pre-release tag such as v0.2.0-beta goes to the "beta" channel.
+# The required secrets and the one-time setup are described in docs/RELEASING.md.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Check that the tag matches pluginVersion
+        run: |
+          version=$(sed -n 's/^pluginVersion=//p' gradle.properties)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pluginVersion=$version in gradle.properties"
+            exit 1
+          fi
+      - name: Check that the signing and publishing secrets are set
+        env:
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+        run: |
+          missing=0
+          for name in CERTIFICATE_CHAIN PRIVATE_KEY PRIVATE_KEY_PASSWORD PUBLISH_TOKEN; do
+            if [ -z "${!name}" ]; then echo "::error::Secret $name is not set"; missing=1; fi
+          done
+          exit $missing
+      - name: Test, build and verify the plugin
+        run: ./gradlew test buildPlugin verifyPlugin
+      - name: Sign and publish to JetBrains Marketplace
+        env:
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+        run: ./gradlew publishPlugin
+      - uses: actions/upload-artifact@v4
+        with:
+          name: markdown-review-${{ github.ref_name }}
+          path: build/distributions/*.zip

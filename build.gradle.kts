@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "pl.mdreview"
-version = "0.1.0"
+version = providers.gradleProperty("pluginVersion").get()
 
 repositories {
     mavenCentral()
@@ -45,6 +45,21 @@ intellijPlatform {
     pluginConfiguration {
         ideaVersion {
             sinceBuild = "251"
+        }
+    }
+    // Secrets come from the environment (GitHub Actions secrets in the release workflow), never from the repository.
+    // Signing runs only when the certificate chain and the private key are set; see docs/RELEASING.md.
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+        // A pre-release version such as 0.2.0-beta or 0.2.0-beta.2 goes to the "beta" channel, a plain version to the
+        // default (stable) one.
+        channels = providers.gradleProperty("pluginVersion").map { version ->
+            listOf(version.substringAfter('-', "").substringBefore('.').ifEmpty { "default" })
         }
     }
     pluginVerification {

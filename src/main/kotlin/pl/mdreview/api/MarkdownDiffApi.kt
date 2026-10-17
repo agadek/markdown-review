@@ -51,8 +51,8 @@ data class DiffOptions(
     companion object {
         /** The one place the default pairing threshold is defined; the engine and the settings use it. */
         const val DEFAULT_PAIRING_THRESHOLD = 0.5
-        const val MIN_PAIRING_THRESHOLD = 0.05
-        const val MAX_PAIRING_THRESHOLD = 0.95
+        const val MIN_PAIRING_THRESHOLD = 0.2
+        const val MAX_PAIRING_THRESHOLD = 0.8
     }
 }
 

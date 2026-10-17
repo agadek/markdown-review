@@ -26,6 +26,17 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertEquals(DiffOptions.MAX_PAIRING_THRESHOLD, settings.pairingThreshold)
         settings.pairingThreshold = -1.0
         assertEquals(DiffOptions.MIN_PAIRING_THRESHOLD, settings.pairingThreshold)
+        assertEquals(0.2, DiffOptions.MIN_PAIRING_THRESHOLD)
+        assertEquals(0.8, DiffOptions.MAX_PAIRING_THRESHOLD)
+    }
+
+    fun `test saved pairing threshold outside the range is clamped`() {
+        val settings = MarkdownReviewSettings()
+        settings.loadState(MarkdownReviewSettings.SettingsState().apply { pairingThreshold = 0.05 })
+        assertEquals(0.2, settings.pairingThreshold)
+        assertEquals(0.2, settings.options().pairingThreshold)
+        settings.loadState(MarkdownReviewSettings.SettingsState().apply { pairingThreshold = 0.95 })
+        assertEquals(0.8, settings.pairingThreshold)
     }
 
     fun `test state survives serialization`() {

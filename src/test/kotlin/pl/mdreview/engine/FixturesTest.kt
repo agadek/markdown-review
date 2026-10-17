@@ -344,4 +344,18 @@ class FixturesTest {
         assertFalse(html.contains("mdr-img-changed"))
         assertContains(html, "<img src=\"https://example.com/badge.svg\" alt=\"Remote\"")
     }
+
+    @Test
+    fun `27 mermaid is diffed as a code block until P2_8`() {
+        val d = diff("27-mermaid")
+        assertEquals(
+            listOf("MODIFIED CODE_LINE A[Open file] -->|diff wi", "ADDED CODE_LINE C --> D[JCEF preview]"),
+            changes("27-mermaid"),
+        )
+        val fence = d.blocks.single { it.right?.kind == BlockKind.CODE_FENCE }
+        assertEquals(DiffStatus.EQUAL, fence.status)
+        val edge = d.changes[0].inline
+        assertEquals(listOf("compare"), edge.filter { it.status == DiffStatus.REMOVED }.map { it.text.trim() })
+        assertEquals("diff with HEAD", edge.filter { it.status == DiffStatus.ADDED }.joinToString("") { it.text }.trim())
+    }
 }

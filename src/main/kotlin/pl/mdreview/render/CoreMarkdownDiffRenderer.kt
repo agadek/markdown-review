@@ -21,7 +21,9 @@ class CoreMarkdownDiffRenderer : MarkdownDiffRenderer {
         val engine = MarkdownDiffEngine(
             DiffOptions(ignoreWhitespace = request.options.ignoreWhitespace, mermaidDiagrams = request.options.renderMermaid),
         )
-        val diff = engine.diff(request.left.orEmpty(), request.right.orEmpty())
+        val left = request.left.orEmpty()
+        val right = request.right.orEmpty()
+        val diff = engine.diff(left, right)
         val renderer = DiffHtmlRenderer(
             RenderOptions(
                 mode = request.mode,
@@ -31,8 +33,9 @@ class CoreMarkdownDiffRenderer : MarkdownDiffRenderer {
                 rightBaseUri = request.rightBaseUri,
             ),
         )
+        val edits = EditRegions(diff, left, right).compute()
         val blocks = diff.blocks.mapIndexed { i, b ->
-            BlockInfo(i, status(b.status), b.left?.source?.let(::lines), b.right?.source?.let(::lines))
+            BlockInfo(i, status(b.status), b.left?.source?.let(::lines), b.right?.source?.let(::lines), edits[i])
         }
         return RenderedDiff(renderer.renderBody(diff), renderer.css(), blocks)
     }

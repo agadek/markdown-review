@@ -16,8 +16,14 @@ import javax.swing.SwingConstants
 interface RenderedDiffView {
     val component: JComponent
     fun show(diff: RenderedDiff)
+
+    /** Shows [diff] with the block buttons [actions] allows. */
+    fun show(diff: RenderedDiff, actions: BlockActions) = show(diff)
     fun refreshTheme()
     fun goTo(blockIdx: Int)
+
+    /** Sets what a click on a block button calls (on the CEF thread). */
+    fun onBlockAction(handler: (BlockActionRequest) -> Unit) = Unit
 }
 
 /**
@@ -33,6 +39,8 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
     @Volatile
     private var topIdx = 0
     private var current: RenderedDiff? = null
+    private var currentActions = BlockActions.NONE
+    private var blockActionHandler: (BlockActionRequest) -> Unit = {}
 
     override val component: JComponent get() = browser.component
 
@@ -44,6 +52,7 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
             when (parts[0]) {
                 "scroll" -> parts.getOrNull(1)?.toIntOrNull()?.let { topIdx = it }
                 "link" -> parts.getOrNull(1)?.takeIf(::isExternal)?.let(BrowserUtil::browse)
+                "edit" -> BlockActionRequest.parse(msg)?.let { blockActionHandler(it) }
                 "source" -> {
                     val line = parts.getOrNull(2)?.toIntOrNull()
                     if (line != null) onSourceClick(parts[1], line)
@@ -53,14 +62,22 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
         }
     }
 
-    override fun show(diff: RenderedDiff) {
+    override fun show(diff: RenderedDiff) = show(diff, BlockActions.NONE)
+
+    override fun show(diff: RenderedDiff, actions: BlockActions) {
         current = diff
-        browser.loadHTML(HtmlPage.build(diff, query.inject("msg"), topIdx, MarkdownReviewSettings.getInstance().loadRemoteImages))
+        currentActions = actions
+        val remoteImages = MarkdownReviewSettings.getInstance().loadRemoteImages
+        browser.loadHTML(HtmlPage.build(diff, query.inject("msg"), topIdx, remoteImages, actions))
     }
 
     /** Rebuilds the page with fresh theme colors without recomputing the diff. */
     override fun refreshTheme() {
-        current?.let(::show)
+        current?.let { show(it, currentActions) }
+    }
+
+    override fun onBlockAction(handler: (BlockActionRequest) -> Unit) {
+        blockActionHandler = handler
     }
 
     override fun goTo(blockIdx: Int) {

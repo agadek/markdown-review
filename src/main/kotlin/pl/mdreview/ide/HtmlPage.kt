@@ -20,8 +20,15 @@ object HtmlPage {
     /**
      * @param queryJs JS expression from `JBCefJSQuery.inject("msg")`, with `msg` as the payload variable.
      * @param remoteImages also allow `http:` / `https:` images (NFR-8, off by default).
+     * @param actions block buttons to add to every block with an edit region (FR-12).
      */
-    fun build(diff: RenderedDiff, queryJs: String, restoreIdx: Int, remoteImages: Boolean = false): String {
+    fun build(
+        diff: RenderedDiff,
+        queryJs: String,
+        restoreIdx: Int,
+        remoteImages: Boolean = false,
+        actions: BlockActions = BlockActions.NONE,
+    ): String {
         val nonce = UUID.randomUUID().toString().replace("-", "")
         return """
             <!DOCTYPE html>
@@ -36,6 +43,7 @@ object HtmlPage {
             window.mdrSend = function(msg) { $queryJs };
             $BRIDGE_JS
             mdr.restore($restoreIdx);
+            ${actionsJs(diff, actions)}
             </script>
             </body></html>
         """.trimIndent().let { page ->
@@ -65,6 +73,30 @@ object HtmlPage {
     }
 
     private fun isDark() = ColorUtil.isDark(EditorColorsManager.getInstance().globalScheme.defaultBackground)
+
+    /** The call that adds the block buttons, or nothing when the page has none. */
+    fun actionsJs(diff: RenderedDiff, actions: BlockActions): String {
+        if (!actions.any) return ""
+        val blocks = diff.blocks.filter { it.edit != null }.joinToString(",") { it.idx.toString() }
+        fun button(action: BlockAction, enabled: Boolean): String {
+            if (!enabled) return "null"
+            return "{action: ${jsString(action.id)}, " +
+                "label: ${jsString(MarkdownReviewBundle.message("block.${action.id}.text"))}, " +
+                "title: ${jsString(MarkdownReviewBundle.message("block.${action.id}.description"))}}"
+        }
+        return "mdr.actions([$blocks], [${button(BlockAction.APPLY, actions.apply)}, " +
+            "${button(BlockAction.REVERT, actions.revert)}], ${jsString(actions.stamp)});"
+    }
+
+    /** [text] as a JavaScript string literal that is also safe inside `<script>`. */
+    fun jsString(text: String): String = buildString {
+        append('"')
+        for (c in text) {
+            if (c.isLetterOrDigit() && c.code < 0x80 || c in " .,:;!?()-_") append(c)
+            else append("\\u").append(String.format("%04x", c.code))
+        }
+        append('"')
+    }
 
     fun imgSources(remoteImages: Boolean) = if (remoteImages) "file: data: https: http:" else "file: data:"
 
@@ -160,12 +192,14 @@ object HtmlPage {
     private const val PANEL_CSS = """
         .mdr-current, .mdr-current > [data-side] { outline: 2px solid var(--md-link); outline-offset: -2px; }
         [data-side][data-line] { cursor: text; }
+        .mdr-merged .mdr-item { position: relative; }
+        .mdr-item:hover > .mdr-actions { opacity: 1; }
     """
 
     /**
      * Messages to Kotlin are `action|arg|arg` strings:
      * `scroll|<idx>` topmost visible block, `source|<side>|<line>` Ctrl/Cmd+click on a block,
-     * `link|<href>` external link click.
+     * `link|<href>` external link click, `edit|<revert|apply>|<idx>|<stamp>` a block button click.
      */
     private const val BRIDGE_JS = """
         var mdr = (function() {
@@ -185,7 +219,18 @@ object HtmlPage {
               }
             }, 150);
           });
+          var stamp = '';
           document.addEventListener('click', function(e) {
+            var button = e.target.closest('.mdr-actions button[data-action]');
+            if (button) {
+              e.preventDefault();
+              if (button.disabled) return;
+              var row = button.closest('[data-idx]');
+              var all = row.querySelectorAll('.mdr-actions button');
+              for (var i = 0; i < all.length; i++) all[i].disabled = true;
+              mdrSend('edit|' + button.getAttribute('data-action') + '|' + row.getAttribute('data-idx') + '|' + stamp);
+              return;
+            }
             var a = e.target.closest('a[href]');
             if (a) {
               var href = a.getAttribute('href');
@@ -208,6 +253,27 @@ object HtmlPage {
               for (var i = 0; i < cur.length; i++) cur[i].classList.remove('mdr-current');
               el.classList.add('mdr-current');
               box(el).scrollIntoView({block: 'center'});
+            },
+            actions: function(blocks, buttons, pageStamp) {
+              stamp = pageStamp;
+              for (var i = 0; i < blocks.length; i++) {
+                var el = block(blocks[i]);
+                if (!el) continue;
+                var box = document.createElement('div');
+                box.className = 'mdr-actions';
+                for (var j = 0; j < buttons.length; j++) {
+                  var spec = buttons[j];
+                  if (!spec) continue;
+                  var b = document.createElement('button');
+                  b.className = 'mdr-' + spec.action;
+                  b.textContent = spec.label;
+                  b.title = spec.title;
+                  b.setAttribute('data-action', spec.action);
+                  b.setAttribute('data-block-id', 'b' + blocks[i]);
+                  box.appendChild(b);
+                }
+                el.appendChild(box);
+              }
             },
             restore: function(idx) {
               var el = idx > 0 ? block(idx) : null;

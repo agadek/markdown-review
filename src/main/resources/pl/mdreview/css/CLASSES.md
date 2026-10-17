@@ -96,5 +96,6 @@ Additional block classes:
 
 - In the merged view `.mdr-actions` is the last child of `.mdr-block`; in the side-by-side view it is the last child of `.mdr-row`.
 - Absolutely positioned in the top right corner; visible on hover, on `:focus-within` and for `.mdr-current`.
-- `mdr-revert` is the revert button placeholder (M6). Other buttons in `.mdr-actions` (e.g. a future `mdr-apply`, `mdr-edit`) look the same. Click handling (JBCefJSQuery) belongs to the generator; the CSS does not assume it.
+- `mdr-revert` reverts the block on the right side, `mdr-apply` (side-by-side view only) copies the right version to the left side (P2.5). The IDE's page script adds them, only for sides that can be edited; other buttons in `.mdr-actions` (e.g. a future `mdr-edit`) look the same. Click handling (JBCefJSQuery) belongs to the generator; the CSS does not assume it.
+- In the merged view the IDE puts `.mdr-actions` as the last child of `.mdr-item` and styles it there.
 - `button:disabled` is greyed out (e.g. a read-only file).

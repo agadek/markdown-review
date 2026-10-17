@@ -17,13 +17,17 @@ Requirement IDs (FR-*, NFR-*) refer to the specification.
 | P2.1 | Repository, CI and build upkeep | none | |
 | P2.2 | IDE integration: settings, default viewer, integration tests | P2.1 | 0.2 (beta) |
 | P2.3 | Engine refinements: links, heading levels, images, large files | P2.1 | 0.2 (beta) |
-| P2.4 | Per-block revert and apply | P2.2, P2.3 | |
-| P2.5 | Block source editing | P2.4 | |
-| P2.6 | Moved-block detection | P2.3 | after 1.0 by default |
-| P2.7 | Release 1.0 | P2.4 (P2.5 if kept in 1.0) | 1.0 |
+| P2.4 | Markdown element coverage: GFM first, then HTML, math, emoji | P2.1 | GFM in 0.2 (beta), the rest in 1.0 |
+| P2.5 | Per-block revert and apply | P2.2, P2.3 | |
+| P2.6 | Block source editing | P2.5 | |
+| P2.7 | Moved-block detection | P2.3 | after 1.0 by default |
+| P2.8 | Mermaid diagrams and math rendering | P2.2, P2.4 | 1.0 |
+| P2.9 | Release 1.0 | P2.4, P2.5, P2.8 (P2.6 if kept in 1.0) | 1.0 |
 
-P2.2 and P2.3 are independent and can run in parallel. P2.4 waits for both: it needs the settings page for its
-toggle and the final shape of `BlockInfo` from the engine work.
+P2.2, P2.3 and P2.4 are independent and can run in parallel; P2.4 should follow P2.3 into `BlockExtractor` to
+avoid conflicts if one person does both. P2.5 waits for P2.2 and P2.3: it needs the settings page for its toggle
+and the final shape of `BlockInfo` from the engine work. P2.8 builds on P2.4's math blocks and can run in parallel
+with P2.5.
 
 ## P2.1 Repository, CI and build upkeep
 
@@ -90,7 +94,66 @@ Done when:
 - A file above the threshold opens with the message, not a frozen panel.
 - 1,000 lines render in under 300 ms and 10,000 lines in under 2 s off the EDT on a typical laptop.
 
-## P2.4 Per-block revert and apply (FR-12, NFR-7)
+## P2.4 Markdown element coverage
+
+Today the parser enables three commonmark-java extensions: tables, strikethrough and task list items
+(`BlockExtractor.extensions`). Core commonmark also gives HTML blocks, inline HTML, `<url>` autolinks, thematic
+breaks and hard line breaks. Footnotes, bare-URL autolinks, GitHub alerts, math and emoji shortcodes are not
+recognized and show as plain text. Fixtures 01–20 cover paragraphs, headings, nested lists, tables, code, links and
+images, blockquotes and front matter, but none of the elements below.
+
+Every element gets its own fixture pair under `src/test/resources/fixtures/` (numbered from 21, same
+`old.md` / `new.md` / `EXPECTED.md` layout) with an assertion in `FixturesTest` and, where the rendering is new, a
+`DiffHtmlRendererTest` case.
+
+### Wave A: GitHub Flavored Markdown (0.2 beta)
+
+GFM first, because it is the format of README files on GitHub, where most reviewed Markdown lives.
+
+- **Task lists** (`- [ ]`, `- [x]`): already parsed. Add a fixture where only the checkbox state changes; that must
+  be a `MODIFIED` list item with a visible checkbox change, not an empty word diff.
+- **Strikethrough** (`~~text~~`): already parsed. Fixture for adding and removing strikethrough on unchanged words,
+  so the formatting change is visible next to the diff's own `<del>` styling (use a distinct style for content
+  strikethrough).
+- **Autolinks**: add `commonmark-ext-autolink` so bare `https://...` and `www.` URLs become links, as on GitHub.
+  Fixture with a bare URL that changes.
+- **Footnotes** (`[^1]` and `[^1]: text`): add `commonmark-ext-footnotes`. A footnote definition is its own block;
+  a changed definition marks the definition, and the reference in the text links to it within the page. Fixture
+  with an added, a removed and a changed footnote.
+- **GitHub alerts** (`> [!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`): use commonmark-java's
+  alerts extension if the version in use has one, otherwise a post-processor that turns a blockquote starting with
+  the marker into an alert node. Rendered with the type's title and color from the theme variables. Changing only
+  the alert type is `MODIFIED` with a note, like the heading level change in P2.3.
+
+### Wave B: HTML and other popular syntax (1.0)
+
+- **HTML blocks and inline HTML**: already parsed and sanitized (`HtmlSanitizer`). Add fixtures for a changed HTML
+  block, inline `<kbd>` / `<sub>` / `<sup>`, and dangerous input (`<script>`, `on*` attributes, `javascript:` URLs)
+  to pin NFR-8.
+- **`<details>` / `<summary>`**: render as a real collapsible element that starts open when it contains a change.
+  Fixture with a change inside a `<details>` block.
+- **HTML comments** (`<!-- -->`): not visible when rendered, so a change in a comment shows as a muted
+  "comment changed" row with the comment text, instead of an invisible change. Fixture with an added and an edited
+  comment.
+- **Hard line breaks** (two trailing spaces or `\`): today they count as a space in the compared text, so adding or
+  removing one is not detected. Per the specification a hard break is a change; make it part of the block key and
+  show a break marker in the word diff. Fixture for both syntaxes.
+- **Thematic breaks** (`---`, `***`, `___`): already a block kind. Fixture for an added and a removed break, and
+  for a syntax-only change (`---` to `***`), which stays equal.
+- **Math** (`$...$`, `$$...$$`): no commonmark-java extension exists, so add a small inline and block parser
+  extension that makes formulas nodes of their own, compared as units and shown as monospace source. Drawing them
+  is part of P2.8. Fixture with inline and block formulas, one changed.
+- **Emoji shortcodes** (`:smile:`): convert GitHub shortcodes to Unicode emoji from a bundled table, so a changed
+  shortcode shows as a changed emoji. Unknown shortcodes stay as text. Fixture with known and unknown shortcodes.
+
+Done when:
+- Wave A: fixtures for task lists, strikethrough, autolinks, footnotes and alerts pass, and a typical GitHub README
+  using them renders in both viewers as it does on GitHub.
+- Wave B: fixtures for HTML blocks, inline HTML, `<details>`, comments, hard line breaks, thematic breaks, math and
+  emoji pass, including the sanitizer cases.
+- `docs/ENGINE_CONTRACT.md` lists the supported elements and any new block kinds.
+
+## P2.5 Per-block revert and apply (FR-12, NFR-7)
 
 Scope:
 - Extend `BlockInfo` with what the IDE needs to edit the target document: for `ADDED` and `REMOVED` blocks, the
@@ -110,11 +173,11 @@ Done when:
 - Each action is one Undo step, and Redo works.
 - Buttons never appear on read-only sides (history, branch compare, PR windows).
 
-## P2.5 Block source editing (FR-13)
+## P2.6 Block source editing (FR-13)
 
 Scope:
 - Double-click on a block on a writable side replaces it with a `<textarea>` holding the block's raw Markdown.
-  Ctrl/Cmd+Enter saves through the same write path as P2.4, Esc cancels.
+  Ctrl/Cmd+Enter saves through the same write path as P2.5, Esc cancels.
 - The textarea keeps its content and caret while the document re-renders from other sources (or the re-render is
   paused while editing).
 
@@ -122,11 +185,11 @@ Done when:
 - Editing a paragraph, a table row and a list item saves the expected source, as one Undo step.
 - Typing in the textarea never loses input to a re-render.
 
-## P2.6 Moved-block detection (FR-15)
+## P2.7 Moved-block detection (FR-15)
 
 Scope:
 - After pairing, `REMOVED` and `ADDED` blocks with equal keys in different windows become a moved pair. Add a
-  `movedFrom` / `movedTo` index to `BlockInfo` rather than a new `BlockStatus`, so the IDE side and P2.4 keep
+  `movedFrom` / `movedTo` index to `BlockInfo` rather than a new `BlockStatus`, so the IDE side and P2.5 keep
   working unchanged.
 - The renderer labels both ends ("moved from / to" with a link to the other end); no word diff.
 - Revert of a moved block moves it back (two edits in one command).
@@ -135,7 +198,42 @@ Done when:
 - Fixture 04 reports one moved section instead of two removals and two additions, and no block is `MODIFIED`.
 - Fixture 20 (large file) keeps its current counts or the changes are explained in its `EXPECTED.md`.
 
-## P2.7 Release 1.0
+## P2.8 Mermaid diagrams and math rendering
+
+Today a ` ```mermaid ` block is a plain code block: the engine has no Mermaid handling, splits the fence into a fence
+block plus one block per source line, and the renderer shows the changed lines with a word diff.
+
+Scope:
+- **Engine**: keep a `mermaid` fence as one block (its whole source as `rawText`) instead of one block per line, so a
+  diagram is compared and rendered as a unit. Equal source means equal block; any change makes it `MODIFIED`.
+- **Renderer**: emit the diagram source in a `<pre class="mermaid">` (or similar inert element) per side, with no
+  scripts in `bodyHtml`, as the contract requires. A changed diagram shows before and after side by side in the
+  side-by-side view and stacked (old struck through, new below) in the merged view.
+- **Source diff stays available**: each changed diagram has a toggle ("Show source changes") that swaps the drawings
+  for today's line-by-line code diff. The fixture case for this also covers a syntax error on one side, which must
+  show Mermaid's error text, not a blank row.
+- **IDE**: bundle a pinned copy of `mermaid.js` as a plugin resource (offline, no network), load it in the JCEF page
+  with the page's CSP nonce, and run it after each render. Re-render on theme change with Mermaid's dark or default
+  theme to match the editor scheme. Check the effect on `HtmlPage`'s CSP (`style-src 'unsafe-inline'` is already
+  allowed; nothing else should need loosening) and record the Mermaid version and license (MIT) in the README.
+- **Settings**: a "Render Mermaid diagrams" option on the P2.2 settings page, on by default; off keeps today's code view.
+- **Large diagrams**: rendering is client-side and asynchronous, so a slow diagram must not block scrolling or change
+  navigation; row heights settle after each diagram is drawn.
+
+- **Math**: P2.4 already makes `$...$` and `$$...$$` separate inline and block nodes shown as monospace source.
+  Here they are drawn with a bundled, pinned copy of KaTeX (MIT), loaded the same way as `mermaid.js`, with the same
+  setting pattern ("Render math", on by default) and the same "Show source changes" toggle for changed formulas. A
+  formula KaTeX cannot parse shows its source with an error marker.
+
+Done when:
+- A new fixture with an added, a removed, a changed and an unchanged Mermaid diagram shows each with the right status,
+  and the changed one shows both drawings side by side.
+- The toggle shows the source line diff for a changed diagram.
+- The plugin renders diagrams with the network disabled, and `verifyPlugin` still passes.
+- With the setting off, Mermaid blocks look exactly as they do today.
+- The math fixture from P2.4 renders its formulas with KaTeX, offline, and an invalid formula shows its source.
+
+## P2.9 Release 1.0
 
 Scope:
 - Marketplace listing: description, change notes, plugin icon (`pluginIcon.svg`, light and dark), screenshots of
@@ -143,8 +241,8 @@ Scope:
 - `signPlugin` and `publishPlugin` configured with secrets in CI; the first upload done by hand for moderation.
 - README: remove "planned" from the features that shipped, add screenshots and the settings page.
 - Update the specification so it matches the shipped product: English-only UI (NFR-10 currently says Polish is
-  optional), PolyForm Noncommercial license (the open questions still list MIT or Apache-2.0), and the answered open
-  questions.
+  optional), PolyForm Noncommercial license (the open questions still list MIT or Apache-2.0), Mermaid and math rendering
+  moved from out of scope into 1.0, the supported Markdown elements from P2.4, and the answered open questions.
 
 Done when:
 - The plugin is approved on JetBrains Marketplace and installs from it into a clean IDE.
@@ -152,5 +250,5 @@ Done when:
 
 ## Not in phase 2
 
-WYSIWYG editing, three-way merge, other formats (AsciiDoc, reStructuredText), Mermaid and LaTeX rendering, a paid
-tier. These stay as listed in the specification's out-of-scope section.
+WYSIWYG editing, three-way merge, other formats (AsciiDoc, reStructuredText), a paid tier. These stay as listed in
+the specification's out-of-scope section. Mermaid and LaTeX math were on that list too and are now P2.8.

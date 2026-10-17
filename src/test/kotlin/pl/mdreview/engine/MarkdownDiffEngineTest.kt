@@ -250,4 +250,28 @@ class MarkdownDiffEngineTest {
         assertEquals(100, diff.changes.size)
         assertTrue(ms < 5_000, "took $ms ms")
     }
+
+    @Test
+    fun `changed reference definition modifies every block that uses its label`() {
+        val left = "Docs: [guide][g].\n\nPlain text.\n\n- See [guide][g]\n\n[g]: https://example.com/v1\n"
+        val right = left.replace("/v1", "/v2")
+        val diff = engine.diff(left, right)
+        assertEquals(listOf(DiffStatus.MODIFIED, DiffStatus.EQUAL, DiffStatus.MODIFIED), diff.blocks.map { it.status })
+        // The visible text is equal, so the word diff has nothing to mark.
+        assertTrue(diff.changes.all { b -> b.inline.all { it.status == DiffStatus.EQUAL } })
+    }
+
+    @Test
+    fun `link url change with equal text is a modification`() {
+        assertEquals(
+            listOf(DiffStatus.MODIFIED),
+            statuses("See [repo](https://a.example/x).", "See [repo](https://a.example/y)."),
+        )
+    }
+
+    @Test
+    fun `block keys carry resolved link targets`() {
+        val blocks = BlockExtractor.extract("A [x][r] and ![i](img.png)\n\n[r]: https://e.example\n")
+        assertTrue(blocks.single().key.endsWith(" -> https://e.example img.png"), blocks.single().key)
+    }
 }

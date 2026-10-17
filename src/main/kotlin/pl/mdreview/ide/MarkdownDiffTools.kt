@@ -7,7 +7,9 @@ import com.intellij.diff.contents.DocumentContent
 import com.intellij.diff.contents.EmptyContent
 import com.intellij.diff.requests.ContentDiffRequest
 import com.intellij.diff.requests.DiffRequest
+import com.intellij.openapi.util.Key
 import com.intellij.ui.jcef.JBCefApp
+import pl.mdreview.api.SizeLimit
 import pl.mdreview.api.ViewMode
 
 /**
@@ -25,14 +27,22 @@ abstract class RenderedMarkdownDiffTool(private val mode: ViewMode, private val 
         if (contents.size != 2) return false
         if (contents.any { it !is DocumentContent && it !is EmptyContent }) return false
         if (contents.none { it is DocumentContent && isMarkdown(it) }) return false
+        // The user chose the text viewer from the large-file notice in this window.
+        if (context.getUserData(TEXT_VIEWER_FOR_LARGE_FILES) == true && isTooLarge(contents)) return false
         return JBCefApp.isSupported()
     }
 
     override fun createComponent(context: DiffContext, request: DiffRequest): FrameDiffTool.DiffViewer =
-        RenderedDiffViewer(request as ContentDiffRequest, mode)
+        RenderedDiffViewer(context, request as ContentDiffRequest, mode)
 
     companion object {
         val EXTENSIONS = setOf("md", "markdown", "mdown", "mkd")
+
+        /** Set on the diff context by the large-file notice's button; rendered viewers then step aside. */
+        val TEXT_VIEWER_FOR_LARGE_FILES: Key<Boolean> = Key.create("MarkdownReview.textViewerForLargeFiles")
+
+        fun isTooLarge(contents: List<DiffContent>, limit: SizeLimit = LargeFiles.limit()): Boolean =
+            contents.any { limit.exceeds((it as? DocumentContent)?.document?.immutableCharSequence) }
 
         fun isMarkdown(content: DiffContent): Boolean {
             val file = (content as? DocumentContent)?.highlightFile

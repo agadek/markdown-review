@@ -27,6 +27,7 @@ import org.commonmark.node.Heading
 import org.commonmark.node.HtmlBlock
 import org.commonmark.node.Image
 import org.commonmark.node.IndentedCodeBlock
+import org.commonmark.node.Link
 import org.commonmark.node.ListBlock
 import org.commonmark.node.ListItem
 import org.commonmark.node.Node
@@ -140,7 +141,7 @@ object BlockExtractor {
             val raw = raw(node.sourceSpans)
             return Block(
                 kind = kind,
-                key = keyPrefix(kind, ctx) + collapse(raw),
+                key = keyPrefix(kind, ctx) + collapse(raw) + linkTargets(listOf(node)),
                 plainText = plain ?: plainText(node),
                 rawText = raw,
                 source = range(node.sourceSpans),
@@ -162,7 +163,7 @@ object BlockExtractor {
             }
             return Block(
                 kind = BlockKind.HEADING,
-                key = keyPrefix(BlockKind.HEADING, ctx) + "h" + node.level + ":" + collapse(content),
+                key = keyPrefix(BlockKind.HEADING, ctx) + "h" + node.level + ":" + collapse(content) + linkTargets(listOf(node)),
                 plainText = plainText(node),
                 rawText = raw(node.sourceSpans),
                 source = range(node.sourceSpans),
@@ -244,7 +245,7 @@ object BlockExtractor {
             val rangeSpans = listOfNotNull(start) + spans
             out += Block(
                 kind = BlockKind.LIST_ITEM,
-                key = keyPrefix(BlockKind.LIST_ITEM, ctx) + taskKey + collapse(raw),
+                key = keyPrefix(BlockKind.LIST_ITEM, ctx) + taskKey + collapse(raw) + linkTargets(content),
                 plainText = content.joinToString(" ") { plainText(it) },
                 rawText = raw,
                 source = range(rangeSpans),
@@ -350,6 +351,28 @@ object BlockExtractor {
         append(kind.name).append(':')
         if (ctx.quoteDepth > 0) append("q").append(ctx.quoteDepth).append(':')
         if (kind == BlockKind.LIST_ITEM) append(if (ctx.ordered) "ol" else "ul").append(ctx.listDepth).append(':')
+    }
+
+    /**
+     * Destinations of the links and images in [nodes], as a key suffix. commonmark resolves reference
+     * links through their `[label]: url` definitions, so a changed definition changes the key of every
+     * block that uses it, even though the block's own source is unchanged.
+     */
+    fun linkTargets(nodes: List<Node>): String {
+        val targets = mutableListOf<String>()
+        val visitor = object : AbstractVisitor() {
+            override fun visit(link: Link) {
+                targets += link.destination
+                visitChildren(link)
+            }
+
+            override fun visit(image: Image) {
+                targets += image.destination
+                visitChildren(image)
+            }
+        }
+        nodes.forEach { it.accept(visitor) }
+        return if (targets.isEmpty()) "" else " ->" + targets.joinToString(" ", prefix = " ")
     }
 
     /** Visible text of a node plus the offset of every [Text] and [Code] node within it. */

@@ -199,4 +199,48 @@ class DiffHtmlRendererTest {
         val html = render("> [!NOTE]\n> > inner\n", "> [!NOTE]\n> > inner\n")
         assertContains(html, "<blockquote class=\"mdr-alert mdr-alert-note\"><blockquote><div class=\"mdr-block mdr-equal\"><p>inner</p>")
     }
+
+    @Test
+    fun `relative images resolve against each side's base uri`() {
+        val options = RenderOptions(leftBaseUri = "file:///repo/v1/docs/", rightBaseUri = "file:///repo/v2/docs/")
+        val html = render("![a](img/a.png)\n", "![a](../a.png)\n", options)
+        assertContains(html, "<img src=\"file:///repo/v1/docs/img/a.png\" alt=\"a\"")
+        assertContains(html, "<img src=\"file:///repo/v2/a.png\" alt=\"a\"")
+        // Without a base URI the path stays as written.
+        assertContains(render("![a](img/a.png)\n", "![a](img/a.png)\n"), "<img src=\"img/a.png\"")
+    }
+
+    @Test
+    fun `only relative paths are resolved`() {
+        val base = "file:///repo/docs/"
+        assertEquals("file:///repo/docs/a%20b.png", LinkAttributeProvider.resolve(base, "a%20b.png"))
+        assertEquals("file:///repo/docs/sub/x.svg?raw=1", LinkAttributeProvider.resolve(base, "sub/x.svg?raw=1"))
+        assertEquals(null, LinkAttributeProvider.resolve(base, "https://example.com/x.png"))
+        assertEquals(null, LinkAttributeProvider.resolve(base, "data:image/png;base64,AAAA"))
+        assertEquals(null, LinkAttributeProvider.resolve(base, "/root.png"))
+        assertEquals(null, LinkAttributeProvider.resolve(base, "#frag"))
+        assertEquals(null, LinkAttributeProvider.resolve(base, ""))
+    }
+
+    @Test
+    fun `heading level change gets a note, a text change does not`() {
+        val html = render("### Title\n\n## Other\n", "#### Title\n\n## Another\n")
+        assertContains(html, "<div class=\"mdr-block mdr-modified mdr-meta-changed\" data-change-note=\"h3 \u2192 h4\"><h4>Title</h4>")
+        // Only on the new side, like the other change notes.
+        assertEquals(1, Regex("data-change-note").findAll(html).count())
+    }
+
+    @Test
+    fun `link marks pair by text and occurrence`() {
+        val html = render("[a](u1) [a](u2) [b](u3)\n", "[a](u1) [a](u9) [b](u3)\n")
+        assertEquals(2, Regex("mdr-link-changed").findAll(html).count())
+        assertContains(html, "href=\"u9\" class=\"mdr-link-changed\" title=\"Previous URL: u2\"")
+    }
+
+    @Test
+    fun `link changes in list items are marked`() {
+        val html = render("- [x][r]\n\n[r]: https://a.example\n", "- [x][r]\n\n[r]: https://b.example\n")
+        assertContains(html, "<li class=\"mdr-block mdr-modified\">")
+        assertContains(html, "title=\"Previous URL: https://a.example\"")
+    }
 }

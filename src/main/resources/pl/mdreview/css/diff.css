@@ -30,6 +30,11 @@
   --mdr-moved-marker: #a571e6;
   --mdr-placeholder-bg: repeating-linear-gradient(-45deg, transparent 0 6px, #ebecf0 6px 7px);
   --mdr-current-outline: #3574f0;
+  --mdr-alert-note: #0969da;
+  --mdr-alert-tip: #1a7f37;
+  --mdr-alert-important: #8250df;
+  --mdr-alert-warning: #9a6700;
+  --mdr-alert-caution: #d1242f;
 
   --mdr-button-bg: #ffffff;
   --mdr-button-fg: #1e1f22;
@@ -62,6 +67,11 @@
   --mdr-moved-marker: #955ae0;
   --mdr-placeholder-bg: repeating-linear-gradient(-45deg, transparent 0 6px, #2b2d30 6px 7px);
   --mdr-current-outline: #548af7;
+  --mdr-alert-note: #4493f8;
+  --mdr-alert-tip: #3fb950;
+  --mdr-alert-important: #ab7df8;
+  --mdr-alert-warning: #d29922;
+  --mdr-alert-caution: #f85149;
 
   --mdr-button-bg: #2b2d30;
   --mdr-button-fg: #dfe1e5;
@@ -88,6 +98,11 @@
     --mdr-moved-marker: #955ae0;
     --mdr-placeholder-bg: repeating-linear-gradient(-45deg, transparent 0 6px, #2b2d30 6px 7px);
     --mdr-current-outline: #548af7;
+    --mdr-alert-note: #4493f8;
+    --mdr-alert-tip: #3fb950;
+    --mdr-alert-important: #ab7df8;
+    --mdr-alert-warning: #d29922;
+    --mdr-alert-caution: #f85149;
     --mdr-button-bg: #2b2d30;
     --mdr-button-fg: #dfe1e5;
     --mdr-button-border: #4e5157;
@@ -147,6 +162,24 @@ html, body {
 .mdr-root th { font-weight: 600; }
 .mdr-root li.mdr-task { list-style: none; margin-left: -1.4em; }
 .mdr-root li.mdr-task input { margin: 0 0.4em 0 0; vertical-align: middle; }
+/* Strikethrough written in the Markdown: no background, so it does not read as a removed word */
+.mdr-root del:not(.mdr-del) { text-decoration: line-through; text-decoration-thickness: 2px; text-decoration-color: currentColor; background: none; }
+
+/* GitHub alerts (> [!NOTE]): the outermost quote carries the type, the title is its own block */
+.mdr-root blockquote.mdr-alert { color: var(--mdr-fg); border-left-color: var(--mdr-alert); }
+.mdr-alert-note { --mdr-alert: var(--mdr-alert-note); }
+.mdr-alert-tip { --mdr-alert: var(--mdr-alert-tip); }
+.mdr-alert-important { --mdr-alert: var(--mdr-alert-important); }
+.mdr-alert-warning { --mdr-alert: var(--mdr-alert-warning); }
+.mdr-alert-caution { --mdr-alert: var(--mdr-alert-caution); }
+.mdr-root p.mdr-alert-title { color: var(--mdr-alert); font-weight: 600; }
+
+/* Footnote definitions: label, then the text; references are superscript links */
+.mdr-footnote { display: flex; gap: 0.5em; font-size: 0.9em; }
+.mdr-footnote > .mdr-fn-label { color: var(--mdr-muted); flex: none; }
+.mdr-footnote > .mdr-fn-label::after { content: "."; }
+.mdr-footnote > .mdr-fn-body { flex: 1; min-width: 0; }
+.mdr-root sup.mdr-fnref { font-size: 0.75em; line-height: 0; }
 
 /* ---------- Blocks and change markers ---------- */
 /*
@@ -178,6 +211,7 @@ html, body {
 }
 
 /* Change with no word differences (heading level, table alignment, info string, URL) */
+li.mdr-task.mdr-meta-changed input { outline: 2px solid var(--mdr-modified-marker); outline-offset: 1px; }
 .mdr-block.mdr-meta-changed::after {
   content: attr(data-change-note);
   display: block;

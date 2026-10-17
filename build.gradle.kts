@@ -18,10 +18,14 @@ dependencies {
     intellijPlatform {
         create("IC", "2025.1.3")
     }
-    implementation("org.commonmark:commonmark:0.24.0")
-    implementation("org.commonmark:commonmark-ext-gfm-tables:0.24.0")
-    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.24.0")
-    implementation("org.commonmark:commonmark-ext-task-list-items:0.24.0")
+    val commonmark = "0.30.1"
+    implementation("org.commonmark:commonmark:$commonmark")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:$commonmark")
+    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:$commonmark")
+    implementation("org.commonmark:commonmark-ext-task-list-items:$commonmark")
+    implementation("org.commonmark:commonmark-ext-autolink:$commonmark")
+    implementation("org.commonmark:commonmark-ext-footnotes:$commonmark")
+    implementation("org.commonmark:commonmark-ext-gfm-alerts:$commonmark")
     // Block and word diffs in the engine (pl.mdreview.engine), usable without the IntelliJ Platform.
     implementation("io.github.java-diff-utils:java-diff-utils:4.15")
     testImplementation(kotlin("test"))

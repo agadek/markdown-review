@@ -217,4 +217,66 @@ class FixturesTest {
             .map { it.left!!.plainText }
         assertEquals(listOf("Section 450", "Section 451"), removedHeadings)
     }
+
+    @Test
+    fun `21 task lists`() {
+        assertEquals(
+            listOf(
+                // Only the checkbox changed.
+                "MODIFIED LIST_ITEM Update the changelog",
+                "MODIFIED LIST_ITEM Tag the release on GitHu",
+                "MODIFIED LIST_ITEM Plain item",
+            ),
+            changes("21-task-lists"),
+        )
+        assertTrue(diff("21-task-lists").changes[0].inline.all { it.status == DiffStatus.EQUAL })
+    }
+
+    @Test
+    fun `22 strikethrough`() {
+        val d = diff("22-strikethrough")
+        assertEquals(
+            listOf("MODIFIED PARAGRAPH The basic plan costs 10", "MODIFIED PARAGRAPH The trial lasts 14 days"),
+            changes("22-strikethrough"),
+        )
+        assertEquals(listOf("12 EUR "), d.changes[0].inline.filter { it.status == DiffStatus.ADDED }.map { it.text })
+        // Removing the strikethrough changes only the formatting.
+        assertTrue(d.changes[1].inline.all { it.status == DiffStatus.EQUAL })
+    }
+
+    @Test
+    fun `23 autolinks`() {
+        val d = diff("23-autolinks")
+        assertEquals(listOf("MODIFIED PARAGRAPH Docs: https://plugins.je"), changes("23-autolinks"))
+        assertEquals(listOf("welcome"), d.changes[0].inline.filter { it.status == DiffStatus.REMOVED }.map { it.text })
+        assertEquals(listOf("getting-started"), d.changes[0].inline.filter { it.status == DiffStatus.ADDED }.map { it.text })
+    }
+
+    @Test
+    fun `24 footnotes`() {
+        assertEquals(
+            listOf(
+                "MODIFIED PARAGRAPH Rendering uses commonmar",
+                "REMOVED FOOTNOTE Word diff runs inside mo",
+                "MODIFIED FOOTNOTE Version 0.30.",
+                "ADDED FOOTNOTE The Chromium browser emb",
+            ),
+            changes("24-footnotes"),
+        )
+    }
+
+    @Test
+    fun `25 alerts`() {
+        assertEquals(
+            listOf(
+                "MODIFIED PARAGRAPH Rendering runs in JCEF w",
+                // Only the type changed; the content is equal.
+                "MODIFIED ALERT Caution",
+                "ADDED ALERT Important",
+            ),
+            changes("25-alerts"),
+        )
+        val content = diff("25-alerts").blocks.filter { it.right?.context?.alert == "IMPORTANT" }.map { it.status }
+        assertEquals(listOf(DiffStatus.ADDED, DiffStatus.EQUAL), content)
+    }
 }

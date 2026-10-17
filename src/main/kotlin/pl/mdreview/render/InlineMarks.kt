@@ -1,5 +1,6 @@
 package pl.mdreview.render
 
+import org.commonmark.ext.footnotes.FootnoteReference
 import org.commonmark.node.Code
 import org.commonmark.node.Node
 import org.commonmark.node.Text
@@ -128,5 +129,28 @@ internal class MarkedTextNodeRenderer(
                 html.raw("</code>")
             }
         }
+    }
+}
+
+/**
+ * commonmark renderer for [FootnoteReference]: a superscript link to the definition on the same side.
+ * The plain text holds the reference as `[^label]`; only the label is shown, with its word marks.
+ */
+internal class FootnoteReferenceRenderer(
+    private val context: HtmlNodeRendererContext,
+    private val writer: MarkedTextWriter,
+    private val offsets: Map<Node, Int>,
+    private val anchor: (String) -> String,
+) : NodeRenderer {
+
+    override fun getNodeTypes(): Set<Class<out Node>> = setOf(FootnoteReference::class.java)
+
+    override fun render(node: Node) {
+        val ref = node as FootnoteReference
+        val html = context.writer
+        html.raw("<sup class=\"mdr-fnref\"><a href=\"#" + anchor(ref.label) + "\">")
+        val offset = offsets[ref]
+        if (offset == null) html.text(ref.label) else html.raw(writer.write(offset + 2, ref.label))
+        html.raw("</a></sup>")
     }
 }

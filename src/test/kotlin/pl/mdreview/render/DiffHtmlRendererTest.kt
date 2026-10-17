@@ -136,4 +136,67 @@ class DiffHtmlRendererTest {
         assertContains(css, "--mdr-bg: var(--md-bg);")
         assertFalse(css.contains("</style", ignoreCase = true))
     }
+
+    @Test
+    fun `checkbox-only change carries a note on the new side`() {
+        val html = render("- [ ] ship it\n", "- [x] ship it\n")
+        assertContains(html, "<li class=\"mdr-block mdr-modified mdr-task mdr-meta-changed\" data-change-note=\"unchecked → checked\">")
+        assertEquals(1, Regex("mdr-meta-changed").findAll(html).count())
+        val merged = render("- [ ] ship it\n", "- [x] ship it\n", RenderOptions(mode = ViewMode.MERGED))
+        assertContains(merged, "data-change-note=\"unchecked → checked\"")
+    }
+
+    @Test
+    fun `content strikethrough next to a word change`() {
+        val html = render("costs 10 EUR", "costs ~~10 EUR~~ 12 EUR")
+        assertContains(html, "<del>10 EUR</del><ins class=\"mdr-ins\"> 12 EUR</ins>")
+        assertContains(DiffHtmlRenderer().css(), "del:not(.mdr-del)")
+    }
+
+    @Test
+    fun `bare urls become links`() {
+        val html = render("See https://example.com/a here", "See https://example.com/b here")
+        assertContains(html, "<a rel=\"nofollow\" href=\"https://example.com/a\">https://example.com/<del class=\"mdr-del\">a</del></a>")
+        assertContains(html, "<a rel=\"nofollow\" href=\"https://example.com/b\">https://example.com/<ins class=\"mdr-ins\">b</ins></a>")
+    }
+
+    @Test
+    fun `footnote references link to the definition on the same side`() {
+        val html = render("Text[^n].\n\n[^n]: Old note.\n", "Text[^n].\n\n[^n]: New note.\n")
+        assertContains(html, "<sup class=\"mdr-fnref\"><a href=\"#mdr-fn-left-n\">n</a></sup>")
+        assertContains(html, "<sup class=\"mdr-fnref\"><a href=\"#mdr-fn-right-n\">n</a></sup>")
+        assertContains(
+            html,
+            "<div class=\"mdr-block mdr-modified mdr-footnote\" id=\"mdr-fn-right-n\"><span class=\"mdr-fn-label\">n</span>" +
+                "<div class=\"mdr-fn-body\"><p><ins class=\"mdr-ins\">New</ins> note.</p>",
+        )
+        // The definition is not repeated at the end of the block that references it.
+        assertFalse(html.contains("class=\"footnotes\""))
+    }
+
+    @Test
+    fun `changed footnote reference is marked`() {
+        val html = render("A[^a].\n\n[^a]: x\n\n[^b]: y\n", "A[^b].\n\n[^a]: x\n\n[^b]: y\n")
+        assertContains(html, "<a href=\"#mdr-fn-left-a\"><del class=\"mdr-del\">a</del></a>")
+        assertContains(html, "<a href=\"#mdr-fn-right-b\"><ins class=\"mdr-ins\">b</ins></a>")
+    }
+
+    @Test
+    fun `alerts render with their type and a note when the type changes`() {
+        val html = render("> [!WARNING]\n> Careful.\n", "> [!CAUTION]\n> Careful.\n")
+        assertContains(html, "<blockquote class=\"mdr-alert mdr-alert-warning\"><p class=\"mdr-block mdr-modified mdr-alert-title\"><del class=\"mdr-del\">Warning</del></p>")
+        assertContains(
+            html,
+            "<blockquote class=\"mdr-alert mdr-alert-caution\"><p class=\"mdr-block mdr-modified mdr-alert-title mdr-meta-changed\" " +
+                "data-change-note=\"Warning → Caution\"><ins class=\"mdr-ins\">Caution</ins></p>",
+        )
+        assertContains(html, "<blockquote class=\"mdr-alert mdr-alert-caution\"><div class=\"mdr-block mdr-equal\"><p>Careful.</p>")
+        assertContains(DiffHtmlRenderer().css(), "--mdr-alert-caution")
+    }
+
+    @Test
+    fun `quotes nested in an alert keep the alert on the outermost quote`() {
+        val html = render("> [!NOTE]\n> > inner\n", "> [!NOTE]\n> > inner\n")
+        assertContains(html, "<blockquote class=\"mdr-alert mdr-alert-note\"><blockquote><div class=\"mdr-block mdr-equal\"><p>inner</p>")
+    }
 }

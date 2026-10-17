@@ -43,7 +43,17 @@ Additional block classes:
 | `mdr-meta-changed` | Change with no text difference (heading level, table alignment, code info string, checkbox state). Description text in the `data-change-note` attribute, shown under the block. |
 | `mdr-current` | Currently selected change during navigation (F7 / Shift+F7): outline, buttons always visible. Can go on `.mdr-block` or `.mdr-row`. |
 | `mdr-frontmatter` | YAML front matter block (on `.mdr-block`, with `<pre><code>` inside). Shows a "front matter" label. |
-| `mdr-task` | Task list item (`li` with `<input type="checkbox" disabled>`). |
+| `mdr-task` | Task list item (`li` with `<input type="checkbox" disabled>`). With `mdr-meta-changed` the checkbox is outlined. |
+| `mdr-alert-title` | Title line of a GitHub alert (`p`, its own block), e.g. "Note". A changed type carries `mdr-meta-changed`. |
+| `mdr-footnote` | Footnote definition (`div`, its own block) with `id="mdr-fn-<side>-<label>"`; children `.mdr-fn-label` and `.mdr-fn-body`. |
+
+## GitHub alerts and footnotes
+
+| Class | Where | Meaning |
+|---|---|---|
+| `mdr-alert` + `mdr-alert-<type>` | outermost `blockquote` around every block of an alert | Alert of type `note`, `tip`, `important`, `warning` or `caution`; border and title use `--mdr-alert-<type>` (from `--md-alert-<type>`). |
+| `mdr-fnref` | `sup` around an `a href="#mdr-fn-<side>-<label>"` | Footnote reference; links to the definition on the same side. |
+| `del` without `mdr-del` | inline | Strikethrough written in the Markdown (`~~text~~`): line-through, no background. |
 
 ## Inline changes
 

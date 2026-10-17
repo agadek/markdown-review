@@ -5,6 +5,8 @@ import com.intellij.diff.DiffContextEx
 import com.intellij.diff.FrameDiffTool
 import com.intellij.diff.contents.DiffContent
 import com.intellij.diff.contents.DocumentContent
+import com.intellij.diff.util.DiffUserDataKeys
+import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.requests.ContentDiffRequest
 import com.intellij.diff.tools.util.DiffDataKeys
 import com.intellij.diff.tools.util.PrevNextDifferenceIterable
@@ -18,6 +20,8 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.command.CommandProcessor
+import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -34,6 +38,7 @@ import com.intellij.util.ui.JBUI
 import pl.mdreview.api.BlockInfo
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.RenderedDiff
+import pl.mdreview.api.TextEdit
 import pl.mdreview.api.ViewMode
 import java.awt.BorderLayout
 import javax.swing.JButton
@@ -43,11 +48,11 @@ import javax.swing.JPanel
 /**
  * One rendered diff inside IntelliJ's diff window. Recomputes off the EDT whenever a side's document
  * changes (debounced), keeps change navigation (F7 / Shift+F7 through [DiffDataKeys.PREV_NEXT_DIFFERENCE_ITERABLE])
- * and Ctrl/Cmd+click navigation to the source (FR-14).
+ * Ctrl/Cmd+click navigation to the source (FR-14) and the per-block revert and apply buttons (FR-12).
  */
 class RenderedDiffViewer(
     private val context: DiffContext,
-    request: ContentDiffRequest,
+    private val request: ContentDiffRequest,
     private val mode: ViewMode,
     viewFactory: (parent: Disposable, onSourceClick: (side: String, line: Int) -> Unit) -> RenderedDiffView = ::defaultView,
 ) : FrameDiffTool.DiffViewer {
@@ -66,6 +71,9 @@ class RenderedDiffViewer(
     private val largeFileNotice by lazy { createLargeFileNotice() }
 
     private var changes: List<BlockInfo> = emptyList()
+
+    /** The diff on screen and the document stamps it was computed from; block actions edit against it. */
+    private var rendered: Pair<RenderedDiff, String>? = null
     private var currentChange = -1
 
     override fun getComponent(): JComponent = root
@@ -80,6 +88,9 @@ class RenderedDiffViewer(
         }
         ApplicationManager.getApplication().messageBus.connect(disposable)
             .subscribe(EditorColorsManager.TOPIC, EditorColorsListener { browserPanel.refreshTheme() })
+        browserPanel.onBlockAction { action ->
+            ApplicationManager.getApplication().invokeLater({ performBlockAction(action) }, ModalityState.any())
+        }
         scheduleRender(0)
         return FrameDiffTool.ToolbarComponents().apply {
             popupActions = listOf<AnAction>(
@@ -103,10 +114,11 @@ class RenderedDiffViewer(
 
     private fun render() {
         val options = settings.options()
-        ReadAction.nonBlocking<RenderedDiff?> {
+        ReadAction.nonBlocking<Pair<RenderedDiff, String>?> {
             if (RenderedMarkdownDiffTool.isTooLarge(contents)) return@nonBlocking null
+            val stamp = stamp()
             val texts = documents.map { it?.let { doc -> StringUtil.convertLineSeparators(doc.text) } }
-            RendererProvider.renderer.render(RenderRequest(texts[0], texts[1], mode, options, baseUris[0], baseUris[1]))
+            RendererProvider.renderer.render(RenderRequest(texts[0], texts[1], mode, options, baseUris[0], baseUris[1])) to stamp
         }
             .expireWith(disposable)
             .coalesceBy(this)
@@ -114,19 +126,65 @@ class RenderedDiffViewer(
             .submit(AppExecutorUtil.getAppExecutorService())
     }
 
-    private fun show(diff: RenderedDiff?) {
-        if (diff == null) {
+    private fun show(result: Pair<RenderedDiff, String>?) {
+        rendered = result
+        if (result == null) {
             changes = emptyList()
             currentChange = -1
             root.showContent(largeFileNotice)
             statusLabel.text = MarkdownReviewBundle.message("status.too.large")
             return
         }
+        val (diff, stamp) = result
         root.showContent(browserPanel.component)
         changes = diff.changes
         currentChange = currentChange.coerceAtMost(changes.size - 1)
-        browserPanel.show(diff)
+        browserPanel.show(diff, blockActions(stamp))
         updateStatus()
+    }
+
+    /** `left:right` modification stamps of the documents, `-1` for a side without one. */
+    private fun stamp(): String = documents.joinToString(":") { (it?.modificationStamp ?: -1).toString() }
+
+    /** The block buttons for a page rendered at [stamp]: only for sides that can be edited. */
+    internal fun blockActions(stamp: String): BlockActions {
+        if (!settings.showBlockActions) return BlockActions.NONE.copy(stamp = stamp)
+        return BlockActions(revert = canEdit(1), apply = mode == ViewMode.SIDE_BY_SIDE && canEdit(0), stamp = stamp)
+    }
+
+    /** False for VCS revisions, read-only files and requests marked read-only. */
+    private fun canEdit(side: Int): Boolean {
+        val content = contents[side] as? DocumentContent ?: return false
+        if (DiffUtil.isUserDataFlagSet(DiffUserDataKeys.FORCE_READ_ONLY, content, request, context)) return false
+        return DiffUtil.canMakeWritable(content.document)
+    }
+
+    /**
+     * Replaces the block's lines on the target side with the other side's lines, as one undoable command.
+     * Refused, with a re-render, when a document changed after the page was rendered. Returns whether it edited.
+     */
+    internal fun performBlockAction(request: BlockActionRequest): Boolean {
+        val (diff, stamp) = rendered ?: return false
+        if (request.stamp != stamp || stamp() != stamp) {
+            scheduleRender(0)
+            return false
+        }
+        if (!blockActions(stamp).allows(request.action)) return false
+        val region = diff.blocks.getOrNull(request.idx)?.edit ?: return false
+        val (target, source) = if (request.action == BlockAction.REVERT) 1 to 0 else 0 to 1
+        val document = documents[target] ?: return false
+        val lines = { side: Int -> if (side == 0) region.left else region.right }
+        val edit = TextEdit.replaceLines(document.charsSequence, lines(target), documents[source]?.charsSequence ?: "", lines(source))
+        val project = context.project
+        if (!DiffUtil.makeWritable(project, document)) return false
+        val name = MarkdownReviewBundle.message(if (request.action == BlockAction.REVERT) "command.revert.block" else "command.apply.block")
+        WriteCommandAction.writeCommandAction(project).withName(name).run<RuntimeException> {
+            // Global, so Undo works from the diff window, which has no editor for the document.
+            if (project != null) CommandProcessor.getInstance().markCurrentCommandAsGlobal(project)
+            document.replaceString(edit.start, edit.end, edit.replacement)
+        }
+        scheduleRender(0)
+        return true
     }
 
     /** Shown instead of the page when a side is above [LargeFiles.limit] (NFR-4). */

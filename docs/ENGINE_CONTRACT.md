@@ -45,8 +45,18 @@ with an **Open Text Viewer** button instead.
   page script draws. A modified diagram's row (or merged item) also carries `mdr-mermaid-row` and starts with
   `details.mdr-mermaid-source`, holding the source line diff as nested rows or items with `data-side` / `data-line`
   but no `data-idx`. See `CLASSES.md`.
-- `blocks`: `BlockInfo(idx, status, left: LineRange?, right: LineRange?)` in display order; zero-based, end-exclusive line
-  ranges. The IDE builds F7/Shift+F7 navigation and the "Change 3 of 12" counter from them, and per-block revert in M6.
+- `blocks`: `BlockInfo(idx, status, left: LineRange?, right: LineRange?, edit: EditRegion?)` in display order;
+  zero-based, end-exclusive line ranges. The IDE builds F7/Shift+F7 navigation and the "Change 3 of 12" counter from
+  them.
+- `edit` (P2.5, additive): the lines per-block revert and apply exchange, one `LineRange` per side. Replacing
+  `edit.right` with the lines of `edit.left` reverts the change; the reverse applies it to the left side
+  (`TextEdit.replaceLines` turns that into one text replacement). A modified block exchanges its own lines plus the
+  uncovered lines that follow it directly (a setext underline, a table's delimiter row). An added or removed block
+  exchanges, on each side, everything from the end of the previous block on that side to the start of the next one,
+  so the blank lines around it come along and the side without it gets an insertion (an empty range where it goes).
+  A fenced code block, front matter or table added or removed as a whole is one region for all its blocks, closing
+  fence or delimiter row included. `null` for equal blocks and for changes no line edit can undo, such as a block
+  that changed only through a link reference definition.
 
 ## What the IDE does
 - Registers two viewers in IntelliJ's diff window (`diff.DiffTool`): "Rendered Markdown (side by side)" and "(merged)"; the text diff is the built-in viewer.
@@ -64,8 +74,15 @@ with an **Open Text Viewer** button instead.
 - Shows the large-file notice above `LargeFiles.limit()`; its button marks the diff context so the rendered viewers
   report `canShow = false` for files above the limit, then reopens the request, which falls back to the text viewer.
 - Settings | Tools | Markdown Review (`MarkdownReviewSettings`, stored in `markdownReview.xml`): the default viewer,
-  `ignoreWhitespace`, `collapseUnchanged`, the large-file limits (lines, KB), loading remote images and rendering
-  Mermaid diagrams.
+  `ignoreWhitespace`, `collapseUnchanged`, the large-file limits (lines, KB), loading remote images, rendering
+  Mermaid diagrams and `showBlockActions`.
+- Per-block buttons (FR-12): the page's script adds `.mdr-actions` with `mdr-revert` (writes the left version into
+  the right document) and, in the side-by-side view, `mdr-apply` (writes the right version into the left document)
+  to every block with an `edit` region, only for sides whose `DocumentContent` can be made writable and that the
+  request does not mark `FORCE_READ_ONLY` (so never on VCS revisions). A click sends `edit|<action>|<idx>|<stamp>`
+  with the documents' modification stamps at render time; a different stamp refuses the edit and re-renders. The edit
+  is one global `WriteCommandAction` ("Revert Markdown Block" / "Apply Markdown Block"), so one Undo restores it
+  from the diff window or the editor.
 - Makes the chosen default viewer the first one IntelliJ tries for Markdown diffs through the diff tool order; see
   [ADR 0001](adr/0001-default-diff-viewer.md).
 - Recognizes Markdown by extension (`md`, `markdown`, `mdown`, `mkd`) or, when the bundled Markdown plugin is enabled,

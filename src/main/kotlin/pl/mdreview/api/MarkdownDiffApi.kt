@@ -104,13 +104,72 @@ data class LineRange(val start: Int, val end: Int)
  * @property idx position in [RenderedDiff.blocks]; equals the `data-idx` attribute in the HTML.
  * @property left source lines on the left side, `null` for [BlockStatus.ADDED].
  * @property right source lines on the right side, `null` for [BlockStatus.REMOVED].
+ * @property edit the lines that per-block revert and apply exchange (FR-12), `null` for [BlockStatus.EQUAL].
  */
 data class BlockInfo(
     val idx: Int,
     val status: BlockStatus,
     val left: LineRange?,
     val right: LineRange?,
+    val edit: EditRegion? = null,
 )
+
+/**
+ * Line ranges, one per side, that make a block's change undone when one replaces the other: replacing [right]
+ * with the lines of [left] reverts the change on the right side, replacing [left] with [right] applies it to the
+ * left side.
+ *
+ * For a [BlockStatus.MODIFIED] block these are its own lines. For an added or removed block, the side holding it
+ * covers the block with the blank lines around it, and the other side covers the gap where it would go, which may
+ * be empty (`start == end`): an insertion. A fenced code block, front matter or table added or removed as a whole
+ * is one region for all its blocks, including the closing fence or delimiter row, so any of its blocks reverts all
+ * of it. Ranges are zero-based and end-exclusive over the lines of the side's text split at `\n`.
+ */
+data class EditRegion(val left: LineRange, val right: LineRange)
+
+/** Replace [start, end) of a text with [replacement]. */
+data class TextEdit(val start: Int, val end: Int, val replacement: String) {
+    companion object {
+        /**
+         * The edit that replaces the lines [targetLines] of [target] with the lines [sourceLines] of [source].
+         * Both texts use `\n` only; lines are the text split at `\n`, so a trailing line break ends with an
+         * empty last line, and an empty text has one empty line.
+         */
+        fun replaceLines(target: CharSequence, targetLines: LineRange, source: CharSequence, sourceLines: LineRange): TextEdit {
+            val starts = lineStarts(target)
+            val n = starts.size
+            fun lineEnd(line: Int) = if (line + 1 < n) starts[line + 1] - 1 else target.length
+            val sourceStarts = lineStarts(source)
+            val lines = (sourceLines.start until sourceLines.end).map { line ->
+                val end = if (line + 1 < sourceStarts.size) sourceStarts[line + 1] - 1 else source.length
+                source.subSequence(sourceStarts[line], end)
+            }
+            val text = lines.joinToString("\n")
+            val a = targetLines.start
+            val b = targetLines.end
+            require(a in 0..b && b <= n) { "Line range $targetLines outside a text of $n lines" }
+            return when {
+                a < b && lines.isNotEmpty() -> TextEdit(starts[a], lineEnd(b - 1), text)
+                a < b && b < n -> TextEdit(starts[a], starts[b], "")
+                a < b && a > 0 -> TextEdit(lineEnd(a - 1), lineEnd(b - 1), "")
+                a < b -> TextEdit(0, target.length, "")
+                lines.isEmpty() -> TextEdit(0, 0, "")
+                target.isEmpty() -> TextEdit(0, 0, text)
+                a < n -> TextEdit(starts[a], starts[a], text + "\n")
+                else -> TextEdit(target.length, target.length, "\n" + text)
+            }
+        }
+
+        private fun lineStarts(text: CharSequence): IntArray {
+            val starts = ArrayList<Int>()
+            starts += 0
+            for (i in text.indices) if (text[i] == '\n') starts += i + 1
+            return starts.toIntArray()
+        }
+    }
+
+    fun applyTo(text: String): String = text.substring(0, start) + replacement + text.substring(end)
+}
 
 /**
  * @property bodyHtml HTML fragment placed inside `<body>`. Must not contain scripts or event handler

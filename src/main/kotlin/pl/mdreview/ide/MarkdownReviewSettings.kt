@@ -31,6 +31,7 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         var largeFileKilobytes: Int = DEFAULT_LARGE_FILE_KILOBYTES
         var loadRemoteImages: Boolean = false
         var renderMermaid: Boolean = true
+        var showBlockActions: Boolean = true
 
         /** The [defaultViewer] last written into IntelliJ's diff tool order, see [DefaultViewerOrder]. */
         var appliedDefaultViewer: DefaultViewer? = null
@@ -79,6 +80,11 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
     var renderMermaid: Boolean
         get() = state.renderMermaid
         set(value) { state.renderMermaid = value }
+
+    /** Revert and apply buttons on changed blocks of writable sides (FR-12). */
+    var showBlockActions: Boolean
+        get() = state.showBlockActions
+        set(value) { state.showBlockActions = value }
 
     var appliedDefaultViewer: DefaultViewer?
         get() = state.appliedDefaultViewer

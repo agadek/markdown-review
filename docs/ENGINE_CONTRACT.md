@@ -48,6 +48,13 @@ with an **Open Text Viewer** button instead.
 - The "Compare Markdown Files..." action (project view context menu and Tools menu).
 - Re-runs the diff after a document change (300 ms debounce) and after a theme change, keeping the scroll position.
 - Fills `leftBaseUri` / `rightBaseUri` from the directory of each `DocumentContent`'s local file, so images next to the
-  compared file render (the page's CSP allows `file:` and `data:` images only).
+  compared file render (the page's CSP allows `file:` and `data:` images, plus `http:` / `https:` when the
+  "Load remote images" setting is on, which also sets `options.loadRemoteImages`).
 - Shows the large-file notice above `LargeFiles.limit()`; its button marks the diff context so the rendered viewers
   report `canShow = false` for files above the limit, then reopens the request, which falls back to the text viewer.
+- Settings | Tools | Markdown Review (`MarkdownReviewSettings`, stored in `markdownReview.xml`): the default viewer,
+  `ignoreWhitespace`, `collapseUnchanged`, the large-file limits (lines, KB) and loading remote images.
+- Makes the chosen default viewer the first one IntelliJ tries for Markdown diffs through the diff tool order; see
+  [ADR 0001](adr/0001-default-diff-viewer.md).
+- Recognizes Markdown by extension (`md`, `markdown`, `mdown`, `mkd`) or, when the bundled Markdown plugin is enabled,
+  by its file type (optional dependency, `markdown-review-withMarkdown.xml`). Rendering always uses commonmark.

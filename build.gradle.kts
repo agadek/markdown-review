@@ -1,3 +1,5 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.1.20"
@@ -17,6 +19,9 @@ repositories {
 dependencies {
     intellijPlatform {
         create("IC", "2025.1.3")
+        // Optional dependency: recognizes the Markdown file type, see markdown-review-withMarkdown.xml.
+        bundledPlugin("org.intellij.plugins.markdown")
+        testFramework(TestFrameworkType.Platform)
     }
     val commonmark = "0.30.1"
     implementation("org.commonmark:commonmark:$commonmark")
@@ -31,8 +36,9 @@ dependencies {
     testImplementation(kotlin("test"))
     // Gradle 9 no longer puts the JUnit Platform launcher on the test classpath by itself.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
-    // The IntelliJ test environment initializer references JUnit 4 classes even for JUnit 5 tests.
-    testRuntimeOnly("junit:junit:4.13.2")
+    // BasePlatformTestCase integration tests are JUnit 3/4 style; the vintage engine runs them on the JUnit Platform.
+    testImplementation("junit:junit:4.13.2")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.10.1")
 }
 
 intellijPlatform {

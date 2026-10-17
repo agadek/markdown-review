@@ -16,12 +16,23 @@
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
+    <!-- Only to recognize the Markdown file type for files without a .md-like extension; rendering uses commonmark. -->
+    <depends optional="true" config-file="markdown-review-withMarkdown.xml">org.intellij.plugins.markdown</depends>
 
     <resource-bundle>messages.MarkdownReviewBundle</resource-bundle>
+
+    <extensionPoints>
+        <extensionPoint qualifiedName="pl.mdreview.markdownFileTypeRecognizer"
+                        interface="pl.mdreview.ide.MarkdownFileTypeRecognizer" dynamic="true"/>
+    </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
         <diff.DiffTool implementation="pl.mdreview.ide.RenderedSideBySideTool"/>
         <diff.DiffTool implementation="pl.mdreview.ide.RenderedMergedTool"/>
+        <applicationConfigurable parentId="tools" id="pl.mdreview.settings"
+                                 instance="pl.mdreview.ide.MarkdownReviewConfigurable"
+                                 key="settings.display.name"/>
+        <postStartupActivity implementation="pl.mdreview.ide.DefaultViewerStartupActivity"/>
     </extensions>
 
     <actions>

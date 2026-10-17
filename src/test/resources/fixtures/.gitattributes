@@ -1,0 +1,2 @@
+# Test data: keep bytes 1:1 (CRLF, trailing spaces, missing final newline)
+* -text

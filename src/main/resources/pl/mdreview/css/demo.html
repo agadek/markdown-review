@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" class="mdr-theme-light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markdown Review: style demo</title>
+<link rel="stylesheet" href="diff.css">
+<style>
+  /* Demo page only, not for the generator */
+  .demo-bar { display: flex; gap: 8px; align-items: center; padding: 8px 16px; border-bottom: 1px solid var(--mdr-border); font-family: var(--mdr-font); font-size: 13px; }
+  .demo-bar button { font: inherit; padding: 3px 10px; color: var(--mdr-button-fg); background: var(--mdr-button-bg); border: 1px solid var(--mdr-button-border); border-radius: 4px; cursor: pointer; }
+  .demo-title { font-family: var(--mdr-font); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mdr-muted); margin: 16px 16px 0; }
+</style>
+</head>
+<body>
+<div class="demo-bar">
+  <button type="button" onclick="document.documentElement.classList.toggle('mdr-theme-dark');document.documentElement.classList.toggle('mdr-theme-light')">Toggle theme</button>
+  <span>Data: fixture <code>18-mixed</code> (excerpt). Hover over a block to see the buttons.</span>
+</div>
+
+<!-- ===================== Side-by-side view ===================== -->
+<div class="demo-title">Side-by-side view</div>
+<div class="mdr-root mdr-sbs">
+  <div class="mdr-sbs-header"><div>old.md</div><div>new.md</div></div>
+
+  <div class="mdr-row" data-block-id="b0">
+    <div class="mdr-side mdr-left"><div class="mdr-placeholder"></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-added mdr-frontmatter"><pre><code>title: Markdown Review</code></pre></div></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b0" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="b1">
+    <div class="mdr-side mdr-left"><div class="mdr-block mdr-equal"><h1>Markdown Review</h1></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-equal"><h1>Markdown Review</h1></div></div>
+  </div>
+
+  <div class="mdr-row mdr-current" data-block-id="b2">
+    <div class="mdr-side mdr-left"><div class="mdr-block mdr-modified"><p><del class="mdr-del">A</del> plugin for reviewing changes in Markdown files.</p></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-modified"><p><ins class="mdr-ins">An IntelliJ</ins> plugin for reviewing changes in Markdown files<ins class="mdr-ins"> in rendered form</ins>.</p></div></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b2" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="b3">
+    <div class="mdr-side mdr-left"><div class="mdr-block mdr-equal"><h2>Features</h2></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-equal"><h2>Features</h2></div></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="b4">
+    <div class="mdr-side mdr-left"><ul><li class="mdr-block mdr-modified"><del class="mdr-del">Merged</del> view</li></ul></div>
+    <div class="mdr-side mdr-right"><ul><li class="mdr-block mdr-modified"><ins class="mdr-ins">Unified</ins> view<ins class="mdr-ins"> with strikethrough</ins></li></ul></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b4" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="b5">
+    <div class="mdr-side mdr-left"><div class="mdr-placeholder"></div></div>
+    <div class="mdr-side mdr-right"><ul><li class="mdr-block mdr-added">Per-block revert</li></ul></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b5" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="b6">
+    <div class="mdr-side mdr-left"><div class="mdr-block mdr-modified"><pre><code><span class="mdr-line">./gradlew buildPlugin</span></code></pre></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-modified"><pre><code><span class="mdr-line">./gradlew buildPlugin</span><span class="mdr-line mdr-added">./gradlew runIde</span></code></pre></div></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b6" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="b7">
+    <div class="mdr-side mdr-left"><div class="mdr-block mdr-removed"><h2>License</h2></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-placeholder"></div></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b7" title="Revert block">⟲ Revert</button></div>
+  </div>
+</div>
+
+<!-- ===================== Merged view ===================== -->
+<div class="demo-title">Merged view</div>
+<div class="mdr-root mdr-merged">
+  <div class="mdr-block mdr-added mdr-frontmatter" data-block-id="b0"><pre><code>title: Markdown Review</code></pre>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b0">⟲ Revert</button></div></div>
+
+  <div class="mdr-block mdr-equal" data-block-id="b1"><h1>Markdown Review</h1></div>
+
+  <div class="mdr-block mdr-modified" data-block-id="b2"><p><del class="mdr-del">A</del><ins class="mdr-ins">An IntelliJ</ins> plugin for reviewing changes in Markdown files<ins class="mdr-ins"> in rendered form</ins>.</p>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b2">⟲ Revert</button></div></div>
+
+  <div class="mdr-block mdr-modified mdr-meta-changed" data-block-id="b3" data-change-note="heading level: 3 → 4"><h4>Side-by-side view</h4>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b3">⟲ Revert</button></div></div>
+
+  <ul>
+    <li class="mdr-block mdr-equal" data-block-id="b4a">Side-by-side view</li>
+    <li class="mdr-block mdr-modified" data-block-id="b4"><del class="mdr-del">Merged view</del><ins class="mdr-ins">Unified view with strikethrough</ins>
+      <div class="mdr-actions"><button class="mdr-revert" data-block-id="b4">⟲ Revert</button></div></li>
+    <li class="mdr-block mdr-added" data-block-id="b5">Per-block revert
+      <div class="mdr-actions"><button class="mdr-revert" data-block-id="b5">⟲ Revert</button></div></li>
+    <li class="mdr-block mdr-task mdr-modified" data-block-id="b5b"><input type="checkbox" checked disabled><del class="mdr-del">☐</del> Unit tests</li>
+  </ul>
+
+  <div class="mdr-block mdr-added" data-block-id="b8"><blockquote><p>Text mode uses the IDE's built-in diff.</p></blockquote>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b8">⟲ Revert</button></div></div>
+
+  <div class="mdr-block mdr-modified" data-block-id="b6"><pre><code><span class="mdr-line">./gradlew buildPlugin</span><span class="mdr-line mdr-added">./gradlew runIde</span><span class="mdr-line mdr-removed">./gradlew test</span></code></pre>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b6">⟲ Revert</button></div></div>
+
+  <div class="mdr-block mdr-modified" data-block-id="b9"><p>See the <a href="#" class="mdr-link-changed" title="Previous address: https://github.com/example/markdown-review">repository</a> and a line with a hard break<span class="mdr-ws mdr-ws-break"></span><br>in the new version.</p></div>
+
+  <table>
+    <thead><tr class="mdr-block mdr-modified"><th>IDE</th><th>Version</th><th class="mdr-cell-added">Notes</th></tr></thead>
+    <tbody>
+      <tr class="mdr-block mdr-modified"><td>PyCharm</td><td><del class="mdr-del">2025.1</del><ins class="mdr-ins">2025.2</ins></td><td class="mdr-cell-added"></td></tr>
+      <tr class="mdr-block mdr-removed"><td>Rider</td><td>2025.1</td><td></td></tr>
+      <tr class="mdr-block mdr-added"><td>GoLand</td><td>2025.1</td><td></td></tr>
+    </tbody>
+  </table>
+
+  <div class="mdr-block mdr-moved" data-block-id="b10" data-moved-from="b12"><h3>Which IDEs are supported?</h3></div>
+
+  <div class="mdr-block mdr-removed" data-block-id="b7"><h2>License</h2><p>To be decided.</p>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="b7">⟲ Revert</button></div></div>
+</div>
+
+<div class="demo-title">Empty document</div>
+<div class="mdr-root mdr-merged"><div class="mdr-empty">No differences</div></div>
+</body>
+</html>

@@ -1,0 +1,316 @@
+/*
+ * Markdown Review: diff preview styles (side-by-side and merged views).
+ *
+ * Class reference: CLASSES.md in this directory. Usage example: demo.html.
+ *
+ * Theme: class mdr-theme-light or mdr-theme-dark on <html> or on .mdr-root
+ * (the generator sets it from JBColor.isBright()). Without a class,
+ * prefers-color-scheme applies. Colors and fonts are CSS variables, so the
+ * generator can override them with an inline style (e.g. the IDE editor font).
+ */
+
+/* ---------- Variables: IntelliJ Light ---------- */
+:root,
+.mdr-theme-light {
+  --mdr-bg: #ffffff;
+  --mdr-fg: #1e1f22;
+  --mdr-muted: #6c707e;
+  --mdr-border: #ebecf0;
+  --mdr-code-bg: #f7f8fa;
+  --mdr-link: #2e55a3;
+  --mdr-quote-border: #c9ccd6;
+
+  --mdr-added-bg: #e7f5e9;
+  --mdr-added-inline: #b7e4bf;
+  --mdr-added-marker: #5fb865;
+  --mdr-removed-bg: #fdecec;
+  --mdr-removed-inline: #f6c1c1;
+  --mdr-removed-marker: #e55765;
+  --mdr-modified-marker: #4682fa;
+  --mdr-moved-marker: #a571e6;
+  --mdr-placeholder-bg: repeating-linear-gradient(-45deg, transparent 0 6px, #ebecf0 6px 7px);
+  --mdr-current-outline: #3574f0;
+
+  --mdr-button-bg: #ffffff;
+  --mdr-button-fg: #1e1f22;
+  --mdr-button-border: #c9ccd6;
+  --mdr-button-hover: #dfe1e5;
+
+  --mdr-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
+  --mdr-mono: "JetBrains Mono", Menlo, Consolas, monospace;
+  --mdr-font-size: 14px;
+  --mdr-gap: 16px;
+}
+
+/* ---------- Variables: Darcula / Dark ---------- */
+.mdr-theme-dark {
+  --mdr-bg: #1e1f22;
+  --mdr-fg: #bcbec4;
+  --mdr-muted: #868a91;
+  --mdr-border: #393b40;
+  --mdr-code-bg: #2b2d30;
+  --mdr-link: #548af7;
+  --mdr-quote-border: #4e5157;
+
+  --mdr-added-bg: #22372a;
+  --mdr-added-inline: #375e41;
+  --mdr-added-marker: #549159;
+  --mdr-removed-bg: #3f2526;
+  --mdr-removed-inline: #6e3436;
+  --mdr-removed-marker: #db5c5c;
+  --mdr-modified-marker: #3574f0;
+  --mdr-moved-marker: #955ae0;
+  --mdr-placeholder-bg: repeating-linear-gradient(-45deg, transparent 0 6px, #2b2d30 6px 7px);
+  --mdr-current-outline: #548af7;
+
+  --mdr-button-bg: #2b2d30;
+  --mdr-button-fg: #dfe1e5;
+  --mdr-button-border: #4e5157;
+  --mdr-button-hover: #393b40;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.mdr-theme-light) {
+    --mdr-bg: #1e1f22;
+    --mdr-fg: #bcbec4;
+    --mdr-muted: #868a91;
+    --mdr-border: #393b40;
+    --mdr-code-bg: #2b2d30;
+    --mdr-link: #548af7;
+    --mdr-quote-border: #4e5157;
+    --mdr-added-bg: #22372a;
+    --mdr-added-inline: #375e41;
+    --mdr-added-marker: #549159;
+    --mdr-removed-bg: #3f2526;
+    --mdr-removed-inline: #6e3436;
+    --mdr-removed-marker: #db5c5c;
+    --mdr-modified-marker: #3574f0;
+    --mdr-moved-marker: #955ae0;
+    --mdr-placeholder-bg: repeating-linear-gradient(-45deg, transparent 0 6px, #2b2d30 6px 7px);
+    --mdr-current-outline: #548af7;
+    --mdr-button-bg: #2b2d30;
+    --mdr-button-fg: #dfe1e5;
+    --mdr-button-border: #4e5157;
+    --mdr-button-hover: #393b40;
+  }
+}
+
+/* ---------- Base ---------- */
+html, body {
+  margin: 0;
+  background: var(--mdr-bg);
+  color: var(--mdr-fg);
+}
+
+.mdr-root {
+  background: var(--mdr-bg);
+  color: var(--mdr-fg);
+  font-family: var(--mdr-font);
+  font-size: var(--mdr-font-size);
+  line-height: 1.6;
+  padding: var(--mdr-gap);
+  box-sizing: border-box;
+}
+.mdr-root *, .mdr-root *::before, .mdr-root *::after { box-sizing: inherit; }
+
+/* Rendered Markdown typography */
+.mdr-root h1, .mdr-root h2, .mdr-root h3,
+.mdr-root h4, .mdr-root h5, .mdr-root h6 { line-height: 1.25; margin: 0.6em 0 0.4em; font-weight: 600; }
+.mdr-root h1 { font-size: 1.9em; padding-bottom: 0.2em; border-bottom: 1px solid var(--mdr-border); }
+.mdr-root h2 { font-size: 1.5em; padding-bottom: 0.2em; border-bottom: 1px solid var(--mdr-border); }
+.mdr-root h3 { font-size: 1.25em; }
+.mdr-root h4 { font-size: 1.05em; }
+.mdr-root h5, .mdr-root h6 { font-size: 0.95em; color: var(--mdr-muted); }
+.mdr-root p, .mdr-root ul, .mdr-root ol, .mdr-root blockquote,
+.mdr-root pre, .mdr-root table { margin: 0.4em 0; }
+.mdr-root ul, .mdr-root ol { padding-left: 1.8em; }
+.mdr-root a { color: var(--mdr-link); text-decoration: none; }
+.mdr-root a:hover { text-decoration: underline; }
+.mdr-root img { max-width: 100%; }
+.mdr-root hr { border: 0; border-top: 1px solid var(--mdr-border); }
+.mdr-root blockquote {
+  padding: 0 1em;
+  color: var(--mdr-muted);
+  border-left: 3px solid var(--mdr-quote-border);
+}
+.mdr-root code, .mdr-root pre {
+  font-family: var(--mdr-mono);
+  font-size: 0.9em;
+  background: var(--mdr-code-bg);
+  border-radius: 4px;
+}
+.mdr-root code { padding: 0.1em 0.35em; }
+.mdr-root pre { padding: 0.6em 0.8em; overflow-x: auto; line-height: 1.45; }
+.mdr-root pre code { padding: 0; background: none; }
+.mdr-root table { border-collapse: collapse; }
+.mdr-root th, .mdr-root td { border: 1px solid var(--mdr-border); padding: 0.3em 0.7em; }
+.mdr-root th { font-weight: 600; }
+.mdr-root li.mdr-task { list-style: none; margin-left: -1.4em; }
+.mdr-root li.mdr-task input { margin: 0 0.4em 0 0; vertical-align: middle; }
+
+/* ---------- Blocks and change markers ---------- */
+/*
+ * .mdr-block: one diff block (heading, paragraph, list item, table row,
+ * code block, front matter). The change marker is a bar on the left
+ * (::before); the background carries the change type.
+ */
+.mdr-block {
+  position: relative;
+  padding: 0 0.5em 0 0.75em;
+  border-radius: 3px;
+}
+.mdr-block::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 2px; bottom: 2px;
+  width: 3px;
+  border-radius: 2px;
+  background: transparent;
+}
+.mdr-block.mdr-added    { background: var(--mdr-added-bg); }
+.mdr-block.mdr-removed  { background: var(--mdr-removed-bg); }
+.mdr-block.mdr-added::before    { background: var(--mdr-added-marker); }
+.mdr-block.mdr-removed::before  { background: var(--mdr-removed-marker); }
+.mdr-block.mdr-modified::before { background: var(--mdr-modified-marker); }
+.mdr-block.mdr-moved::before    { background: var(--mdr-moved-marker); }
+.mdr-block.mdr-moved {
+  background-image: linear-gradient(90deg, color-mix(in srgb, var(--mdr-moved-marker) 12%, transparent), transparent 60%);
+}
+
+/* Change with no word differences (heading level, table alignment, info string, URL) */
+.mdr-block.mdr-meta-changed::after {
+  content: attr(data-change-note);
+  display: block;
+  font-size: 0.8em;
+  color: var(--mdr-muted);
+  font-style: italic;
+}
+
+/* Current change during navigation (F7 / Shift+F7) */
+.mdr-block.mdr-current { outline: 2px solid var(--mdr-current-outline); outline-offset: 1px; }
+
+/* List items as blocks: keep the bullet outside the background */
+li.mdr-block { padding-left: 0.25em; }
+li.mdr-block::before { left: -1.6em; }
+li.mdr-task.mdr-block::before { left: 0; }
+
+/* Table rows as blocks */
+tr.mdr-added   > td, tr.mdr-added   > th { background: var(--mdr-added-bg); }
+tr.mdr-removed > td, tr.mdr-removed > th { background: var(--mdr-removed-bg); }
+tr.mdr-modified > td:first-child, tr.mdr-modified > th:first-child { box-shadow: inset 3px 0 0 var(--mdr-modified-marker); }
+tr.mdr-added    > td:first-child, tr.mdr-added    > th:first-child { box-shadow: inset 3px 0 0 var(--mdr-added-marker); }
+tr.mdr-removed  > td:first-child, tr.mdr-removed  > th:first-child { box-shadow: inset 3px 0 0 var(--mdr-removed-marker); }
+td.mdr-cell-added,   th.mdr-cell-added,   .mdr-col-added   { background: var(--mdr-added-inline); }
+td.mdr-cell-removed, th.mdr-cell-removed, .mdr-col-removed { background: var(--mdr-removed-inline); }
+
+/* Lines in code blocks and front matter: <span class="mdr-line mdr-added">…</span> */
+pre .mdr-line { display: block; margin: 0 -0.8em; padding: 0 0.8em; }
+pre .mdr-line.mdr-added   { background: var(--mdr-added-inline); }
+pre .mdr-line.mdr-removed { background: var(--mdr-removed-inline); }
+pre .mdr-line.mdr-modified { box-shadow: inset 3px 0 0 var(--mdr-modified-marker); }
+
+/* Front matter YAML */
+.mdr-frontmatter pre { font-family: var(--mdr-mono); font-size: 0.85em; color: var(--mdr-muted); }
+.mdr-frontmatter > pre::before { content: "front matter"; display: block; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ---------- Zmiany inline ---------- */
+ins.mdr-ins, del.mdr-del {
+  text-decoration: none;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+ins.mdr-ins { background: var(--mdr-added-inline); }
+del.mdr-del { background: var(--mdr-removed-inline); }
+/* Whitespace-only change (e.g. hard line break) */
+.mdr-ws-break::before { content: "\21B5"; color: var(--mdr-modified-marker); font-size: 0.85em; }
+.mdr-ws { box-shadow: 0 0 0 1px var(--mdr-modified-marker) inset; border-radius: 2px; }
+/* Link or image with the same text but a different URL; old address in title */
+.mdr-link-changed { border-bottom: 1px dashed var(--mdr-modified-marker); }
+img.mdr-img-changed { outline: 2px dashed var(--mdr-modified-marker); outline-offset: 2px; }
+img.mdr-img-missing { min-width: 4em; min-height: 2em; background: var(--mdr-code-bg); }
+
+/* Strikethrough only in the merged view */
+.mdr-merged del.mdr-del,
+.mdr-merged .mdr-block.mdr-removed {
+  text-decoration: line-through;
+  text-decoration-color: var(--mdr-removed-marker);
+}
+.mdr-merged .mdr-block.mdr-removed img { opacity: 0.5; }
+
+/* ---------- Side-by-side view ---------- */
+/*
+ * .mdr-sbs is a 2-column grid; each .mdr-row has two cells (.mdr-side.mdr-left,
+ * .mdr-side.mdr-right), so matching blocks always sit at the same height.
+ * A block with no counterpart gets an empty cell with class .mdr-placeholder.
+ */
+.mdr-sbs-header,
+.mdr-sbs .mdr-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: var(--mdr-gap);
+}
+.mdr-sbs-header {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--mdr-bg);
+  border-bottom: 1px solid var(--mdr-border);
+  padding: 0.3em 0;
+  font-size: 0.85em;
+  color: var(--mdr-muted);
+}
+.mdr-sbs-header > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mdr-sbs .mdr-side { min-width: 0; position: relative; }
+.mdr-sbs .mdr-side > .mdr-block { height: 100%; }
+.mdr-sbs .mdr-placeholder {
+  min-height: 1.6em;
+  background: var(--mdr-placeholder-bg);
+  border-radius: 3px;
+}
+
+/* ---------- Per-block action buttons ---------- */
+/*
+ * <div class="mdr-actions"><button class="mdr-revert" data-block-id="…">…</button></div>
+ * inside .mdr-block (merged view) or .mdr-row (side by side). Visible on hover
+ * and for .mdr-current. Clicks are handled by the generator's JS (JBCefJSQuery).
+ */
+.mdr-actions {
+  position: absolute;
+  top: 2px; right: 2px;
+  display: flex; gap: 4px;
+  opacity: 0;
+  transition: opacity 0.1s;
+  z-index: 1;
+}
+.mdr-block:hover > .mdr-actions,
+.mdr-row:hover .mdr-actions,
+.mdr-current .mdr-actions,
+.mdr-actions:focus-within { opacity: 1; }
+.mdr-sbs .mdr-row { position: relative; }
+
+.mdr-actions button {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 3px 6px;
+  color: var(--mdr-button-fg);
+  background: var(--mdr-button-bg);
+  border: 1px solid var(--mdr-button-border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.mdr-actions button:hover { background: var(--mdr-button-hover); }
+.mdr-actions button:focus-visible { outline: 2px solid var(--mdr-current-outline); outline-offset: 1px; }
+.mdr-actions button:disabled { opacity: 0.4; cursor: default; }
+
+/* ---------- Empty document state and notices ---------- */
+.mdr-empty, .mdr-notice {
+  color: var(--mdr-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 2em 0;
+}
+.mdr-notice { padding: 0.5em; font-style: normal; border: 1px solid var(--mdr-border); border-radius: 4px; }
+
+/* Print without interactive elements */
+@media print {
+  .mdr-actions, .mdr-sbs-header { display: none; }
+}

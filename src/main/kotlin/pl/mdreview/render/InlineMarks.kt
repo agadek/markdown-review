@@ -1,0 +1,132 @@
+package pl.mdreview.render
+
+import org.commonmark.node.Code
+import org.commonmark.node.Node
+import org.commonmark.node.Text
+import org.commonmark.renderer.NodeRenderer
+import org.commonmark.renderer.html.HtmlNodeRendererContext
+import pl.mdreview.engine.DiffStatus
+import pl.mdreview.engine.InlineSegment
+
+/**
+ * Word-level marks for one side of a modified block, expressed as offsets into the block's plain
+ * text. [marks] wrap existing text; [insertions] put text from the other side at a position
+ * (used by the merged view to show removed words inline).
+ */
+class InlineMarks(
+    val marks: List<Mark> = emptyList(),
+    val insertions: List<Insertion> = emptyList(),
+) {
+    data class Mark(val start: Int, val end: Int, val tag: String)
+    data class Insertion(val offset: Int, val text: String, val tag: String)
+
+    companion object {
+        // Written as <del class="mdr-del"> / <ins class="mdr-ins">; the class tells them apart from
+        // <del> produced by ~~strikethrough~~ in the content.
+        const val DEL = "del"
+        const val INS = "ins"
+
+        val NONE = InlineMarks()
+
+        fun left(segments: List<InlineSegment>): InlineMarks {
+            val marks = mutableListOf<Mark>()
+            var pos = 0
+            for (s in segments) {
+                when (s.status) {
+                    DiffStatus.EQUAL -> pos += s.text.length
+                    DiffStatus.REMOVED -> { marks += Mark(pos, pos + s.text.length, DEL); pos += s.text.length }
+                    else -> Unit
+                }
+            }
+            return InlineMarks(marks)
+        }
+
+        fun right(segments: List<InlineSegment>, withRemoved: Boolean = false): InlineMarks {
+            val marks = mutableListOf<Mark>()
+            val insertions = mutableListOf<Insertion>()
+            var pos = 0
+            for (s in segments) {
+                when (s.status) {
+                    DiffStatus.EQUAL -> pos += s.text.length
+                    DiffStatus.ADDED -> { marks += Mark(pos, pos + s.text.length, INS); pos += s.text.length }
+                    DiffStatus.REMOVED -> if (withRemoved) insertions += Insertion(pos, s.text, DEL)
+                    DiffStatus.MODIFIED -> Unit
+                }
+            }
+            return InlineMarks(marks, insertions)
+        }
+    }
+}
+
+/**
+ * Writes plain text with word marks applied. One instance renders one block; [offsets] maps each
+ * [Text]/[Code] node to its position in the block's plain text.
+ */
+class MarkedTextWriter(private val marks: InlineMarks, private val escape: (String) -> String) {
+    private val pending = ArrayDeque(marks.insertions.sortedBy { it.offset })
+
+    /** Text of [literal] starting at plain-text [offset], as HTML. */
+    fun write(offset: Int, literal: String): String {
+        val sb = StringBuilder()
+        flushInsertions(sb, offset)
+        val end = offset + literal.length
+        val cuts = sortedSetOf(offset, end)
+        for (m in marks.marks) {
+            if (m.end > offset && m.start < end) {
+                cuts += m.start.coerceIn(offset, end)
+                cuts += m.end.coerceIn(offset, end)
+            }
+        }
+        pending.filter { it.offset in (offset + 1) until end }.forEach { cuts += it.offset }
+        val points = cuts.toList()
+        for (k in 0 until points.size - 1) {
+            val a = points[k]
+            val b = points[k + 1]
+            flushInsertions(sb, a)
+            val chunk = escape(literal.substring(a - offset, b - offset))
+            val tag = marks.marks.firstOrNull { it.start <= a && it.end >= b }?.tag
+            if (tag != null) sb.append(open(tag)).append(chunk).append("</").append(tag).append('>')
+            else sb.append(chunk)
+        }
+        return sb.toString()
+    }
+
+    /** Insertions left after the last text node (for example words removed at the end of a block). */
+    fun rest(): String {
+        val sb = StringBuilder()
+        flushInsertions(sb, Int.MAX_VALUE)
+        return sb.toString()
+    }
+
+    private fun open(tag: String) = "<$tag class=\"mdr-$tag\">"
+
+    private fun flushInsertions(sb: StringBuilder, upTo: Int) {
+        while (pending.isNotEmpty() && pending.first().offset <= upTo) {
+            val ins = pending.removeFirst()
+            sb.append(open(ins.tag)).append(escape(ins.text)).append("</").append(ins.tag).append('>')
+        }
+    }
+}
+
+/** commonmark renderer for [Text] and [Code] that routes text through a [MarkedTextWriter]. */
+internal class MarkedTextNodeRenderer(
+    private val context: HtmlNodeRendererContext,
+    private val writer: MarkedTextWriter,
+    private val offsets: Map<Node, Int>,
+) : NodeRenderer {
+
+    override fun getNodeTypes(): Set<Class<out Node>> = setOf(Text::class.java, Code::class.java)
+
+    override fun render(node: Node) {
+        val html = context.writer
+        when (node) {
+            is Text -> html.raw(writer.write(offsets[node] ?: return html.text(node.literal), node.literal))
+            is Code -> {
+                html.raw("<code>")
+                val offset = offsets[node]
+                if (offset == null) html.text(node.literal) else html.raw(writer.write(offset, node.literal))
+                html.raw("</code>")
+            }
+        }
+    }
+}

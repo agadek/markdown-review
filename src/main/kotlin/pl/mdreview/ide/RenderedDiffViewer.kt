@@ -1,0 +1,160 @@
+package pl.mdreview.ide
+
+import com.intellij.diff.FrameDiffTool
+import com.intellij.diff.contents.DiffContent
+import com.intellij.diff.contents.DocumentContent
+import com.intellij.diff.requests.ContentDiffRequest
+import com.intellij.diff.tools.util.DiffDataKeys
+import com.intellij.diff.tools.util.PrevNextDifferenceIterable
+import com.intellij.diff.util.LineCol
+import com.intellij.openapi.actionSystem.ActionUpdateThread
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataSink
+import com.intellij.openapi.actionSystem.UiDataProvider
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.editor.colors.EditorColorsListener
+import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.editor.event.DocumentEvent
+import com.intellij.openapi.editor.event.DocumentListener
+import com.intellij.openapi.project.DumbAwareToggleAction
+import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.util.text.StringUtil
+import com.intellij.ui.components.JBLabel
+import com.intellij.util.Alarm
+import com.intellij.util.concurrency.AppExecutorUtil
+import com.intellij.util.ui.JBUI
+import pl.mdreview.api.BlockInfo
+import pl.mdreview.api.RenderRequest
+import pl.mdreview.api.RenderedDiff
+import pl.mdreview.api.ViewMode
+import java.awt.BorderLayout
+import javax.swing.JComponent
+import javax.swing.JPanel
+
+/**
+ * One rendered diff inside IntelliJ's diff window. Recomputes off the EDT whenever a side's document
+ * changes (debounced), keeps change navigation (F7 / Shift+F7 through [DiffDataKeys.PREV_NEXT_DIFFERENCE_ITERABLE])
+ * and Ctrl/Cmd+click navigation to the source (FR-14).
+ */
+class RenderedDiffViewer(
+    request: ContentDiffRequest,
+    private val mode: ViewMode,
+) : FrameDiffTool.DiffViewer {
+
+    private val disposable = Disposer.newDisposable("Markdown Review viewer")
+    private val contents: List<DiffContent> = request.contents
+    private val documents = contents.map { (it as? DocumentContent)?.document }
+    private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, disposable)
+    private val statusLabel = JBLabel(MarkdownReviewBundle.message("status.loading"))
+    private val browserPanel = MarkdownDiffPanel(disposable) { side, line ->
+        ApplicationManager.getApplication().invokeLater({ navigateToSource(side, line) }, ModalityState.any())
+    }
+    private val root = RootPanel()
+
+    private var changes: List<BlockInfo> = emptyList()
+    private var currentChange = -1
+
+    override fun getComponent(): JComponent = root
+
+    override fun getPreferredFocusedComponent(): JComponent = browserPanel.component
+
+    override fun init(): FrameDiffTool.ToolbarComponents {
+        for (document in documents.filterNotNull()) {
+            document.addDocumentListener(object : DocumentListener {
+                override fun documentChanged(event: DocumentEvent) = scheduleRender(300)
+            }, disposable)
+        }
+        ApplicationManager.getApplication().messageBus.connect(disposable)
+            .subscribe(EditorColorsManager.TOPIC, EditorColorsListener { browserPanel.refreshTheme() })
+        scheduleRender(0)
+        return FrameDiffTool.ToolbarComponents().apply {
+            popupActions = listOf<AnAction>(
+                OptionToggle("toggle.ignore.whitespace", { MarkdownReviewSettings.ignoreWhitespace }) {
+                    MarkdownReviewSettings.ignoreWhitespace = it
+                },
+                OptionToggle("toggle.collapse.unchanged", { MarkdownReviewSettings.collapseUnchanged }) {
+                    MarkdownReviewSettings.collapseUnchanged = it
+                },
+            )
+            statusPanel = statusLabel.apply { border = JBUI.Borders.empty(0, 8) }
+        }
+    }
+
+    override fun dispose() = Disposer.dispose(disposable)
+
+    private fun scheduleRender(delayMs: Int) {
+        alarm.cancelAllRequests()
+        alarm.addRequest(::render, delayMs)
+    }
+
+    private fun render() {
+        val options = MarkdownReviewSettings.options()
+        ReadAction.nonBlocking<RenderedDiff> {
+            val texts = documents.map { it?.let { doc -> StringUtil.convertLineSeparators(doc.text) } }
+            RendererProvider.renderer.render(RenderRequest(texts[0], texts[1], mode, options))
+        }
+            .expireWith(disposable)
+            .coalesceBy(this)
+            .finishOnUiThread(ModalityState.any(), ::show)
+            .submit(AppExecutorUtil.getAppExecutorService())
+    }
+
+    private fun show(diff: RenderedDiff) {
+        changes = diff.changes
+        currentChange = currentChange.coerceAtMost(changes.size - 1)
+        browserPanel.show(diff)
+        updateStatus()
+    }
+
+    private fun updateStatus() {
+        statusLabel.text = when {
+            changes.isEmpty() -> MarkdownReviewBundle.message("status.no.differences")
+            currentChange < 0 -> MarkdownReviewBundle.message("status.changes", changes.size)
+            else -> MarkdownReviewBundle.message("status.change.of", currentChange + 1, changes.size)
+        }
+    }
+
+    private fun goToChange(index: Int) {
+        currentChange = index
+        browserPanel.goTo(changes[index].idx)
+        updateStatus()
+    }
+
+    private fun navigateToSource(side: String, line: Int) {
+        val content = contents[if (side == "left") 0 else 1] as? DocumentContent ?: return
+        content.getNavigatable(LineCol(line, 0))?.takeIf { it.canNavigate() }?.navigate(true)
+    }
+
+    private val differenceIterable = object : PrevNextDifferenceIterable {
+        override fun canGoNext() = currentChange < changes.size - 1
+        override fun canGoPrev() = currentChange > 0
+        override fun goNext() = goToChange(currentChange + 1)
+        override fun goPrev() = goToChange(currentChange - 1)
+    }
+
+    private inner class RootPanel : JPanel(BorderLayout()), UiDataProvider {
+        init {
+            add(browserPanel.component, BorderLayout.CENTER)
+        }
+
+        override fun uiDataSnapshot(sink: DataSink) {
+            sink[DiffDataKeys.PREV_NEXT_DIFFERENCE_ITERABLE] = differenceIterable
+        }
+    }
+
+    private inner class OptionToggle(
+        key: String,
+        private val get: () -> Boolean,
+        private val set: (Boolean) -> Unit,
+    ) : DumbAwareToggleAction(MarkdownReviewBundle.message(key)) {
+        override fun getActionUpdateThread() = ActionUpdateThread.EDT
+        override fun isSelected(e: AnActionEvent) = get()
+        override fun setSelected(e: AnActionEvent, state: Boolean) {
+            set(state)
+            scheduleRender(0)
+        }
+    }
+}

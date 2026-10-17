@@ -1,0 +1,53 @@
+plugins {
+    id("java")
+    id("org.jetbrains.kotlin.jvm") version "2.1.20"
+    id("org.jetbrains.intellij.platform") version "2.5.0"
+}
+
+group = "pl.mdreview"
+version = "0.1.0"
+
+repositories {
+    mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
+}
+
+dependencies {
+    intellijPlatform {
+        create("IC", "2025.1.3")
+    }
+    implementation("org.commonmark:commonmark:0.24.0")
+    implementation("org.commonmark:commonmark-ext-gfm-tables:0.24.0")
+    implementation("org.commonmark:commonmark-ext-gfm-strikethrough:0.24.0")
+    implementation("org.commonmark:commonmark-ext-task-list-items:0.24.0")
+    // Block and word diffs in the engine (pl.mdreview.engine), usable without the IntelliJ Platform.
+    implementation("io.github.java-diff-utils:java-diff-utils:4.15")
+    testImplementation(kotlin("test"))
+    // Gradle 9 no longer puts the JUnit Platform launcher on the test classpath by itself.
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
+    // The IntelliJ test environment initializer references JUnit 4 classes even for JUnit 5 tests.
+    testRuntimeOnly("junit:junit:4.13.2")
+}
+
+intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "251"
+        }
+    }
+    pluginVerification {
+        ides {
+            ide("IC", "2025.1.3")
+        }
+    }
+}
+
+kotlin {
+    jvmToolchain(21)
+}
+
+tasks.test {
+    useJUnitPlatform()
+}

@@ -1,0 +1,61 @@
+package pl.mdreview.ide
+
+import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.util.Disposer
+import com.intellij.ui.jcef.JBCefBrowser
+import com.intellij.ui.jcef.JBCefBrowserBase
+import com.intellij.ui.jcef.JBCefJSQuery
+import pl.mdreview.api.RenderedDiff
+import javax.swing.JComponent
+
+/**
+ * JCEF view of one [RenderedDiff]. Knows nothing about diff requests: it shows a page, scrolls to
+ * changes on request and reports clicks back through [onSourceClick] (called on the CEF thread).
+ */
+class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: String, line: Int) -> Unit) {
+
+    private val browser = JBCefBrowser()
+    private val query = JBCefJSQuery.create(browser as JBCefBrowserBase)
+
+    /** Topmost visible block, kept so a re-render after an edit does not jump to the top. */
+    @Volatile
+    private var topIdx = 0
+    private var current: RenderedDiff? = null
+
+    val component: JComponent get() = browser.component
+
+    init {
+        Disposer.register(parent, browser)
+        Disposer.register(parent, query)
+        query.addHandler { msg ->
+            val parts = msg.split('|', limit = 3)
+            when (parts[0]) {
+                "scroll" -> parts.getOrNull(1)?.toIntOrNull()?.let { topIdx = it }
+                "link" -> parts.getOrNull(1)?.takeIf(::isExternal)?.let(BrowserUtil::browse)
+                "source" -> {
+                    val line = parts.getOrNull(2)?.toIntOrNull()
+                    if (line != null) onSourceClick(parts[1], line)
+                }
+            }
+            null
+        }
+    }
+
+    fun show(diff: RenderedDiff) {
+        current = diff
+        browser.loadHTML(HtmlPage.build(diff, query.inject("msg"), topIdx))
+    }
+
+    /** Rebuilds the page with fresh theme colors without recomputing the diff. */
+    fun refreshTheme() {
+        current?.let(::show)
+    }
+
+    fun goTo(blockIdx: Int) {
+        browser.cefBrowser.executeJavaScript("mdr.goTo($blockIdx)", browser.cefBrowser.url, 0)
+    }
+
+    private fun isExternal(href: String) =
+        href.startsWith("http://") || href.startsWith("https://") || href.startsWith("mailto:")
+}

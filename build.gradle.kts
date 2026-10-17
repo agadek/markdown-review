@@ -1,7 +1,7 @@
 plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.1.20"
-    id("org.jetbrains.intellij.platform") version "2.5.0"
+    id("org.jetbrains.intellij.platform") version "2.19.0"
 }
 
 group = "pl.mdreview"
@@ -39,7 +39,7 @@ intellijPlatform {
     }
     pluginVerification {
         ides {
-            ide("IC", "2025.1.3")
+            create("IC", "2025.1.3")
         }
     }
 }

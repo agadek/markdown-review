@@ -10,6 +10,9 @@ import com.intellij.ui.dsl.builder.bindValue
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toNullableProperty
 import pl.mdreview.api.DiffOptions
+import java.util.Hashtable
+import java.util.Locale
+import javax.swing.JLabel
 
 /** Settings | Tools | Markdown Review (FR-11). */
 class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.message("settings.display.name")) {
@@ -30,8 +33,16 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
                 checkBox(MarkdownReviewBundle.message("toggle.collapse.unchanged")).bindSelected(settings::collapseUnchanged)
             }
             row(MarkdownReviewBundle.message("settings.pairing.threshold")) {
-                spinner(DiffOptions.MIN_PAIRING_THRESHOLD..DiffOptions.MAX_PAIRING_THRESHOLD, 0.05)
-                    .bindValue(settings::pairingThreshold)
+                slider(percent(DiffOptions.MIN_PAIRING_THRESHOLD), percent(DiffOptions.MAX_PAIRING_THRESHOLD), 5, 10)
+                    .applyToComponent {
+                        labelTable = Hashtable<Int, JLabel>().apply {
+                            for (value in percent(DiffOptions.MIN_PAIRING_THRESHOLD)..percent(DiffOptions.MAX_PAIRING_THRESHOLD) step 10) {
+                                put(value, JLabel("%.1f".format(Locale.ROOT, value / 100.0)))
+                            }
+                        }
+                        paintLabels = true
+                    }
+                    .bindValue({ percent(settings.pairingThreshold) }, { settings.pairingThreshold = it / 100.0 })
                     .comment(MarkdownReviewBundle.message("settings.pairing.threshold.comment", DiffOptions.DEFAULT_PAIRING_THRESHOLD))
             }
             row {
@@ -56,6 +67,9 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
             }.comment(MarkdownReviewBundle.message("settings.large.file.comment"))
         }
     }
+
+    /** The slider works in hundredths of the threshold. */
+    private fun percent(threshold: Double) = Math.round(threshold * 100).toInt()
 
     override fun apply() {
         super.apply()

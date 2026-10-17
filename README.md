@@ -41,6 +41,10 @@ JCEF the plugin stays out of the way: the diff window keeps the text viewer.
 ./gradlew runIde
 ```
 
+## Development
+
+Developed with the help of Claude Code, with every change reviewed by the maintainer.
+
 ## License
 
 [PolyForm Noncommercial License 1.0.0](LICENSE). Noncommercial use (personal, educational, research, nonprofit

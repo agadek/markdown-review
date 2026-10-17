@@ -35,6 +35,8 @@ data class DiffOptions(
     val ignoreWhitespace: Boolean = false,
     /** Collapse runs of more than 5 unchanged blocks into an expandable bar. */
     val collapseUnchanged: Boolean = true,
+    /** Keep `http(s)` image sources in raw HTML instead of blanking them (NFR-8); the page's CSP must allow them too. */
+    val loadRemoteImages: Boolean = false,
 )
 
 /**

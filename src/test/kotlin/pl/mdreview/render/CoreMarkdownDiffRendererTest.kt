@@ -70,4 +70,13 @@ class CoreMarkdownDiffRendererTest {
         assertContains(result.bodyHtml, "src=\"file:///a/x.png\"")
         assertContains(result.bodyHtml, "src=\"file:///b/y.png\"")
     }
+
+    @Test
+    fun `remote images in raw html load only when allowed`() {
+        val md = "<img src=\"https://example.com/a.png\">\n"
+        val blocked = renderer.render(RenderRequest("", md, ViewMode.MERGED))
+        assertTrue("https://example.com/a.png" !in blocked.bodyHtml)
+        val allowed = renderer.render(RenderRequest("", md, ViewMode.MERGED, DiffOptions(loadRemoteImages = true)))
+        assertContains(allowed.bodyHtml, "src=\"https://example.com/a.png\"")
+    }
 }

@@ -12,12 +12,13 @@ The `pl.mdreview.api` package does not depend on the IntelliJ Platform.
 
 ## Input
 `RenderRequest(left, right, mode, options, leftBaseUri, rightBaseUri)`: texts with `\n` line separators, `null` = the file does not exist;
-`mode` = `SIDE_BY_SIDE` or `MERGED`; `options.ignoreWhitespace` (FR-7), `options.collapseUnchanged`.
+`mode` = `SIDE_BY_SIDE` or `MERGED`; `options.ignoreWhitespace` (FR-7), `options.collapseUnchanged`,
+`options.loadRemoteImages` (NFR-8, default `false`: remote `src` in raw HTML is blanked).
 `leftBaseUri` / `rightBaseUri` (optional): URI of the directory holding each side's file, ending with `/`
 (`file:///home/me/project/docs/`). Relative image paths on that side resolve against it; `null` keeps them as written.
 Absolute URLs, root-relative paths (`/img.png`) and fragments are never rewritten.
 
-The IDE does not call `render()` for a side above `SizeLimit.DEFAULT` (20,000 lines or 2 MB, NFR-4); it shows a notice
+The IDE does not call `render()` for a side above `LargeFiles.limit()` (default `SizeLimit.DEFAULT`: 20,000 lines or 2 MB, NFR-4); it shows a notice
 with an **Open Text Viewer** button instead.
 `render()` is called off the EDT, inside a read action, possibly concurrently: no state, no IntelliJ APIs, no network.
 
@@ -48,5 +49,5 @@ with an **Open Text Viewer** button instead.
 - Re-runs the diff after a document change (300 ms debounce) and after a theme change, keeping the scroll position.
 - Fills `leftBaseUri` / `rightBaseUri` from the directory of each `DocumentContent`'s local file, so images next to the
   compared file render (the page's CSP allows `file:` and `data:` images only).
-- Shows the large-file notice above `SizeLimit.DEFAULT`; its button marks the diff context so the rendered viewers
+- Shows the large-file notice above `LargeFiles.limit()`; its button marks the diff context so the rendered viewers
   report `canShow = false` for files above the limit, then reopens the request, which falls back to the text viewer.

@@ -41,7 +41,7 @@ abstract class RenderedMarkdownDiffTool(private val mode: ViewMode, private val 
         /** Set on the diff context by the large-file notice's button; rendered viewers then step aside. */
         val TEXT_VIEWER_FOR_LARGE_FILES: Key<Boolean> = Key.create("MarkdownReview.textViewerForLargeFiles")
 
-        fun isTooLarge(contents: List<DiffContent>, limit: SizeLimit = SizeLimit.DEFAULT): Boolean =
+        fun isTooLarge(contents: List<DiffContent>, limit: SizeLimit = LargeFiles.limit()): Boolean =
             contents.any { limit.exceeds((it as? DocumentContent)?.document?.immutableCharSequence) }
 
         fun isMarkdown(content: DiffContent): Boolean {

@@ -32,7 +32,6 @@ import com.intellij.util.ui.JBUI
 import pl.mdreview.api.BlockInfo
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.RenderedDiff
-import pl.mdreview.api.SizeLimit
 import pl.mdreview.api.ViewMode
 import java.awt.BorderLayout
 import javax.swing.JButton
@@ -126,9 +125,9 @@ class RenderedDiffViewer(
         updateStatus()
     }
 
-    /** Shown instead of the page when a side is above [SizeLimit.DEFAULT] (NFR-4). */
+    /** Shown instead of the page when a side is above [LargeFiles.limit] (NFR-4). */
     private fun createLargeFileNotice(): JComponent {
-        val limit = SizeLimit.DEFAULT
+        val limit = LargeFiles.limit()
         val message = JBLabel(
             MarkdownReviewBundle.message("large.file.message", limit.maxLines, limit.maxBytes / (1024 * 1024)),
         )

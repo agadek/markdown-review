@@ -24,6 +24,7 @@ class CoreMarkdownDiffRenderer : MarkdownDiffRenderer {
             RenderOptions(
                 mode = request.mode,
                 collapseUnchanged = request.options.collapseUnchanged,
+                allowRemoteImages = request.options.loadRemoteImages,
                 leftBaseUri = request.leftBaseUri,
                 rightBaseUri = request.rightBaseUri,
             ),

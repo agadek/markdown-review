@@ -1,3 +1,5 @@
+<img src="docs/icon.png" alt="Markdown Review icon" width="128" align="right">
+
 # Markdown Review
 
 An IntelliJ IDEA plugin for reviewing changes to Markdown files in **rendered** form instead of as raw text.

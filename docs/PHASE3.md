@@ -47,12 +47,9 @@ Scope:
 - **Block source editing** (FR-13, P2.6): double-click a block to edit its raw Markdown, saved as one Undo step.
 - **Moved-block detection** (FR-15, P2.7): a moved section shows as moved at both ends instead of removed and added,
   and reverting it moves it back.
-- **Configurable pairing threshold**: the 0.5 similarity used to pair a removed and an added block as one modified
-  block, exposed in the settings page (an open question in the specification), with fixtures at 0.3 and 0.7.
 
 Done when:
 - The done criteria of P2.6 and P2.7 in PHASE2.md are met.
-- Changing the threshold in settings re-renders open diffs, and the fixtures pin its effect.
 
 ## P3.3 Other JetBrains IDEs and remote development
 
@@ -133,15 +130,16 @@ Scope:
   feeds the Marketplace change notes, and "good first issue" labels.
 - Sponsorship: GitHub Sponsors is already in `FUNDING.yml`; link it from the README, the Marketplace listing and the
   plugin's settings page.
-- **Commercial use**: the PolyForm Noncommercial license means companies need a separate license. Decide how that is
-  offered: a paid plan through JetBrains Marketplace (which handles licensing and trials), a manual license on
-  request, or a change of license.
+- **Commercial use** (decided): the PolyForm Noncommercial license stays, and companies get a commercial license
+  through GitHub Sponsors. Add a sponsor tier for commercial use, state its terms in the README and `LICENSE` notes,
+  and link it from the Marketplace listing. The plugin itself has no license check.
 - A short documentation page (GitHub Pages) with screenshots, supported elements and settings.
 
 Done when:
 - A first outside contribution is merged following `CONTRIBUTING.md`.
-- The README and Marketplace listing say how to sponsor and how to get a commercial license.
-- If a paid plan is chosen: the plugin checks its Marketplace license, and noncommercial use keeps working free.
+- The README and Marketplace listing say how to sponsor and that a commercial license comes with the GitHub Sponsors
+  commercial tier.
+- The commercial tier is live on GitHub Sponsors.
 
 ## Not in phase 3
 

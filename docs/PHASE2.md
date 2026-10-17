@@ -52,7 +52,9 @@ Scope:
 - **Settings page** (FR-11): `applicationConfigurable` under Tools, backed by a `PersistentStateComponent` that
   replaces the `PropertiesComponent` keys in `MarkdownReviewSettings` (migrating their current values). Options:
   default viewer for `.md` (rendered side by side, rendered merged, text), ignore whitespace, collapse unchanged
-  blocks, large-file threshold (P2.3), load remote images (NFR-8).
+  blocks, large-file threshold (P2.3), load remote images (NFR-8), and the pairing threshold: the word similarity
+  (default 0.5) at which a removed and an added block count as one modified block. The pairing threshold was added
+  after the rest of P2.2 merged and ships in 1.0; changing it re-renders open diffs, with fixtures at 0.3 and 0.7.
 - **Default viewer for `.md`**: verify in the 2025.1 API how a `DiffTool` becomes the preselected viewer. Candidates,
   in order: `DiffToolSubstitutor`, then the diff window's remembered viewer choice (`DiffSettings` / `DiffUtil` tool
   order). Record the result in `docs/ENGINE_CONTRACT.md` or a short ADR. Whatever the mechanism, the user must be able

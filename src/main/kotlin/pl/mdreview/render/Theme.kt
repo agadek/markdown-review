@@ -29,11 +29,21 @@ data class Theme(
             "--md-added-word-bg" to addedWord, "--md-font" to fontFamily, "--md-font-size" to "${fontSizePx}px",
             "--md-mono-font" to monoFamily,
         )
+        vars.putAll(alertVariables(dark))
         for ((k, v) in vars) append(' ').append(k).append(": ").append(v).append(';')
         append(" }")
     }
 
     companion object {
+        /** `--md-alert-<type>` colors of GitHub alerts, as GitHub draws them in light and dark mode. */
+        fun alertVariables(dark: Boolean): Map<String, String> = linkedMapOf(
+            "--md-alert-note" to if (dark) "#4493f8" else "#0969da",
+            "--md-alert-tip" to if (dark) "#3fb950" else "#1a7f37",
+            "--md-alert-important" to if (dark) "#ab7df8" else "#8250df",
+            "--md-alert-warning" to if (dark) "#d29922" else "#9a6700",
+            "--md-alert-caution" to if (dark) "#f85149" else "#d1242f",
+        )
+
         val LIGHT = Theme(
             dark = false,
             background = "#ffffff",

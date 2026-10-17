@@ -34,6 +34,11 @@ html, body { background: var(--md-bg, var(--mdr-bg)); color: var(--md-fg, var(--
   --mdr-font: var(--md-font);
   --mdr-mono: var(--md-mono-font);
   --mdr-font-size: var(--md-font-size);
+  --mdr-alert-note: var(--md-alert-note, #0969da);
+  --mdr-alert-tip: var(--md-alert-tip, #1a7f37);
+  --mdr-alert-important: var(--md-alert-important, #8250df);
+  --mdr-alert-warning: var(--md-alert-warning, #9a6700);
+  --mdr-alert-caution: var(--md-alert-caution, #d1242f);
 }
 """
 

@@ -30,3 +30,8 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 18-mixed | realistic README, many change types at once |
 | 19-line-endings | CRLF -> LF |
 | 20-large-file | ~500 sections, performance |
+| 21-task-lists | checkbox-only change, task text change, item becoming a task |
+| 22-strikethrough | strikethrough added and removed on unchanged words |
+| 23-autolinks | bare `https://` and `www.` URLs (GFM autolinks) |
+| 24-footnotes | added, removed and changed footnote definitions, references |
+| 25-alerts | GitHub alerts: content change, type change, quote becoming an alert |

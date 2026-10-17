@@ -12,6 +12,10 @@ enum class BlockKind {
     THEMATIC_BREAK,
     HTML,
     FRONT_MATTER,
+    /** A footnote definition (`[^label]: text`). */
+    FOOTNOTE,
+    /** The title line of a GitHub alert (`> [!NOTE]`); the alert's content follows as quoted blocks. */
+    ALERT,
 }
 
 enum class DiffStatus { EQUAL, MODIFIED, REMOVED, ADDED }
@@ -25,6 +29,8 @@ data class BlockContext(
     val listDepth: Int = 0,
     val ordered: Boolean = false,
     val number: Int? = null,
+    /** Type of the GitHub alert (`NOTE`, `TIP`, ...) the block sits in; the alert is the outermost quote. */
+    val alert: String? = null,
 )
 
 /**

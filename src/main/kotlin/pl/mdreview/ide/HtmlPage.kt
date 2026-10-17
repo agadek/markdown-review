@@ -7,6 +7,7 @@ import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import pl.mdreview.api.RenderedDiff
+import pl.mdreview.render.Theme
 import java.awt.Color
 import java.util.UUID
 
@@ -65,7 +66,7 @@ object HtmlPage {
             "--md-font" to "'${UIUtil.getLabelFont().family}', system-ui, sans-serif",
             "--md-font-size" to "${UIUtil.getLabelFont().size}px",
             "--md-mono-font" to "'${scheme.editorFontName}', monospace",
-        )
+        ) + Theme.alertVariables(dark)
         return ":root { color-scheme: ${if (dark) "dark" else "light"}; " +
             vars.entries.joinToString(" ") { "${it.key}: ${it.value};" } + " }"
     }

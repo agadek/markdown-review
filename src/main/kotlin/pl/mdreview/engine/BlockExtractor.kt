@@ -1,5 +1,12 @@
 package pl.mdreview.engine
 
+import org.commonmark.ext.autolink.AutolinkExtension
+import org.commonmark.ext.footnotes.FootnoteDefinition
+import org.commonmark.ext.footnotes.FootnoteReference
+import org.commonmark.ext.footnotes.FootnotesExtension
+import org.commonmark.ext.gfm.alerts.Alert
+import org.commonmark.ext.gfm.alerts.AlertTitle
+import org.commonmark.ext.gfm.alerts.AlertsExtension
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.ext.gfm.tables.TableBlock
 import org.commonmark.ext.gfm.tables.TableBody
@@ -42,6 +49,9 @@ object BlockExtractor {
         TablesExtension.create(),
         StrikethroughExtension.create(),
         TaskListItemsExtension.create(),
+        AutolinkExtension.create(),
+        FootnotesExtension.create(),
+        AlertsExtension.create(),
     )
 
     private val parser: Parser = Parser.builder()
@@ -120,6 +130,8 @@ object BlockExtractor {
                 is FencedCodeBlock -> visitFencedCode(node, ctx)
                 is IndentedCodeBlock -> visitCodeLines(node, node.literal, node.sourceSpans, null, ctx)
                 is TableBlock -> visitTable(node, ctx)
+                is FootnoteDefinition -> out += footnote(node, ctx)
+                is Alert -> visitAlert(node, ctx)
                 else -> Unit // link reference definitions and other non-visual blocks
             }
         }
@@ -158,6 +170,45 @@ object BlockExtractor {
                 node = node,
                 level = node.level,
             )
+        }
+
+        /** A footnote definition is one block; its paragraphs are rendered one after another, like a list item's. */
+        private fun footnote(node: FootnoteDefinition, ctx: BlockContext): Block {
+            val content = generateSequence(node.firstChild) { it.next }.toList()
+            val raw = raw(node.sourceSpans)
+            return Block(
+                kind = BlockKind.FOOTNOTE,
+                key = keyPrefix(BlockKind.FOOTNOTE, ctx) + collapse(raw),
+                plainText = content.joinToString(" ") { plainText(it) },
+                rawText = raw,
+                source = range(node.sourceSpans),
+                context = ctx,
+                node = node,
+                renderNodes = content,
+            )
+        }
+
+        /**
+         * An alert is a quote with a title: the marker line becomes an [BlockKind.ALERT] block keyed by the
+         * type, and the content is flattened like a quote's, so changing only the type modifies the title.
+         */
+        private fun visitAlert(node: Alert, ctx: BlockContext) {
+            val inner = ctx.copy(quoteDepth = ctx.quoteDepth + 1, alert = ctx.alert ?: node.type)
+            val marker = node.sourceSpans.firstOrNull()
+            out += Block(
+                kind = BlockKind.ALERT,
+                key = keyPrefix(BlockKind.ALERT, inner) + node.type,
+                plainText = alertTitle(node.type),
+                rawText = marker?.let(::slice).orEmpty(),
+                source = range(listOfNotNull(marker)),
+                context = inner,
+                node = node,
+            )
+            var child = node.firstChild
+            while (child != null) {
+                if (child !is AlertTitle) visit(child, inner)
+                child = child.next
+            }
         }
 
         private fun visitList(list: ListBlock, ctx: BlockContext) {
@@ -291,6 +342,10 @@ object BlockExtractor {
         }
     }
 
+    /** Title GitHub shows for an alert type, for example "Note" for `NOTE`. */
+    fun alertTitle(type: String): String =
+        AlertsExtension.STANDARD_TYPES[type] ?: type.lowercase().replaceFirstChar { it.uppercase() }
+
     private fun keyPrefix(kind: BlockKind, ctx: BlockContext): String = buildString {
         append(kind.name).append(':')
         if (ctx.quoteDepth > 0) append("q").append(ctx.quoteDepth).append(':')
@@ -302,8 +357,8 @@ object BlockExtractor {
 
     /**
      * Visible text of a node, as the renderer emits it: [Text] and [Code] literals, line breaks as
-     * spaces, a space between table cells. Image alt text is skipped because the HTML renderer
-     * writes it into an attribute.
+     * spaces, a space between table cells, footnote references as `[^label]`. Image alt text is
+     * skipped because the HTML renderer writes it into an attribute.
      */
     fun plainTextWithOffsets(node: Node): PlainText {
         val sb = StringBuilder()
@@ -324,6 +379,11 @@ object BlockExtractor {
             override fun visit(image: Image) = Unit
 
             override fun visit(customNode: CustomNode) {
+                if (customNode is FootnoteReference) {
+                    offsets[customNode] = sb.length
+                    sb.append("[^").append(customNode.label).append(']')
+                    return
+                }
                 if (customNode is TableCell && customNode.previous != null) sb.append(' ')
                 visitChildren(customNode)
             }

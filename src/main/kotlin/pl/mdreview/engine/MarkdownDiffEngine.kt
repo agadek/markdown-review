@@ -1,6 +1,7 @@
 package pl.mdreview.engine
 
 import com.github.difflib.DiffUtils
+import org.commonmark.ext.footnotes.FootnoteDefinition
 
 /**
  * Compares two Markdown documents block by block.
@@ -158,6 +159,10 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
                     else -> 0.0
                 }
             }
+            // Only the type changed: the same alert.
+            BlockKind.ALERT -> return MIN_SCORE
+            // Footnotes are identified by their label.
+            BlockKind.FOOTNOTE -> return if (footnoteLabel(l) == footnoteLabel(r)) s + 1.0 else 0.0
             // A renamed heading at the same level, with no other heading around, is the same heading.
             BlockKind.HEADING -> if (bothLone && l.level == r.level) return maxOf(s, MIN_SCORE)
             else -> Unit
@@ -168,6 +173,8 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
 
     private fun firstCell(block: Block): String =
         block.rawText.trim().removePrefix("|").substringBefore('|').trim()
+
+    private fun footnoteLabel(block: Block): String? = (block.node as? FootnoteDefinition)?.label
 
     private fun compatible(l: Block, r: Block): Boolean {
         if (l.kind != r.kind) return false

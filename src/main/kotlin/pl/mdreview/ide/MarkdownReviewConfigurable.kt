@@ -6,8 +6,10 @@ import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.bindValue
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toNullableProperty
+import pl.mdreview.api.DiffOptions
 
 /** Settings | Tools | Markdown Review (FR-11). */
 class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.message("settings.display.name")) {
@@ -26,6 +28,11 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
             }
             row {
                 checkBox(MarkdownReviewBundle.message("toggle.collapse.unchanged")).bindSelected(settings::collapseUnchanged)
+            }
+            row(MarkdownReviewBundle.message("settings.pairing.threshold")) {
+                spinner(DiffOptions.MIN_PAIRING_THRESHOLD..DiffOptions.MAX_PAIRING_THRESHOLD, 0.05)
+                    .bindValue(settings::pairingThreshold)
+                    .comment(MarkdownReviewBundle.message("settings.pairing.threshold.comment", DiffOptions.DEFAULT_PAIRING_THRESHOLD))
             }
             row {
                 checkBox(MarkdownReviewBundle.message("settings.load.remote.images")).bindSelected(settings::loadRemoteImages)

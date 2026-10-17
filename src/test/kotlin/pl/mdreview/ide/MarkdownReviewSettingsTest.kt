@@ -17,6 +17,15 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertEquals(2_048, settings.largeFileKilobytes)
         assertFalse(settings.loadRemoteImages)
         assertTrue(settings.renderMermaid)
+        assertEquals(DiffOptions.DEFAULT_PAIRING_THRESHOLD, settings.pairingThreshold)
+    }
+
+    fun `test pairing threshold stays in range`() {
+        val settings = MarkdownReviewSettings()
+        settings.pairingThreshold = 2.0
+        assertEquals(DiffOptions.MAX_PAIRING_THRESHOLD, settings.pairingThreshold)
+        settings.pairingThreshold = -1.0
+        assertEquals(DiffOptions.MIN_PAIRING_THRESHOLD, settings.pairingThreshold)
     }
 
     fun `test state survives serialization`() {
@@ -28,6 +37,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
             largeFileKilobytes = 64
             loadRemoteImages = true
             renderMermaid = false
+            pairingThreshold = 0.7
             appliedDefaultViewer = DefaultViewer.TEXT
         }
         val element = XmlSerializer.serialize(settings.state)
@@ -41,6 +51,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertEquals(64, restored.largeFileKilobytes)
         assertTrue(restored.loadRemoteImages)
         assertFalse(restored.renderMermaid)
+        assertEquals(0.7, restored.pairingThreshold)
         assertEquals(DefaultViewer.TEXT, restored.appliedDefaultViewer)
     }
 
@@ -52,8 +63,16 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
             renderMermaid = false
             largeFileLines = 100
             largeFileKilobytes = 3
+            pairingThreshold = 0.3
         }
-        assertEquals(DiffOptions(ignoreWhitespace = true, collapseUnchanged = false, loadRemoteImages = true, renderMermaid = false),
+        assertEquals(
+            DiffOptions(
+                ignoreWhitespace = true,
+                collapseUnchanged = false,
+                loadRemoteImages = true,
+                renderMermaid = false,
+                pairingThreshold = 0.3,
+            ),
             settings.options(),
         )
         assertEquals(SizeLimit(100, 3 * 1024L), LargeFiles.limit(settings))

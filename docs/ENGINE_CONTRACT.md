@@ -14,7 +14,9 @@ The `pl.mdreview.api` package does not depend on the IntelliJ Platform.
 `RenderRequest(left, right, mode, options, leftBaseUri, rightBaseUri)`: texts with `\n` line separators, `null` = the file does not exist;
 `mode` = `SIDE_BY_SIDE` or `MERGED`; `options.ignoreWhitespace` (FR-7), `options.collapseUnchanged`,
 `options.loadRemoteImages` (NFR-8, default `false`: remote `src` in raw HTML is blanked),
-`options.renderMermaid` (P2.8, default `true`: each ` ```mermaid ` fence is one block; `false` diffs it line by line).
+`options.renderMermaid` (P2.8, default `true`: each ` ```mermaid ` fence is one block; `false` diffs it line by line),
+`options.pairingThreshold` (minimum word similarity for a removed and an added block to pair as one modified block;
+default `DiffOptions.DEFAULT_PAIRING_THRESHOLD`, halved for a block that is the only one of its kind in its window).
 `leftBaseUri` / `rightBaseUri` (optional): URI of the directory holding each side's file, ending with `/`
 (`file:///home/me/project/docs/`). Relative image paths on that side resolve against it; `null` keeps them as written.
 Absolute URLs, root-relative paths (`/img.png`) and fragments are never rewritten.
@@ -75,7 +77,7 @@ with an **Open Text Viewer** button instead.
   report `canShow = false` for files above the limit, then reopens the request, which falls back to the text viewer.
 - Settings | Tools | Markdown Review (`MarkdownReviewSettings`, stored in `markdownReview.xml`): the default viewer,
   `ignoreWhitespace`, `collapseUnchanged`, the large-file limits (lines, KB), loading remote images, rendering
-  Mermaid diagrams and `showBlockActions`.
+  Mermaid diagrams, `showBlockActions` and the pairing threshold.
 - Per-block buttons (FR-12): the page's script adds `.mdr-actions` with `mdr-revert` (writes the left version into
   the right document) and, in the side-by-side view, `mdr-apply` (writes the right version into the left document)
   to every block with an `edit` region, only for sides whose `DocumentContent` can be made writable and that the

@@ -19,7 +19,11 @@ class CoreMarkdownDiffRenderer : MarkdownDiffRenderer {
 
     override fun render(request: RenderRequest): RenderedDiff {
         val engine = MarkdownDiffEngine(
-            DiffOptions(ignoreWhitespace = request.options.ignoreWhitespace, mermaidDiagrams = request.options.renderMermaid),
+            DiffOptions(
+                ignoreWhitespace = request.options.ignoreWhitespace,
+                mermaidDiagrams = request.options.renderMermaid,
+                pairingThreshold = request.options.pairingThreshold,
+            ),
         )
         val left = request.left.orEmpty()
         val right = request.right.orEmpty()

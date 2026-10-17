@@ -1,6 +1,7 @@
 package pl.mdreview.engine
 
 import org.commonmark.node.Node
+import pl.mdreview.api.DiffOptions.Companion.DEFAULT_PAIRING_THRESHOLD
 
 enum class BlockKind {
     HEADING,
@@ -82,7 +83,7 @@ data class DiffOptions(
     /** Ignore all whitespace differences when deciding whether two blocks are equal. */
     val ignoreWhitespace: Boolean = false,
     /** Minimum word similarity (0..1) for a removed and an added block to count as one modified block. */
-    val pairingThreshold: Double = 0.5,
+    val pairingThreshold: Double = DEFAULT_PAIRING_THRESHOLD,
     /** Keep each ` ```mermaid ` fence as one [BlockKind.MERMAID] block instead of one block per line. */
     val mermaidDiagrams: Boolean = true,
 )

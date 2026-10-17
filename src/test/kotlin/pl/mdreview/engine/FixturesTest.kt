@@ -402,4 +402,53 @@ class FixturesTest {
         assertEquals(2, Regex("<details class=\"mdr-mermaid-source\">").findAll(html).count())
         assertContains(html, "X --&gt; Y --&gt;")
     }
+
+    /** [changes] with the engine run at [threshold], plus the statuses the core renderer reports at that threshold. */
+    private fun changesAt(case: String, threshold: Double): List<String> {
+        val engine = MarkdownDiffEngine(DiffOptions(pairingThreshold = threshold))
+        val result = engine.diff(read(case, "old.md"), read(case, "new.md")).changes.map {
+            val b = (it.right ?: it.left)!!
+            "${it.status} ${b.kind} ${b.plainText.trim().take(24).trim()}".trim()
+        }
+        val rendered = CoreMarkdownDiffRenderer().render(
+            RenderRequest(read(case, "old.md"), read(case, "new.md"), ViewMode.SIDE_BY_SIDE, ApiDiffOptions(pairingThreshold = threshold)),
+        ).changes.map { it.status.name }
+        assertEquals(result.map { it.substringBefore(' ') }, rendered, "renderer passes the threshold to the engine")
+        return result
+    }
+
+    @Test
+    fun `37 pairing threshold decides which rewritten paragraphs pair`() {
+        assertEquals(
+            listOf(
+                "MODIFIED PARAGRAPH The build runs every nig",
+                "MODIFIED PARAGRAPH Release notes are genera",
+                "MODIFIED PARAGRAPH All tests must pass on W",
+                "REMOVED PARAGRAPH Contributors sign the li",
+                "ADDED PARAGRAPH Questions go to the disc",
+            ),
+            changesAt("37-pairing-threshold", 0.3),
+        )
+        assertEquals(
+            listOf(
+                "MODIFIED PARAGRAPH The build runs every nig",
+                "REMOVED PARAGRAPH Release notes are writte",
+                "REMOVED PARAGRAPH Tests must pass on Linux",
+                "REMOVED PARAGRAPH Contributors sign the li",
+                "ADDED PARAGRAPH Release notes are genera",
+                "ADDED PARAGRAPH All tests must pass on W",
+                "ADDED PARAGRAPH Questions go to the disc",
+            ),
+            changesAt("37-pairing-threshold", 0.7),
+        )
+    }
+
+    @Test
+    fun `38 a lone rewritten paragraph needs half the threshold`() {
+        assertEquals(listOf("MODIFIED PARAGRAPH Download the ZIP file an"), changesAt("38-pairing-threshold-lone", 0.3))
+        assertEquals(
+            listOf("REMOVED PARAGRAPH Install the plugin from", "ADDED PARAGRAPH Download the ZIP file an"),
+            changesAt("38-pairing-threshold-lone", 0.7),
+        )
+    }
 }

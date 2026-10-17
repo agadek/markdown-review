@@ -38,3 +38,5 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 26-relative-images | relative image paths resolved against each side's directory |
 | 27-mermaid | Mermaid diagram with a renamed edge label and an added node: one modified diagram, line diff behind a toggle |
 | 28-mermaid-diagrams | Mermaid diagrams: unchanged, changed, removed, added, and one whose new source does not parse |
+| 37-pairing-threshold | rewritten paragraphs of different similarity, expectations at pairing thresholds 0.3 and 0.7 |
+| 38-pairing-threshold-lone | one rewritten paragraph alone on each side, which pairs at half the threshold |

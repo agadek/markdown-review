@@ -32,6 +32,7 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         var loadRemoteImages: Boolean = false
         var renderMermaid: Boolean = true
         var showBlockActions: Boolean = true
+        var pairingThreshold: Double = DiffOptions.DEFAULT_PAIRING_THRESHOLD
 
         /** The [defaultViewer] last written into IntelliJ's diff tool order, see [DefaultViewerOrder]. */
         var appliedDefaultViewer: DefaultViewer? = null
@@ -86,6 +87,11 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         get() = state.showBlockActions
         set(value) { state.showBlockActions = value }
 
+    /** How similar a removed and an added block must be to show as one modified block (see [DiffOptions.pairingThreshold]). */
+    var pairingThreshold: Double
+        get() = state.pairingThreshold.coerceIn(DiffOptions.MIN_PAIRING_THRESHOLD, DiffOptions.MAX_PAIRING_THRESHOLD)
+        set(value) { state.pairingThreshold = value.coerceIn(DiffOptions.MIN_PAIRING_THRESHOLD, DiffOptions.MAX_PAIRING_THRESHOLD) }
+
     var appliedDefaultViewer: DefaultViewer?
         get() = state.appliedDefaultViewer
         set(value) { state.appliedDefaultViewer = value }
@@ -95,6 +101,7 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         collapseUnchanged = collapseUnchanged,
         loadRemoteImages = loadRemoteImages,
         renderMermaid = renderMermaid,
+        pairingThreshold = pairingThreshold,
     )
 
     /**

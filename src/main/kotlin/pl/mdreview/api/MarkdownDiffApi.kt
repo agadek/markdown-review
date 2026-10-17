@@ -42,7 +42,19 @@ data class DiffOptions(
      * layer's page script draws; off, the fence is diffed line by line like any other code block.
      */
     val renderMermaid: Boolean = true,
-)
+    /**
+     * Minimum word similarity (0..1) for a removed and an added block to be shown as one modified block.
+     * Lower pairs more rewritten blocks; higher shows more of them as removed plus added.
+     */
+    val pairingThreshold: Double = DEFAULT_PAIRING_THRESHOLD,
+) {
+    companion object {
+        /** The one place the default pairing threshold is defined; the engine and the settings use it. */
+        const val DEFAULT_PAIRING_THRESHOLD = 0.5
+        const val MIN_PAIRING_THRESHOLD = 0.05
+        const val MAX_PAIRING_THRESHOLD = 0.95
+    }
+}
 
 /**
  * @property left Markdown of the left (old) side, `null` when that file does not exist (new file).

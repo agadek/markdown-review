@@ -17,6 +17,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - name: Test and build the plugin
         run: ./gradlew test buildPlugin
+      - name: Report render benchmark
+        if: always()
+        run: cat build/reports/benchmark/render.md >> "$GITHUB_STEP_SUMMARY" || true
       - uses: actions/upload-artifact@v4
         with:
           name: markdown-review-plugin

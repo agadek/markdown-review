@@ -1,10 +1,12 @@
 package pl.mdreview.engine
 
 import pl.mdreview.api.RenderRequest
+import pl.mdreview.api.DiffOptions as ApiDiffOptions
 import pl.mdreview.api.ViewMode
 import pl.mdreview.render.CoreMarkdownDiffRenderer
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -24,6 +26,10 @@ class FixturesTest {
     }
 
     private fun diff(case: String) = engine.diff(read(case, "old.md"), read(case, "new.md"))
+
+    private fun html(case: String, mode: ViewMode = ViewMode.SIDE_BY_SIDE): String = CoreMarkdownDiffRenderer().render(
+        RenderRequest(read(case, "old.md"), read(case, "new.md"), mode, ApiDiffOptions(collapseUnchanged = false)),
+    ).bodyHtml
 
     /** One line per changed block: status, kind and the first words of its text. */
     private fun changes(case: String): List<String> = diff(case).changes.map {
@@ -75,6 +81,12 @@ class FixturesTest {
         )
         val levelOnly = diff("05-headings").changes[1]
         assertTrue(levelOnly.inline.all { it.status == DiffStatus.EQUAL })
+        // The level change is spelled out under the new heading, like other notes, in both views.
+        val note = "mdr-meta-changed\" data-change-note=\"h3 \u2192 h4\""
+        assertEquals(1, html("05-headings").windowed(note.length).count { it == note })
+        assertEquals(1, html("05-headings", ViewMode.MERGED).windowed(note.length).count { it == note })
+        // Headings whose level did not change get no note.
+        assertEquals(1, Regex("data-change-note").findAll(html("05-headings", ViewMode.MERGED)).count())
     }
 
     @Test
@@ -125,12 +137,46 @@ class FixturesTest {
 
     @Test
     fun `09 links and images`() {
-        // Link text and URL change, image src change, added image. A changed reference definition
-        // is not detected: the paragraph using it compares equal.
+        // Link text and URL change, image src change, added image, and the paragraph whose
+        // `[mp]` reference definition changed.
         assertEquals(
-            listOf("MODIFIED PARAGRAPH See the platform documen", "MODIFIED PARAGRAPH", "ADDED PARAGRAPH"),
+            listOf(
+                "MODIFIED PARAGRAPH See the platform documen",
+                "MODIFIED PARAGRAPH",
+                "ADDED PARAGRAPH",
+                "MODIFIED PARAGRAPH Reference link: Marketpl",
+            ),
             changes("09-links-images"),
         )
+        val sbs = html("09-links-images")
+        // Same text, new URL: marked on both sides, the tooltip names the other side's URL.
+        assertContains(
+            sbs,
+            "<a rel=\"nofollow\" href=\"https://github.com/example/markdown-review\" class=\"mdr-link-changed\" " +
+                "title=\"New URL: https://github.com/example/markdown-review-plugin\">repository</a>",
+        )
+        assertContains(
+            sbs,
+            "<a rel=\"nofollow\" href=\"https://github.com/example/markdown-review-plugin\" class=\"mdr-link-changed\" " +
+                "title=\"Previous URL: https://github.com/example/markdown-review\">repository</a>",
+        )
+        // A link whose text changed is shown by the word diff, not marked.
+        assertContains(sbs, "<a rel=\"nofollow\" href=\"https://plugins.jetbrains.com/docs/intellij/\"><ins class=\"mdr-ins\">platform </ins>")
+        // Image with the same alt text and a new src keeps its title and adds the old src.
+        assertContains(
+            sbs,
+            "<img src=\"docs/screenshot-v2.png\" alt=\"Screenshot\" title=\"Diff view\nPrevious URL: docs/screenshot.png\" class=\"mdr-img-changed\" />",
+        )
+        assertContains(
+            sbs,
+            "<a rel=\"nofollow\" href=\"https://plugins.jetbrains.com/plugin/00000-markdown-review\" class=\"mdr-link-changed\" " +
+                "title=\"Previous URL: https://plugins.jetbrains.com/\">Marketplace</a>",
+        )
+        assertFalse(sbs.contains("diagram.svg\" alt=\"Diagram\" class"))
+        // The merged view shows the new side only, with the previous URL.
+        val merged = html("09-links-images", ViewMode.MERGED)
+        assertEquals(3, Regex("mdr-(link|img)-changed").findAll(merged).count())
+        assertFalse(merged.contains("New URL:"))
     }
 
     @Test
@@ -278,5 +324,24 @@ class FixturesTest {
         )
         val content = diff("25-alerts").blocks.filter { it.right?.context?.alert == "IMPORTANT" }.map { it.status }
         assertEquals(listOf(DiffStatus.ADDED, DiffStatus.EQUAL), content)
+    }
+
+    @Test
+    fun `26 relative images resolve against the fixture directory`() {
+        val case = "26-relative-images"
+        assertEquals(listOf("MODIFIED PARAGRAPH", "MODIFIED PARAGRAPH Text under the images, r"), changes(case))
+        val dir = File(javaClass.getResource("/fixtures/$case/old.md")!!.toURI()).parentFile
+        val base = dir.toURI().toString().let { if (it.endsWith("/")) it else "$it/" }
+        val html = CoreMarkdownDiffRenderer().render(
+            RenderRequest(read(case, "old.md"), read(case, "new.md"), ViewMode.SIDE_BY_SIDE, leftBaseUri = base, rightBaseUri = base),
+        ).bodyHtml
+        val logo = Regex("<img src=\"([^\"]+)\" alt=\"Logo\"").findAll(html).map { it.groupValues[1] }.toList()
+        assertEquals(2, logo.size)
+        logo.forEach { src ->
+            assertTrue(src.startsWith("file:///"), src)
+            assertTrue(File(java.net.URI(src)).isFile, "$src should point at the fixture's image")
+        }
+        assertFalse(html.contains("mdr-img-changed"))
+        assertContains(html, "<img src=\"https://example.com/badge.svg\" alt=\"Remote\"")
     }
 }

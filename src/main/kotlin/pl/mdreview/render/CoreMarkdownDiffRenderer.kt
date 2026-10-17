@@ -21,7 +21,12 @@ class CoreMarkdownDiffRenderer : MarkdownDiffRenderer {
         val engine = MarkdownDiffEngine(DiffOptions(ignoreWhitespace = request.options.ignoreWhitespace))
         val diff = engine.diff(request.left.orEmpty(), request.right.orEmpty())
         val renderer = DiffHtmlRenderer(
-            RenderOptions(mode = request.mode, collapseUnchanged = request.options.collapseUnchanged),
+            RenderOptions(
+                mode = request.mode,
+                collapseUnchanged = request.options.collapseUnchanged,
+                leftBaseUri = request.leftBaseUri,
+                rightBaseUri = request.rightBaseUri,
+            ),
         )
         val blocks = diff.blocks.mapIndexed { i, b ->
             BlockInfo(i, status(b.status), b.left?.source?.let(::lines), b.right?.source?.let(::lines))

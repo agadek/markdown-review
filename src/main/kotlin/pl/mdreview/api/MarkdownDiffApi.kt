@@ -41,13 +41,50 @@ data class DiffOptions(
  * @property left Markdown of the left (old) side, `null` when that file does not exist (new file).
  *   Line separators are already normalized to `\n`.
  * @property right Markdown of the right (new) side, `null` when that file does not exist (deleted file).
+ * @property leftBaseUri URI of the directory holding the left file, ending with `/` (for example
+ *   `file:///home/me/project/docs/`). Relative image paths on that side resolve against it; `null`
+ *   leaves them as written.
+ * @property rightBaseUri the same for the right side.
  */
 data class RenderRequest(
     val left: String?,
     val right: String?,
     val mode: ViewMode,
     val options: DiffOptions = DiffOptions(),
+    val leftBaseUri: String? = null,
+    val rightBaseUri: String? = null,
 )
+
+/**
+ * Size above which a side is not rendered (NFR-4): the viewer shows a notice with a way to the text
+ * viewer instead of a panel that freezes on a huge document.
+ */
+data class SizeLimit(val maxLines: Int = DEFAULT_MAX_LINES, val maxBytes: Long = DEFAULT_MAX_BYTES) {
+
+    /** True when [text] has more than [maxLines] lines or more than [maxBytes] bytes in UTF-8. */
+    fun exceeds(text: CharSequence?): Boolean {
+        if (text == null) return false
+        // Every char takes at least one byte, and at most three (a surrogate pair takes four for two chars).
+        if (text.length > maxBytes) return true
+        var lines = 1
+        var bytes = 0L
+        for (c in text) {
+            if (c == '\n' && ++lines > maxLines) return true
+            bytes += when {
+                c.code < 0x80 -> 1
+                c.code < 0x800 || c.isSurrogate() -> 2
+                else -> 3
+            }
+        }
+        return bytes > maxBytes
+    }
+
+    companion object {
+        const val DEFAULT_MAX_LINES = 20_000
+        const val DEFAULT_MAX_BYTES = 2L * 1024 * 1024
+        val DEFAULT = SizeLimit()
+    }
+}
 
 enum class BlockStatus { EQUAL, MODIFIED, REMOVED, ADDED }
 

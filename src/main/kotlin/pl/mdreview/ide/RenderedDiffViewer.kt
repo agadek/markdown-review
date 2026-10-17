@@ -1,5 +1,7 @@
 package pl.mdreview.ide
 
+import com.intellij.diff.DiffContext
+import com.intellij.diff.DiffContextEx
 import com.intellij.diff.FrameDiffTool
 import com.intellij.diff.contents.DiffContent
 import com.intellij.diff.contents.DocumentContent
@@ -25,12 +27,15 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.Alarm
 import com.intellij.util.concurrency.AppExecutorUtil
+import com.intellij.ui.components.panels.VerticalLayout
 import com.intellij.util.ui.JBUI
 import pl.mdreview.api.BlockInfo
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.RenderedDiff
+import pl.mdreview.api.SizeLimit
 import pl.mdreview.api.ViewMode
 import java.awt.BorderLayout
+import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -40,6 +45,7 @@ import javax.swing.JPanel
  * and Ctrl/Cmd+click navigation to the source (FR-14).
  */
 class RenderedDiffViewer(
+    private val context: DiffContext,
     request: ContentDiffRequest,
     private val mode: ViewMode,
 ) : FrameDiffTool.DiffViewer {
@@ -47,12 +53,14 @@ class RenderedDiffViewer(
     private val disposable = Disposer.newDisposable("Markdown Review viewer")
     private val contents: List<DiffContent> = request.contents
     private val documents = contents.map { (it as? DocumentContent)?.document }
+    private val baseUris = contents.map(::baseUri)
     private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, disposable)
     private val statusLabel = JBLabel(MarkdownReviewBundle.message("status.loading"))
     private val browserPanel = MarkdownDiffPanel(disposable) { side, line ->
         ApplicationManager.getApplication().invokeLater({ navigateToSource(side, line) }, ModalityState.any())
     }
     private val root = RootPanel()
+    private val largeFileNotice by lazy { createLargeFileNotice() }
 
     private var changes: List<BlockInfo> = emptyList()
     private var currentChange = -1
@@ -92,9 +100,10 @@ class RenderedDiffViewer(
 
     private fun render() {
         val options = MarkdownReviewSettings.options()
-        ReadAction.nonBlocking<RenderedDiff> {
+        ReadAction.nonBlocking<RenderedDiff?> {
+            if (RenderedMarkdownDiffTool.isTooLarge(contents)) return@nonBlocking null
             val texts = documents.map { it?.let { doc -> StringUtil.convertLineSeparators(doc.text) } }
-            RendererProvider.renderer.render(RenderRequest(texts[0], texts[1], mode, options))
+            RendererProvider.renderer.render(RenderRequest(texts[0], texts[1], mode, options, baseUris[0], baseUris[1]))
         }
             .expireWith(disposable)
             .coalesceBy(this)
@@ -102,11 +111,44 @@ class RenderedDiffViewer(
             .submit(AppExecutorUtil.getAppExecutorService())
     }
 
-    private fun show(diff: RenderedDiff) {
+    private fun show(diff: RenderedDiff?) {
+        if (diff == null) {
+            changes = emptyList()
+            currentChange = -1
+            root.showContent(largeFileNotice)
+            statusLabel.text = MarkdownReviewBundle.message("status.too.large")
+            return
+        }
+        root.showContent(browserPanel.component)
         changes = diff.changes
         currentChange = currentChange.coerceAtMost(changes.size - 1)
         browserPanel.show(diff)
         updateStatus()
+    }
+
+    /** Shown instead of the page when a side is above [SizeLimit.DEFAULT] (NFR-4). */
+    private fun createLargeFileNotice(): JComponent {
+        val limit = SizeLimit.DEFAULT
+        val message = JBLabel(
+            MarkdownReviewBundle.message("large.file.message", limit.maxLines, limit.maxBytes / (1024 * 1024)),
+        )
+        val panel = JPanel(VerticalLayout(JBUI.scale(8))).apply { border = JBUI.Borders.empty(16) }
+        panel.add(message)
+        if (context is DiffContextEx) {
+            panel.add(JButton(MarkdownReviewBundle.message("large.file.open.text")).apply {
+                addActionListener {
+                    context.putUserData(RenderedMarkdownDiffTool.TEXT_VIEWER_FOR_LARGE_FILES, true)
+                    context.reopenDiffRequest()
+                }
+            })
+        }
+        return panel
+    }
+
+    /** The directory of a local file as a `file:` URI ending with `/`, for resolving relative images. */
+    private fun baseUri(content: DiffContent): String? {
+        val dir = (content as? DocumentContent)?.highlightFile?.takeIf { it.isInLocalFileSystem }?.parent ?: return null
+        return runCatching { dir.toNioPath().toUri().toString() }.getOrNull()?.let { if (it.endsWith("/")) it else "$it/" }
     }
 
     private fun updateStatus() {
@@ -138,6 +180,14 @@ class RenderedDiffViewer(
     private inner class RootPanel : JPanel(BorderLayout()), UiDataProvider {
         init {
             add(browserPanel.component, BorderLayout.CENTER)
+        }
+
+        fun showContent(content: JComponent) {
+            if (content.parent === this) return
+            removeAll()
+            add(content, BorderLayout.CENTER)
+            revalidate()
+            repaint()
         }
 
         override fun uiDataSnapshot(sink: DataSink) {

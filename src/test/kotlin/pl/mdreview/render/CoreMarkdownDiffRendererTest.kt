@@ -61,4 +61,13 @@ class CoreMarkdownDiffRendererTest {
         )
         assertTrue("<details" !in open.bodyHtml)
     }
+
+    @Test
+    fun `base uris reach the renderer`() {
+        val result = renderer.render(
+            RenderRequest("![x](x.png)", "![x](y.png)", ViewMode.SIDE_BY_SIDE, leftBaseUri = "file:///a/", rightBaseUri = "file:///b/"),
+        )
+        assertContains(result.bodyHtml, "src=\"file:///a/x.png\"")
+        assertContains(result.bodyHtml, "src=\"file:///b/y.png\"")
+    }
 }

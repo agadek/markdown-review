@@ -43,6 +43,7 @@ The text diff is IntelliJ's built-in viewer, one click away in the diff window's
 - Load remote images (NFR-8), off by default.
 - Render Mermaid diagrams, on by default.
 - Show revert and apply buttons on changed blocks (FR-12).
+- Support links to GitHub Sponsors and Ko-fi, at the bottom of the page.
 
 ### Supported Markdown
 

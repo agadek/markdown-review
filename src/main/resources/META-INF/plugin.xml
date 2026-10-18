@@ -21,15 +21,16 @@
           <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with and how readily a
               rewritten block is paired with its old version.</li>
         </ul>
+        <b>Free for noncommercial use and maintained in spare time.</b> If it saves you time in reviews, help cover the
+        AI token budget behind new features and fixes on <a href="https://github.com/sponsors/agadek">&#10084; GitHub Sponsors</a> or
+        <a href="https://ko-fi.com/gadek">&#9749; Ko-fi</a>.
+        <br/><br/>
         Requires an IDE with JCEF (the default in JetBrains Runtime); without it the text diff stays in place.
         <br/><br/>
         Free for noncommercial use under the
         <a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial License 1.0.0</a>.
         Commercial use requires a separate license from the author.
         Source code and issues: <a href="https://github.com/agadek/markdown-review">github.com/agadek/markdown-review</a>.
-        <br/><br/>
-        Like the plugin? You can support its development through
-        <a href="https://github.com/sponsors/agadek">GitHub Sponsors</a> or <a href="https://ko-fi.com/gadek">Ko-fi</a>.
     ]]></description>
 
     <change-notes><![CDATA[

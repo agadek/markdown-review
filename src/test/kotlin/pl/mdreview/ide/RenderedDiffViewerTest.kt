@@ -7,7 +7,10 @@ import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.testFramework.PlatformTestUtil
+import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.ui.jcef.JBCefApp
 import pl.mdreview.api.BlockStatus
@@ -20,12 +23,15 @@ class RenderedDiffViewerTest : BasePlatformTestCase() {
 
     private class RecordingView : RenderedDiffView {
         val shown = mutableListOf<RenderedDiff>()
+        val visited = mutableListOf<Int>()
         override val component: JComponent = JPanel()
         override fun show(diff: RenderedDiff) {
             shown += diff
         }
         override fun refreshTheme() = Unit
-        override fun goTo(blockIdx: Int) = Unit
+        override fun goTo(blockIdx: Int) {
+            visited += blockIdx
+        }
     }
 
     private fun waitFor(condition: () -> Boolean) {
@@ -87,5 +93,39 @@ class RenderedDiffViewerTest : BasePlatformTestCase() {
         } finally {
             viewer.dispose()
         }
+    }
+
+    private fun AnAction.isEnabledNow(): Boolean = TestActionEvent.createTestEvent(this).also { update(it) }.presentation.isEnabled
+
+    private fun AnAction.perform() = actionPerformed(TestActionEvent.createTestEvent(this))
+
+    fun `test change navigation moves between changes and stops at the ends`() {
+        val request = SimpleDiffRequest(
+            "test",
+            content("p.md", "one\n\ntwo\n\nthree\n"),
+            content("q.md", "one changed\n\ntwo\n\nthree changed\n"),
+            "p",
+            "q",
+        )
+        val (viewer, view) = open(request, ViewMode.SIDE_BY_SIDE)
+        waitFor { view.shown.isNotEmpty() }
+        val changes = view.shown.last().changes.map { it.idx }
+        assertEquals(2, changes.size)
+        val (next, previous) = viewer.navigationActions
+
+        assertTrue(next.isEnabledNow())
+        assertFalse(previous.isEnabledNow())
+        next.perform()
+        next.perform()
+        assertFalse(next.isEnabledNow())
+        assertTrue(previous.isEnabledNow())
+        previous.perform()
+        assertEquals(listOf(changes[0], changes[1], changes[0]), view.visited)
+    }
+
+    fun `test change navigation is bound to the shortcuts of the diff actions`() {
+        val request = SimpleDiffRequest("test", content("r.md", "a\n"), content("s.md", "b\n"), "r", "s")
+        val (viewer, _) = open(request, ViewMode.SIDE_BY_SIDE)
+        assertSameElements(ActionUtil.getActions(viewer.component), viewer.navigationActions)
     }
 }

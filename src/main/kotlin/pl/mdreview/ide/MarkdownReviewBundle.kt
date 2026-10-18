@@ -6,7 +6,7 @@ import org.jetbrains.annotations.PropertyKey
 
 private const val BUNDLE = "messages.MarkdownReviewBundle"
 
-object MarkdownReviewBundle : DynamicBundle(BUNDLE) {
+object MarkdownReviewBundle : DynamicBundle(MarkdownReviewBundle::class.java, BUNDLE) {
     @Nls
     fun message(@PropertyKey(resourceBundle = BUNDLE) key: String, vararg params: Any): String = getMessage(key, *params)
 }

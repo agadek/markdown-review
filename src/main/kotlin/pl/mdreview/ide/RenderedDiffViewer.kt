@@ -8,14 +8,11 @@ import com.intellij.diff.contents.DocumentContent
 import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.requests.ContentDiffRequest
-import com.intellij.diff.tools.util.DiffDataKeys
-import com.intellij.diff.tools.util.PrevNextDifferenceIterable
 import com.intellij.diff.util.LineCol
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.DataSink
-import com.intellij.openapi.actionSystem.UiDataProvider
+import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -26,6 +23,8 @@ import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
+import com.intellij.openapi.keymap.KeymapUtil
+import com.intellij.openapi.project.DumbAwareAction
 import com.intellij.openapi.project.DumbAwareToggleAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.text.StringUtil
@@ -47,7 +46,7 @@ import javax.swing.JPanel
 
 /**
  * One rendered diff inside IntelliJ's diff window. Recomputes off the EDT whenever a side's document
- * changes (debounced), keeps change navigation (F7 / Shift+F7 through [DiffDataKeys.PREV_NEXT_DIFFERENCE_ITERABLE])
+ * changes (debounced), keeps change navigation (F7 / Shift+F7, see [ChangeNavigation]),
  * Ctrl/Cmd+click navigation to the source (FR-14) and the per-block revert and apply buttons (FR-12).
  */
 class RenderedDiffViewer(
@@ -90,6 +89,9 @@ class RenderedDiffViewer(
             .subscribe(EditorColorsManager.TOPIC, EditorColorsListener { browserPanel.refreshTheme() })
         browserPanel.onBlockAction { action ->
             ApplicationManager.getApplication().invokeLater({ performBlockAction(action) }, ModalityState.any())
+        }
+        for (action in navigationActions) {
+            action.registerCustomShortcutSet(KeymapUtil.getActiveKeymapShortcuts(action.shortcutActionId), root, disposable)
         }
         scheduleRender(0)
         return FrameDiffTool.ToolbarComponents().apply {
@@ -231,14 +233,31 @@ class RenderedDiffViewer(
         content.getNavigatable(LineCol(line, 0))?.takeIf { it.canNavigate() }?.navigate(true)
     }
 
-    private val differenceIterable = object : PrevNextDifferenceIterable {
-        override fun canGoNext() = currentChange < changes.size - 1
-        override fun canGoPrev() = currentChange > 0
-        override fun goNext() = goToChange(currentChange + 1)
-        override fun goPrev() = goToChange(currentChange - 1)
+    /** Next and previous change, bound to the viewer's component under the shortcuts of the platform's actions. */
+    internal val navigationActions = listOf(ChangeNavigation(forward = true), ChangeNavigation(forward = false))
+
+    /**
+     * Moves between the changes of the rendered page. The diff window's own Next/Previous Difference actions only
+     * reach a viewer through internal API, so the viewer binds their shortcuts (F7 / Shift+F7 by default) to these
+     * actions on its component, which take precedence while focus is inside it. At the first or last change the
+     * action is disabled and the shortcut falls through to the diff window, which moves on to the next file.
+     */
+    internal inner class ChangeNavigation(private val forward: Boolean) : DumbAwareAction() {
+        val shortcutActionId: String = if (forward) IdeActions.ACTION_NEXT_DIFF else IdeActions.ACTION_PREVIOUS_DIFF
+
+        override fun getActionUpdateThread() = ActionUpdateThread.EDT
+
+        override fun update(e: AnActionEvent) {
+            e.presentation.isEnabled = if (forward) currentChange < changes.size - 1 else currentChange > 0
+        }
+
+        override fun actionPerformed(e: AnActionEvent) {
+            val target = currentChange + if (forward) 1 else -1
+            if (target in changes.indices) goToChange(target)
+        }
     }
 
-    private inner class RootPanel : JPanel(BorderLayout()), UiDataProvider {
+    private inner class RootPanel : JPanel(BorderLayout()) {
         init {
             add(browserPanel.component, BorderLayout.CENTER)
         }
@@ -249,10 +268,6 @@ class RenderedDiffViewer(
             add(content, BorderLayout.CENTER)
             revalidate()
             repaint()
-        }
-
-        override fun uiDataSnapshot(sink: DataSink) {
-            sink[DiffDataKeys.PREV_NEXT_DIFFERENCE_ITERABLE] = differenceIterable
         }
     }
 

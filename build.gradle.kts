@@ -1,4 +1,5 @@
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel
 
 plugins {
     id("java")
@@ -63,8 +64,12 @@ intellijPlatform {
         }
     }
     pluginVerification {
+        // JetBrains Marketplace rejects internal API usages, so they fail the build like compatibility problems do.
+        failureLevel = listOf(FailureLevel.COMPATIBILITY_PROBLEMS, FailureLevel.INTERNAL_API_USAGES)
         ides {
+            // The oldest supported IDE, and a recent one: the platform marks more API as internal over time.
             create("IC", "2025.1.3")
+            create("IU", "2026.1")
         }
     }
 }

@@ -35,6 +35,10 @@ object WordDiff {
         val b = words(right)
         if (a.isEmpty() && b.isEmpty()) return 1.0
         if (a.isEmpty() || b.isEmpty()) return 0.0
+        return dice(a, b)
+    }
+
+    private fun dice(a: List<String>, b: List<String>): Double {
         val counts = a.groupingBy { it }.eachCount().toMutableMap()
         var common = 0
         for (w in b) {
@@ -45,6 +49,17 @@ object WordDiff {
             }
         }
         return 2.0 * common / (a.size + b.size)
+    }
+
+    /**
+     * [similarity] over content words only, so two short texts are not paired just because they share
+     * "the", "of" or "a". Falls back to all words when either text has no content words.
+     */
+    fun pairingSimilarity(left: String, right: String): Double {
+        val a = words(left).filterNot { it in COMMON_WORDS }
+        val b = words(right).filterNot { it in COMMON_WORDS }
+        if (a.isEmpty() || b.isEmpty()) return similarity(left, right)
+        return dice(a, b)
     }
 
     private fun words(text: String): List<String> =
@@ -109,4 +124,10 @@ object WordDiff {
         return around.any { it.status == DiffStatus.REMOVED && it.text.isNotBlank() } &&
             around.any { it.status == DiffStatus.ADDED && it.text.isNotBlank() }
     }
+
+    /** English function words that carry no meaning on their own (NFR-10: documents are mostly English). */
+    private val COMMON_WORDS = setOf(
+        "a", "an", "the", "and", "or", "but", "if", "of", "to", "in", "on", "at", "by", "for", "with", "from", "as",
+        "is", "are", "was", "were", "be", "been", "it", "its", "this", "that", "these", "those", "into", "than", "then",
+    )
 }

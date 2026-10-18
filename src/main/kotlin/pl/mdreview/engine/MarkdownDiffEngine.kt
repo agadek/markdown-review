@@ -147,7 +147,7 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
      */
     private fun pairScore(l: Block, r: Block, lone: Boolean, bothLone: Boolean): Double {
         if (!compatible(l, r)) return 0.0
-        val s = WordDiff.similarity(l.plainText, r.plainText)
+        val s = WordDiff.pairingSimilarity(l.plainText, r.plainText)
         when (l.kind) {
             // A fence only carries the language; a changed fence is always the same code block.
             BlockKind.CODE_FENCE -> return MIN_SCORE

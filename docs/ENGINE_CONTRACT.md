@@ -15,7 +15,8 @@ The `pl.mdreview.api` package does not depend on the IntelliJ Platform.
 `mode` = `SIDE_BY_SIDE` or `MERGED`; `options.ignoreWhitespace` (FR-7), `options.collapseUnchanged`,
 `options.loadRemoteImages` (NFR-8, default `false`: remote `src` in raw HTML is blanked),
 `options.renderMermaid` (P2.8, default `true`: each ` ```mermaid ` fence is one block; `false` diffs it line by line),
-`options.pairingThreshold` (minimum word similarity for a removed and an added block to pair as one modified block;
+`options.pairingThreshold` (minimum similarity of the content words, leaving out function words such as "the", for
+a removed and an added block to pair as one modified block;
 default `DiffOptions.DEFAULT_PAIRING_THRESHOLD`, halved for a block that is the only one of its kind in its window).
 `leftBaseUri` / `rightBaseUri` (optional): URI of the directory holding each side's file, ending with `/`
 (`file:///home/me/project/docs/`). Relative image paths on that side resolve against it; `null` keeps them as written.

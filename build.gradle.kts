@@ -64,8 +64,15 @@ intellijPlatform {
         }
     }
     pluginVerification {
-        // JetBrains Marketplace rejects internal API usages, so they fail the build like compatibility problems do.
-        failureLevel = listOf(FailureLevel.COMPATIBILITY_PROBLEMS, FailureLevel.INTERNAL_API_USAGES)
+        // What JetBrains Marketplace reports for an upload fails the build, so it is caught before release.
+        failureLevel = listOf(
+            FailureLevel.COMPATIBILITY_PROBLEMS,
+            FailureLevel.INTERNAL_API_USAGES,
+            FailureLevel.OVERRIDE_ONLY_API_USAGES,
+            FailureLevel.NON_EXTENDABLE_API_USAGES,
+            FailureLevel.SCHEDULED_FOR_REMOVAL_API_USAGES,
+            FailureLevel.DEPRECATED_API_USAGES,
+        )
         ides {
             // The oldest supported IDE, and a recent one: the platform marks more API as internal over time.
             create("IC", "2025.1.3")

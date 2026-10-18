@@ -2,7 +2,6 @@ package pl.mdreview.ide
 
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.dsl.builder.RightGap
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindItem
@@ -10,6 +9,7 @@ import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindValue
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.toNullableProperty
+import com.intellij.ui.dsl.listCellRenderer.textListCellRenderer
 import pl.mdreview.api.DiffOptions
 import java.util.Hashtable
 import java.util.Locale
@@ -22,7 +22,7 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
 
     override fun createPanel(): DialogPanel = panel {
         row(MarkdownReviewBundle.message("settings.default.viewer")) {
-            comboBox(DefaultViewer.entries, SimpleListCellRenderer.create("") { MarkdownReviewBundle.message(it.messageKey) })
+            comboBox(DefaultViewer.entries, textListCellRenderer<DefaultViewer?> { it?.let { viewer -> MarkdownReviewBundle.message(viewer.messageKey) } })
                 .bindItem(settings::defaultViewer.toNullableProperty())
                 .comment(MarkdownReviewBundle.message("settings.default.viewer.comment"))
         }

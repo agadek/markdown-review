@@ -31,6 +31,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.util.Alarm
+import com.intellij.util.OpenSourceUtil
 import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.ui.components.panels.VerticalLayout
 import com.intellij.util.ui.JBUI
@@ -230,7 +231,7 @@ class RenderedDiffViewer(
 
     private fun navigateToSource(side: String, line: Int) {
         val content = contents[if (side == "left") 0 else 1] as? DocumentContent ?: return
-        content.getNavigatable(LineCol(line, 0))?.takeIf { it.canNavigate() }?.navigate(true)
+        content.getNavigatable(LineCol(line, 0))?.let { OpenSourceUtil.navigate(true, it) }
     }
 
     /** Next and previous change, bound to the viewer's component under the shortcuts of the platform's actions. */

@@ -9,11 +9,17 @@
           <li><b>Rendered side-by-side diff:</b> headings, paragraphs, list items, table rows and code blocks aligned
               in rows; removed blocks on red, added on green, changed words highlighted.</li>
           <li><b>Merged view:</b> one column, removals struck through, additions in green.</li>
+          <li><b>Mermaid diagrams</b> drawn offline, in the editor's light or dark theme; a changed diagram shows the
+              old and the new drawing, with a toggle for the line diff of its source.</li>
+          <li><b>Per-block revert and apply:</b> buttons on a changed block copy it to the other side, through the
+              IDE document, so Undo works.</li>
           <li><b>Text diff</b> one click away in the diff window's viewer switcher.</li>
           <li>Works for local changes (Commit window), file history, branch comparison and pull requests, plus
               <i>Compare Markdown Files...</i> for any two files.</li>
-          <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts.</li>
-          <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with.</li>
+          <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts, plus HTML
+              blocks, <code>&lt;details&gt;</code>, HTML comments, hard line breaks and emoji shortcodes.</li>
+          <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with and how readily a
+              rewritten block is paired with its old version.</li>
         </ul>
         Requires an IDE with JCEF (the default in JetBrains Runtime); without it the text diff stays in place.
         <br/><br/>
@@ -24,18 +30,25 @@
     ]]></description>
 
     <change-notes><![CDATA[
-        <h3>0.2.0</h3>
+        <h3>1.0.0</h3>
+        First release on JetBrains Marketplace.
         <ul>
-          <li>Settings page (Settings | Tools | Markdown Review) and a choice of the default viewer for Markdown diffs.</li>
-          <li>GitHub Flavored Markdown: task lists, strikethrough, autolinks, footnotes and alerts.</li>
-          <li>A link or image whose target changed, and a heading whose level changed, are marked as changed.</li>
-          <li>Relative images resolve against the file; remote images load only when enabled in settings.</li>
-          <li>Very large files show a notice with an Open Text Viewer button instead of rendering; the limit is set in settings.</li>
-          <li>Plugin icon.</li>
-        </ul>
-        <h3>0.1.0</h3>
-        <ul>
-          <li>First version: rendered side-by-side and merged diff viewers for Markdown files.</li>
+          <li>Rendered side-by-side and merged diff viewers for Markdown files in IntelliJ's own diff window: Commit
+              window, file history, branch comparison, pull requests and <i>Compare Markdown Files...</i>.</li>
+          <li>Settings page (Settings | Tools | Markdown Review) with the default viewer for Markdown diffs, whitespace
+              and collapse options, large-file limits, remote images, Mermaid and the pairing threshold.</li>
+          <li>Pairing threshold: how similar a removed and an added block must be to show as one modified block with
+              a word diff.</li>
+          <li>Per-block revert and apply buttons on changed blocks of an editable side, each one Undo step.</li>
+          <li>Mermaid diagrams drawn offline in the editor's theme, with a "Show source changes" toggle on a changed
+              diagram.</li>
+          <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts.</li>
+          <li>HTML blocks and inline HTML (sanitized), <code>&lt;details&gt;</code> sections, HTML comments, hard line
+              breaks, thematic breaks and emoji shortcodes.</li>
+          <li>A changed link target, heading level or alert type is marked as a change.</li>
+          <li>Relative images resolve against the file; remote images load only when enabled.</li>
+          <li>Very large files show a notice with an Open Text Viewer button instead of rendering.</li>
+          <li>Plugin icon for light and dark themes.</li>
         </ul>
     ]]></change-notes>
 

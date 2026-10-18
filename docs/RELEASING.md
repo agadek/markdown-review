@@ -55,7 +55,9 @@ moderation. With the four variables exported locally:
 ```
 
 Upload `build/distributions/markdown-review-<version>-signed.zip` on <https://plugins.jetbrains.com/plugin/add>,
-fill in the license and source code fields (next section), and wait for approval.
+fill in the license and source code fields (next section), add the screenshots from `docs/screenshots/`
+(`side-by-side-light.png`, `merged-light.png` and their dark versions), and wait for approval. The page text comes from
+`<description>` and `<change-notes>` in `plugin.xml`, the icon from `pluginIcon.svg` and `pluginIcon_dark.svg`.
 
 ### 6. License on the listing
 
@@ -99,4 +101,3 @@ These details come from JetBrains' docs as of October 2026 or are assumptions; c
 - Base64 decoding of `CERTIFICATE_CHAIN` and `PRIVATE_KEY`: taken from the signing docs, not tried with real secrets.
 - Whether the first version on the `beta` channel can be the hand-uploaded one, or the first upload must go to the
   default channel. The docs say only that the first upload is manual.
-- The dark plugin icon (`pluginIcon_dark.svg`) is not part of this change; P2.9 lists it for the listing.

@@ -7,7 +7,7 @@ around the project itself (contributors, sponsorship, licensing).
 Unlike phase 2, the order here should follow what 1.0 users ask for. The milestones below are the default order;
 P3.1 is the place to re-rank them once the first feedback arrives.
 
-Requirement IDs (FR-*, NFR-*) refer to the specification.
+Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 
 ## Overview
 

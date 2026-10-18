@@ -2,6 +2,7 @@ name: Release
 
 # Publishes a signed build to JetBrains Marketplace when a version tag is pushed.
 # v0.2.0 goes to the default (stable) channel; a pre-release tag such as v0.2.0-beta goes to the "beta" channel.
+# The signed zip is also attached to a GitHub release for the tag.
 # The required secrets and the one-time setup are described in docs/RELEASING.md.
 
 on:
@@ -9,7 +10,7 @@ on:
     tags: ['v*']
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: release
@@ -53,6 +54,15 @@ jobs:
           PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
         run: ./gradlew publishPlugin
+      - name: Attach the signed zip to a GitHub release for the tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's/^pluginVersion=//p' gradle.properties)
+          zip="build/distributions/markdown-review-$version-signed.zip"
+          prerelease=$([ "${version#*-}" != "$version" ] && echo --prerelease || true)
+          gh release create "$GITHUB_REF_NAME" "$zip" $prerelease --verify-tag --title "Markdown Review $version" \
+            --notes "Signed build of $version, also published on JetBrains Marketplace." || gh release upload "$GITHUB_REF_NAME" "$zip" --clobber
       - uses: actions/upload-artifact@v4
         with:
           name: markdown-review-${{ github.ref_name }}

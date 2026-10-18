@@ -84,6 +84,18 @@ so it is given as a custom license URL rather than picked from a list:
 The workflow fails if the tag does not equal `v<pluginVersion>` or a secret is missing. It runs the tests, builds,
 runs `verifyPlugin`, signs and publishes. The signed zip is also kept as a workflow artifact.
 
+The signed zip is also attached to a GitHub release named after the tag.
+
+## Sharing a build without publishing
+
+**Actions | Preview release | Run workflow** builds, verifies and signs the current `main` (it needs the three signing
+secrets, not `PUBLISH_TOKEN`) and attaches the signed zip to a GitHub pre-release tagged `preview-<pluginVersion>`.
+Nothing goes to Marketplace, and the tag does not start with `v`, so the Release workflow does not run. The download
+link stays the same for a version:
+`https://github.com/agadek/markdown-review/releases/download/preview-<version>/markdown-review-<version>-signed.zip`.
+Running the workflow again replaces the zip. Install it with **Settings | Plugins | ⚙ | Install Plugin from Disk...**;
+such an install does not update itself, so once the plugin is on Marketplace, uninstall it and install from there.
+
 Channels: a version with a suffix (`0.2.0-beta`, `0.2.0-beta.2`) goes to the `beta` channel, a plain version
 (`1.0.0`) to the default one. Beta users add the custom plugin repository
 `https://plugins.jetbrains.com/plugins/beta/list` in **Settings | Plugins | ⚙ | Manage Plugin Repositories**.

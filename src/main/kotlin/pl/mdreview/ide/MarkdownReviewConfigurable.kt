@@ -3,6 +3,7 @@ package pl.mdreview.ide
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.ui.DialogPanel
 import com.intellij.ui.SimpleListCellRenderer
+import com.intellij.ui.dsl.builder.RightGap
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
@@ -65,6 +66,14 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
             row(MarkdownReviewBundle.message("settings.large.file.size")) {
                 intTextField(1..Int.MAX_VALUE).bindIntText(settings::largeFileKilobytes)
             }.comment(MarkdownReviewBundle.message("settings.large.file.comment"))
+        }
+        group(MarkdownReviewBundle.message("settings.group.support")) {
+            row {
+                icon(MarkdownReviewIcons.SPONSORS).gap(RightGap.SMALL)
+                browserLink(MarkdownReviewBundle.message("settings.support.sponsors"), MarkdownReviewIcons.SPONSORS_URL)
+                icon(MarkdownReviewIcons.KO_FI).gap(RightGap.SMALL)
+                browserLink(MarkdownReviewBundle.message("settings.support.kofi"), MarkdownReviewIcons.KO_FI_URL)
+            }.rowComment(MarkdownReviewBundle.message("settings.support.comment"))
         }
     }
 

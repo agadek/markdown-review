@@ -2,6 +2,9 @@
 
 # Markdown Review
 
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/agadek)
+[![Support on Ko-fi](https://img.shields.io/badge/Support-Ko--fi-ff5e5b?logo=kofi&logoColor=white)](https://ko-fi.com/gadek)
+
 An IntelliJ IDEA plugin for reviewing changes to Markdown files in **rendered** form instead of as raw text.
 
 ## Why
@@ -71,8 +74,9 @@ Developed with the help of Claude Code, with every change reviewed by the mainta
 
 ## Support
 
-Markdown Review is free for noncommercial use and maintained in spare time. If it saves you time in reviews, you can
-support its development through [GitHub Sponsors](https://github.com/sponsors/agadek) or
+Markdown Review is free for noncommercial use and maintained in spare time. It is developed with the help of Claude
+Code, and sponsorships help cover the AI token budget that goes into new features and fixes. If the plugin saves you
+time in reviews, you can chip in through [GitHub Sponsors](https://github.com/sponsors/agadek) or
 [Ko-fi](https://ko-fi.com/gadek).
 
 ## License

@@ -12,6 +12,8 @@ Markdown Review shows the same comparison the way the document looks once render
 content, not the markup. The plugin does not open a window of its own: it adds new viewers to IntelliJ's regular
 diff window, so it works wherever the IDE shows a diff of an `.md` file.
 
+![Rendered side-by-side diff](docs/screenshots/side-by-side-light.png)
+
 ## What the plugin does
 
 - **Rendered side-by-side diff.** The left and right versions are rendered in two columns, with blocks (headings,
@@ -24,19 +26,29 @@ diff window, so it works wherever the IDE shows a diff of an `.md` file.
   A changed diagram shows the old and the new drawing side by side, with a "Show source changes" toggle for the line
   diff of its source. A diagram that does not parse shows Mermaid's error and its source.
 - **Text diff.** IntelliJ's built-in diff is always one click away in the diff window's viewer switcher.
-- **Per-block revert** (planned, M6). Arrows next to a block move it to the other side, like in the text diff, and a
-  double click lets you edit the block's raw Markdown. Changes go through the IDE document, so Undo works.
+- **Per-block revert and apply.** Buttons on a changed block copy it to the other side, like the arrows in the text
+  diff. They appear only on a side that can be edited (a local file, not a VCS revision), and each click goes through
+  the IDE document as one Undo step.
 
 The viewers work in the Commit window (Show Diff, Ctrl+D), in file history, when comparing with a branch and in pull
 request windows. Compare any two files with **Compare Markdown Files...** from the project view context menu or the
 Tools menu. F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.
 
+![Rendered merged diff in a dark theme](docs/screenshots/merged-dark.png)
+
 Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with (rendered side by side, rendered
 merged, or text) and holds the whitespace, collapse, pairing threshold, large-file, remote-image and Mermaid
 options.
 
-Status: early stage, see [PLAN.md](PLAN.md). The contract between the diff engine and the IDE layer is described in
-[docs/ENGINE_CONTRACT.md](docs/ENGINE_CONTRACT.md).
+Supported Markdown: CommonMark with GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks,
+footnotes, alerts), HTML blocks and inline HTML (sanitized), `<details>`, HTML comments, hard line breaks, emoji
+shortcodes, YAML front matter and Mermaid. The user interface is in English.
+
+Status: 1.0. What the plugin does and does not do is described in [docs/SPECIFICATION.md](docs/SPECIFICATION.md),
+what comes next in [docs/PHASE3.md](docs/PHASE3.md), and releases in [docs/RELEASING.md](docs/RELEASING.md). The
+contract between the diff engine and the IDE layer is described in [docs/ENGINE_CONTRACT.md](docs/ENGINE_CONTRACT.md).
+The screenshots are rendered from [docs/screenshots/sample-old.md](docs/screenshots/sample-old.md) and
+[sample-new.md](docs/screenshots/sample-new.md).
 
 ## Requirements
 

@@ -8,7 +8,7 @@ plugin compatible with IC 2025.1.3.
 Phase 2 takes the plugin from a working build to a 1.0 release on JetBrains Marketplace. It finishes what phase 1
 left open in M4 and M5, adds the M6 block actions, and closes a few engine gaps found in the fixtures.
 
-Requirement IDs (FR-*, NFR-*) refer to the specification.
+Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 
 ## Overview
 

@@ -1,0 +1,60 @@
+name: Preview release
+
+# Builds and signs the plugin and attaches the signed zip to a GitHub pre-release, without publishing to JetBrains
+# Marketplace. Use it to share a build (for example while Marketplace moderation is pending). The tag is
+# preview-<pluginVersion>, which does not start with "v", so the Release workflow does not run.
+# Run it from Actions | Preview release | Run workflow. Running it again replaces the zip on the same release.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: preview-release
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Check that the signing secrets are set
+        env:
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+        run: |
+          missing=0
+          for name in CERTIFICATE_CHAIN PRIVATE_KEY PRIVATE_KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then echo "::error::Secret $name is not set"; missing=1; fi
+          done
+          exit $missing
+      - name: Test, build and verify the plugin
+        run: ./gradlew test buildPlugin verifyPlugin
+      - name: Sign the plugin
+        env:
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+        run: ./gradlew signPlugin
+      - name: Attach the signed zip to the preview-<version> pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's/^pluginVersion=//p' gradle.properties)
+          tag="preview-$version"
+          zip="build/distributions/markdown-review-$version-signed.zip"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            gh release upload "$tag" "$zip" --clobber
+          else
+            gh release create "$tag" "$zip" --prerelease --target "$GITHUB_SHA" --title "Markdown Review $version (preview)" \
+              --notes "Signed build of $version for installing by hand: Settings | Plugins | ⚙ | Install Plugin from Disk..., then restart the IDE. This build does not update itself; once the plugin is on JetBrains Marketplace, uninstall it and install the plugin from there."
+          fi
+          echo "Download: https://github.com/$GITHUB_REPOSITORY/releases/download/$tag/$(basename "$zip")" >> "$GITHUB_STEP_SUMMARY"

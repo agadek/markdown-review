@@ -72,7 +72,8 @@ Developed with the help of Claude Code, with every change reviewed by the mainta
 ## Support
 
 Markdown Review is free for noncommercial use and maintained in spare time. If it saves you time in reviews, you can
-support its development through [GitHub Sponsors](https://github.com/sponsors/agadek).
+support its development through [GitHub Sponsors](https://github.com/sponsors/agadek) or
+[Ko-fi](https://ko-fi.com/gadek).
 
 ## License
 

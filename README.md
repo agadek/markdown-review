@@ -69,6 +69,11 @@ JCEF the plugin stays out of the way: the diff window keeps the text viewer.
 
 Developed with the help of Claude Code, with every change reviewed by the maintainer.
 
+## Support
+
+Markdown Review is free for noncommercial use and maintained in spare time. If it saves you time in reviews, you can
+support its development through [GitHub Sponsors](https://github.com/sponsors/agadek).
+
 ## License
 
 The plugin bundles [Mermaid](https://github.com/mermaid-js/mermaid) 11.17.2 (MIT License); see

@@ -48,3 +48,4 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 36-emoji | known and unknown emoji shortcodes |
 | 37-pairing-threshold | rewritten paragraphs of different similarity, expectations at pairing thresholds 0.3 and 0.7 |
 | 38-pairing-threshold-lone | one rewritten paragraph alone on each side, which pairs at half the threshold |
+| 39-short-list-items | a short list item replaced by another that shares only common words, which must not pair |

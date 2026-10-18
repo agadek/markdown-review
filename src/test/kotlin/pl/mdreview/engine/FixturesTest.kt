@@ -447,11 +447,22 @@ class FixturesTest {
 
     @Test
     fun `38 a lone rewritten paragraph needs half the threshold`() {
-        assertEquals(listOf("MODIFIED PARAGRAPH Download the ZIP file an"), changesAt("38-pairing-threshold-lone", 0.3))
+        assertEquals(listOf("MODIFIED PARAGRAPH Download the plugin as a"), changesAt("38-pairing-threshold-lone", 0.3))
         assertEquals(
-            listOf("REMOVED PARAGRAPH Install the plugin from", "ADDED PARAGRAPH Download the ZIP file an"),
+            listOf("REMOVED PARAGRAPH Install the plugin from", "ADDED PARAGRAPH Download the plugin as a"),
             changesAt("38-pairing-threshold-lone", 0.7),
         )
+    }
+
+    @Test
+    fun `39 a replaced short list item does not pair through common words`() {
+        val expected = listOf(
+            "MODIFIED LIST_ITEM Side-by-side view with h",
+            "REMOVED LIST_ITEM Export the diff to a PDF",
+            "ADDED LIST_ITEM Revert a single block of",
+        )
+        assertEquals(expected, changesAt("39-short-list-items", ApiDiffOptions.DEFAULT_PAIRING_THRESHOLD))
+        assertEquals(expected, changesAt("39-short-list-items", 0.7))
     }
 
     private fun added(d: DiffBlock) = d.inline.filter { it.status == DiffStatus.ADDED }.joinToString("") { it.text }.trim()

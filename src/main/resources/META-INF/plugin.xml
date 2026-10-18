@@ -5,6 +5,10 @@
     <description><![CDATA[
         Review changes to Markdown files in <b>rendered</b> form, right inside IntelliJ's own diff window,
         instead of reading raw markup.
+        <br/><br/>
+        A text diff of Markdown shows syntax, not content: a rewritten paragraph turns into scattered red and green
+        lines, a table edit becomes shifted <code>|</code> characters, and re-indenting a list looks like everything
+        changed. Markdown Review shows the comparison the way the document looks once rendered.
         <ul>
           <li><b>Rendered side-by-side diff:</b> headings, paragraphs, list items, table rows and code blocks aligned
               in rows; removed blocks on red, added on green, changed words highlighted.</li>
@@ -16,16 +20,20 @@
           <li><b>Text diff</b> one click away in the diff window's viewer switcher.</li>
           <li>Works for local changes (Commit window), file history, branch comparison and pull requests, plus
               <i>Compare Markdown Files...</i> for any two files.</li>
+          <li>F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.</li>
           <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts, plus HTML
-              blocks, <code>&lt;details&gt;</code>, HTML comments, hard line breaks and emoji shortcodes.</li>
+              blocks, <code>&lt;details&gt;</code>, HTML comments, hard line breaks, emoji shortcodes and YAML front
+              matter.</li>
           <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with and how readily a
-              rewritten block is paired with its old version.</li>
+              rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
+              large-file, remote-image and Mermaid options.</li>
         </ul>
         <b>Free for noncommercial use and maintained in spare time.</b> If it saves you time in reviews, help cover the
         AI token budget behind new features and fixes on <a href="https://github.com/sponsors/agadek">&#10084; GitHub Sponsors</a> or
         <a href="https://ko-fi.com/gadek">&#9749; Ko-fi</a>.
         <br/><br/>
-        Requires an IDE with JCEF (the default in JetBrains Runtime); without it the text diff stays in place.
+        Requires an IntelliJ-based IDE 2025.1 or newer with JCEF (the default in JetBrains Runtime); without JCEF the
+        text diff stays in place.
         <br/><br/>
         Free for noncommercial use under the
         <a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial License 1.0.0</a>.

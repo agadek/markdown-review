@@ -42,6 +42,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>1.0.1</h3>
+        <ul>
+          <li>Expanded plugin description: why a rendered diff helps, navigation between changes and the supported IDE
+              versions.</li>
+        </ul>
         <h3>1.0.0</h3>
         First release on JetBrains Marketplace.
         <ul>

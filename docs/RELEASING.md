@@ -82,9 +82,10 @@ so it is given as a custom license URL rather than picked from a list:
    ```
 
 The workflow fails if the tag does not equal `v<pluginVersion>` or a secret is missing. It runs the tests, builds,
-runs `verifyPlugin`, signs and publishes. The signed zip is also kept as a workflow artifact.
-
-The signed zip is also attached to a GitHub release named after the tag.
+runs `verifyPlugin`, signs, attaches the signed zip to a GitHub release named after the tag, and then publishes to
+Marketplace. The release is created before the upload, so it has the plugin zip even when the upload fails, for
+example with "already contains version" when that version was uploaded by hand. The signed zip is also kept as a
+workflow artifact.
 
 ## Sharing a build without publishing
 

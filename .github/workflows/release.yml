@@ -47,13 +47,14 @@ jobs:
           exit $missing
       - name: Test, build and verify the plugin
         run: ./gradlew test buildPlugin verifyPlugin
-      - name: Sign and publish to JetBrains Marketplace
+      - name: Sign the plugin
         env:
           CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
-          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
-        run: ./gradlew publishPlugin
+        run: ./gradlew signPlugin
+      # Before publishing, so the release page offers the plugin even when the Marketplace upload fails (for example
+      # when the version was already uploaded by hand); otherwise it shows only GitHub's source code archives.
       - name: Attach the signed zip to a GitHub release for the tag
         env:
           GH_TOKEN: ${{ github.token }}
@@ -63,7 +64,15 @@ jobs:
           prerelease=$([ "${version#*-}" != "$version" ] && echo --prerelease || true)
           gh release create "$GITHUB_REF_NAME" "$zip" $prerelease --verify-tag --title "Markdown Review $version" \
             --notes "Signed build of $version, also published on JetBrains Marketplace." || gh release upload "$GITHUB_REF_NAME" "$zip" --clobber
+      - name: Publish to JetBrains Marketplace
+        env:
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+        run: ./gradlew publishPlugin
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: markdown-review-${{ github.ref_name }}
           path: build/distributions/*.zip

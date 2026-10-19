@@ -3,7 +3,8 @@ name: Preview release
 # Builds and signs the plugin and attaches the signed zip to a GitHub pre-release, without publishing to JetBrains
 # Marketplace. Use it to share a build (for example while Marketplace moderation is pending). The tag is
 # preview-<pluginVersion>, which does not start with "v", so the Release workflow does not run.
-# Run it from Actions | Preview release | Run workflow. Running it again replaces the zip on the same release.
+# Run it from Actions | Preview release | Run workflow. Running it again moves the tag to the new commit and replaces the
+# zip on the same release.
 
 on:
   workflow_dispatch:
@@ -52,6 +53,9 @@ jobs:
           tag="preview-$version"
           zip="build/distributions/markdown-review-$version-signed.zip"
           if gh release view "$tag" > /dev/null 2>&1; then
+            # Move the tag to the commit just built, so the tag and its source archives match the attached zip.
+            git tag -f "$tag" "$GITHUB_SHA"
+            git push -f origin "refs/tags/$tag"
             gh release upload "$tag" "$zip" --clobber
           else
             gh release create "$tag" "$zip" --prerelease --target "$GITHUB_SHA" --title "Markdown Review $version (preview)" \

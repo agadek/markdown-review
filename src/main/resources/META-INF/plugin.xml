@@ -46,6 +46,8 @@
         <ul>
           <li>Expanded plugin description: why a rendered diff helps, navigation between changes and the supported IDE
               versions.</li>
+          <li>The rendered viewers have their own icons in the viewer switcher, which IntelliJ 2026.2 turned from a
+              drop-down into a row of icon buttons; before, they showed the text viewer's icon.</li>
         </ul>
         <h3>1.0.0</h3>
         First release on JetBrains Marketplace.

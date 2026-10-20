@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.ui.jcef.JBCefApp
 import org.intellij.plugins.markdown.lang.MarkdownFileType
+import javax.swing.Icon
 
 class MarkdownDiffToolsTest : BasePlatformTestCase() {
 
@@ -77,6 +78,23 @@ class MarkdownDiffToolsTest : BasePlatformTestCase() {
     fun `test tool names come from the bundle`() {
         assertEquals("Rendered Markdown (side by side)", RenderedSideBySideTool().name)
         assertEquals("Rendered Markdown (merged)", RenderedMergedTool().name)
+    }
+
+    fun `test each rendered viewer has its own switcher icon`() {
+        assertSame(MarkdownReviewIcons.RENDERED_SIDE_BY_SIDE, RenderedSideBySideTool().getIcon())
+        assertSame(MarkdownReviewIcons.RENDERED_MERGED, RenderedMergedTool().getIcon())
+        for (name in listOf("renderedSideBySide", "renderedMerged")) {
+            for (variant in listOf("", "_dark")) {
+                val path = "/pl/mdreview/icons/$name$variant.svg"
+                assertNotNull(path, MarkdownReviewIcons::class.java.getResource(path))
+            }
+        }
+    }
+
+    fun `test getIcon has the signature of FrameDiffTool getIcon in 2026_2`() {
+        // The platform calls it through the interface's default method, so only an exact JVM signature overrides it.
+        val method = RenderedMarkdownDiffTool::class.java.getMethod("getIcon")
+        assertEquals(Icon::class.java, method.returnType)
     }
 }
 

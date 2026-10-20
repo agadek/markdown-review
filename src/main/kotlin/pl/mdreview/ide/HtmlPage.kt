@@ -112,6 +112,12 @@ object HtmlPage {
         val modified = diffBg(DiffColors.DIFF_MODIFIED, if (dark) Color(0x385570) else Color(0xC2D8F2))
         // Removed blocks are red per spec, regardless of IntelliJ's grey "deleted" color.
         val removedRed = if (dark) Color(0x5C2B2B) else Color(0xF7D4D4)
+        val removedBg = if (isGrey(removed)) removedRed else removed
+        // Dark schemes give "modified" and "inserted" about the same lightness, so a green word inside a blue
+        // block barely stands out (Darcula: 1.04:1). In dark mode the block only gets a tint (its marker bar
+        // already says "modified") and the word marks get a saturated color of their own.
+        val modifiedBg = if (dark) ColorUtil.mix(bg, modified, 0.4) else modified
+        fun wordBg(c: Color) = if (dark) vivid(c) else ColorUtil.mix(c, fg, 0.15)
         val vars = mapOf(
             "--md-bg" to css(bg),
             "--md-fg" to css(fg),
@@ -119,12 +125,12 @@ object HtmlPage {
             "--md-border" to css(JBColor.border()),
             "--md-link" to css(JBUI.CurrentTheme.Link.Foreground.ENABLED),
             "--md-code-bg" to css(ColorUtil.mix(bg, fg, 0.06)),
-            "--md-removed-bg" to css(if (isGrey(removed)) removedRed else removed),
+            "--md-removed-bg" to css(removedBg),
             "--md-added-bg" to css(added),
-            "--md-modified-bg" to css(modified),
+            "--md-modified-bg" to css(modifiedBg),
             "--md-placeholder-bg" to css(ColorUtil.mix(bg, fg, 0.03)),
-            "--md-removed-word-bg" to css(ColorUtil.mix(if (isGrey(removed)) removedRed else removed, fg, 0.15)),
-            "--md-added-word-bg" to css(ColorUtil.mix(added, fg, 0.15)),
+            "--md-removed-word-bg" to css(wordBg(removedBg)),
+            "--md-added-word-bg" to css(wordBg(added)),
             "--md-font" to "'${UIUtil.getLabelFont().family}', system-ui, sans-serif",
             "--md-font-size" to "${UIUtil.getLabelFont().size}px",
             "--md-mono-font" to "'${scheme.editorFontName}', monospace",
@@ -134,6 +140,12 @@ object HtmlPage {
     }
 
     private fun isGrey(c: Color) = maxOf(c.red, c.green, c.blue) - minOf(c.red, c.green, c.blue) < 16
+
+    /** [c]'s hue, saturated and lightened enough to read as a word mark on a dark tinted block. */
+    internal fun vivid(c: Color): Color {
+        val hsb = Color.RGBtoHSB(c.red, c.green, c.blue, null)
+        return Color(Color.HSBtoRGB(hsb[0], maxOf(hsb[1], 0.6f), maxOf(hsb[2], 0.42f)))
+    }
 
     private fun css(c: Color) = "#" + ColorUtil.toHex(c)
 

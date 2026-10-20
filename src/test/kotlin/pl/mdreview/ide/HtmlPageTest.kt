@@ -32,4 +32,16 @@ class HtmlPageTest : BasePlatformTestCase() {
         assertFalse(html.contains("mdrDrawDiagrams("))
         assertEquals(1, Regex("<script nonce=").findAll(html).count())
     }
+
+    fun `test dark word marks are saturated and keep their hue`() {
+        val inserted = java.awt.Color(0x294436)
+        val word = HtmlPage.vivid(inserted)
+        val hsb = java.awt.Color.RGBtoHSB(word.red, word.green, word.blue, null)
+        val old = java.awt.Color.RGBtoHSB(inserted.red, inserted.green, inserted.blue, null)
+        assertEquals(old[0], hsb[0], 0.01f)
+        assertTrue(hsb[1] >= 0.59f && hsb[2] >= 0.41f)
+        // A color that is already vivid enough stays as it is.
+        val bright = java.awt.Color(0x2EA043)
+        assertEquals(bright.rgb and 0xF0F0F0, HtmlPage.vivid(bright).rgb and 0xF0F0F0)
+    }
 }

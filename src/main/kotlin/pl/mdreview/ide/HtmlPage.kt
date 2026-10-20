@@ -204,7 +204,7 @@ object HtmlPage {
     private const val BRIDGE_JS = """
         var mdr = (function() {
           function block(idx) { return document.querySelector('[data-idx="' + idx + '"]'); }
-          function box(el) { return el.getClientRects().length ? el : (el.firstElementChild || el); }
+          function box(el) { return el.getClientRects().length ? el : (el.querySelector(':scope > :not(.mdr-actions)') || el); }
           function reveal(el) {
             for (var p = el.parentElement; p; p = p.parentElement) if (p.tagName === 'DETAILS') p.open = true;
           }
@@ -272,7 +272,11 @@ object HtmlPage {
                   b.setAttribute('data-block-id', 'b' + blocks[i]);
                   box.appendChild(b);
                 }
-                el.appendChild(box);
+                // First child of the side the buttons change, so the block's text wraps around them (see diff.css).
+                var host = el.querySelector(':scope > .mdr-right') || el;
+                var first = host.firstElementChild;
+                if (!first || !/^(P|H[1-6]|UL|OL|LI|BLOCKQUOTE|DL)$/.test(first.tagName)) box.className += ' mdr-actions-overlay';
+                host.insertBefore(box, host.firstChild);
               }
             },
             restore: function(idx) {

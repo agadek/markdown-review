@@ -339,22 +339,34 @@ details.mdr-mermaid-source > summary {
 /* ---------- Per-block action buttons ---------- */
 /*
  * <div class="mdr-actions"><button class="mdr-revert" data-block-id="…">…</button></div>
- * inside .mdr-block (merged view) or .mdr-row (side by side). Visible on hover
- * and for .mdr-current. Clicks are handled by the generator's JS (JBCefJSQuery).
+ * as the first child of the block's .mdr-item (merged view) or of the row's right
+ * .mdr-side (side by side). Before text (paragraphs, headings, lists, quotes) it
+ * floats right, so the text wraps around the buttons instead of running under them;
+ * the space stays reserved while they are hidden, so nothing moves on hover. Code
+ * blocks, tables and diagrams would shrink beside a float, so there the box gets
+ * .mdr-actions-overlay and sits over the block's top-right corner instead.
+ * Visible on hover and for .mdr-current. Clicks are handled by the generator's JS
+ * (JBCefJSQuery).
  */
 .mdr-actions {
-  position: absolute;
-  top: 2px; right: 2px;
+  float: right;
+  position: relative;
+  margin: 2px 2px 2px 8px;
   display: flex; gap: 4px;
   opacity: 0;
   transition: opacity 0.1s;
   z-index: 1;
 }
+.mdr-actions.mdr-actions-overlay {
+  float: none;
+  position: absolute;
+  top: 2px; right: 2px;
+  margin: 0;
+}
 .mdr-block:hover > .mdr-actions,
 .mdr-row:hover .mdr-actions,
 .mdr-current .mdr-actions,
 .mdr-actions:focus-within { opacity: 1; }
-.mdr-sbs .mdr-row { position: relative; }
 
 .mdr-actions button {
   font: inherit;

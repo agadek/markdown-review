@@ -26,7 +26,8 @@
               matter.</li>
           <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with and how readily a
               rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
-              large-file, remote-image and Mermaid options.</li>
+              large-file, remote-image and Mermaid options. The diff colors are set per color scheme in
+              Settings | Editor | Color Scheme | Markdown Review.</li>
         </ul>
         <b>Free for noncommercial use and maintained in spare time.</b> If it saves you time in reviews, help cover the
         AI token budget behind new features and fixes on <a href="https://github.com/sponsors/agadek">&#10084; GitHub Sponsors</a> or
@@ -48,6 +49,8 @@
               versions.</li>
           <li>The rendered viewers have their own icons in the viewer switcher, which IntelliJ 2026.2 turned from a
               drop-down into a row of icon buttons; before, they showed the text viewer's icon.</li>
+          <li>Colors of added, removed and modified blocks and of changed words can be set per color scheme in
+              Settings | Editor | Color Scheme | Markdown Review.</li>
         </ul>
         <h3>1.0.0</h3>
         First release on JetBrains Marketplace.
@@ -88,6 +91,7 @@
         <applicationConfigurable parentId="tools" id="pl.mdreview.settings"
                                  instance="pl.mdreview.ide.MarkdownReviewConfigurable"
                                  key="settings.display.name"/>
+        <colorSettingsPage implementation="pl.mdreview.ide.MarkdownReviewColorSettingsPage"/>
         <postStartupActivity implementation="pl.mdreview.ide.DefaultViewerStartupActivity"/>
     </extensions>
 

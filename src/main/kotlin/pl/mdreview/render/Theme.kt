@@ -69,9 +69,9 @@ data class Theme(
             codeBackground = "#2b2d30",
             removedBackground = "#4a2a2c",
             addedBackground = "#29402f",
-            modifiedBackground = "#28344a",
-            removedWord = "#7a3b3e",
-            addedWord = "#3d6b47",
+            modifiedBackground = "#232a37",
+            removedWord = "#6b2b2b",
+            addedWord = "#2b6b4a",
         )
     }
 }

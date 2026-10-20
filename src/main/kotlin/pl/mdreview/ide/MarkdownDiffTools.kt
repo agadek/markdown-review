@@ -11,15 +11,28 @@ import com.intellij.openapi.util.Key
 import com.intellij.ui.jcef.JBCefApp
 import pl.mdreview.api.SizeLimit
 import pl.mdreview.api.ViewMode
+import javax.swing.Icon
 
 /**
  * Rendered viewers registered as `diff.DiffTool`, so they appear in the viewer switcher of every
  * IntelliJ diff window (commit, history, branch compare, PR review) next to the built-in text viewers.
  * Without JCEF they report `canShow = false` and IntelliJ keeps its text viewer (NFR-6).
  */
-abstract class RenderedMarkdownDiffTool(private val mode: ViewMode, private val nameKey: String) : FrameDiffTool {
+abstract class RenderedMarkdownDiffTool(
+    private val mode: ViewMode,
+    private val nameKey: String,
+    private val icon: Icon,
+) : FrameDiffTool {
 
     override fun getName(): String = MarkdownReviewBundle.message(nameKey)
+
+    /**
+     * Since 2026.2 the viewer switcher is a row of icon buttons with the name as tooltip, and `FrameDiffTool.getIcon()`
+     * defaults to the built-in side-by-side icon, so without this both rendered viewers look like the text viewer.
+     * Not `override`: the method does not exist in the 2025.1 platform the plugin compiles against, and older IDEs show
+     * a drop-down of names that never calls it.
+     */
+    fun getIcon(): Icon = icon
 
     override fun canShow(context: DiffContext, request: DiffRequest): Boolean {
         if (!accepts(request)) return false
@@ -56,6 +69,7 @@ abstract class RenderedMarkdownDiffTool(private val mode: ViewMode, private val 
     }
 }
 
-class RenderedSideBySideTool : RenderedMarkdownDiffTool(ViewMode.SIDE_BY_SIDE, "tool.side.by.side")
+class RenderedSideBySideTool :
+    RenderedMarkdownDiffTool(ViewMode.SIDE_BY_SIDE, "tool.side.by.side", MarkdownReviewIcons.RENDERED_SIDE_BY_SIDE)
 
-class RenderedMergedTool : RenderedMarkdownDiffTool(ViewMode.MERGED, "tool.merged")
+class RenderedMergedTool : RenderedMarkdownDiffTool(ViewMode.MERGED, "tool.merged", MarkdownReviewIcons.RENDERED_MERGED)

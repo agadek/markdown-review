@@ -47,6 +47,8 @@
         <ul>
           <li>Expanded plugin description: why a rendered diff helps, navigation between changes and the supported IDE
               versions.</li>
+          <li>The rendered viewers have their own icons in the viewer switcher, which IntelliJ 2026.2 turned from a
+              drop-down into a row of icon buttons; before, they showed the text viewer's icon.</li>
           <li>Colors of added, removed and modified blocks and of changed words can be set per color scheme in
               Settings | Editor | Color Scheme | Markdown Review.</li>
         </ul>

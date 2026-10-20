@@ -83,8 +83,12 @@ class MarkdownDiffToolsTest : BasePlatformTestCase() {
     fun `test each rendered viewer has its own switcher icon`() {
         assertSame(MarkdownReviewIcons.RENDERED_SIDE_BY_SIDE, RenderedSideBySideTool().getIcon())
         assertSame(MarkdownReviewIcons.RENDERED_MERGED, RenderedMergedTool().getIcon())
-        assertEquals(16, MarkdownReviewIcons.RENDERED_SIDE_BY_SIDE.iconWidth)
-        assertEquals(16, MarkdownReviewIcons.RENDERED_MERGED.iconWidth)
+        for (name in listOf("renderedSideBySide", "renderedMerged")) {
+            for (variant in listOf("", "_dark")) {
+                val path = "/pl/mdreview/icons/$name$variant.svg"
+                assertNotNull(path, MarkdownReviewIcons::class.java.getResource(path))
+            }
+        }
     }
 
     fun `test getIcon has the signature of FrameDiffTool getIcon in 2026_2`() {

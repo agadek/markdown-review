@@ -42,7 +42,8 @@ Tools menu. F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block open
 
 Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with (rendered side by side, rendered
 merged, or text) and holds the whitespace, collapse, pairing threshold, large-file, remote-image and Mermaid
-options.
+options. The colors of added, removed and modified blocks and of changed words are set per color scheme in
+Settings | Editor | Color Scheme | Markdown Review; a color left unset follows the scheme's Diff colors.
 
 Supported Markdown: CommonMark with GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks,
 footnotes, alerts), HTML blocks and inline HTML (sanitized), `<details>`, HTML comments, hard line breaks, emoji

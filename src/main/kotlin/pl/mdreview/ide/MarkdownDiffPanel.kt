@@ -51,7 +51,7 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
             val parts = msg.split('|', limit = 3)
             when (parts[0]) {
                 "scroll" -> parts.getOrNull(1)?.toIntOrNull()?.let { topIdx = it }
-                "link" -> parts.getOrNull(1)?.takeIf(::isExternal)?.let(BrowserUtil::browse)
+                "link" -> parts.getOrNull(1)?.takeIf(::isExternalLink)?.let(BrowserUtil::browse)
                 "edit" -> BlockActionRequest.parse(msg)?.let { blockActionHandler(it) }
                 "source" -> {
                     val line = parts.getOrNull(2)?.toIntOrNull()
@@ -83,9 +83,14 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
     override fun goTo(blockIdx: Int) {
         browser.cefBrowser.executeJavaScript("mdr.goTo($blockIdx)", browser.cefBrowser.url, 0)
     }
+}
 
-    private fun isExternal(href: String) =
-        href.startsWith("http://") || href.startsWith("https://") || href.startsWith("mailto:")
+/** Whether a sanitized link should be opened by the system browser. URI schemes are case-insensitive. */
+internal fun isExternalLink(href: String): Boolean = when (href.substringBefore(':').lowercase()) {
+    "http" -> href.startsWith("http://", ignoreCase = true)
+    "https" -> href.startsWith("https://", ignoreCase = true)
+    "mailto" -> href.startsWith("mailto:", ignoreCase = true)
+    else -> false
 }
 
 /** Shown instead of [MarkdownDiffPanel] when the IDE runtime has no JCEF (NFR-6). */

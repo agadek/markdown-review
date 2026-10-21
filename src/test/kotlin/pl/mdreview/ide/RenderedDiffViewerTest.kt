@@ -21,6 +21,14 @@ import javax.swing.JPanel
 
 class RenderedDiffViewerTest : BasePlatformTestCase() {
 
+    fun `test external link schemes are case insensitive`() {
+        assertTrue(isExternalLink("HTTPS://example.com/path"))
+        assertTrue(isExternalLink("HtTp://example.com/path"))
+        assertTrue(isExternalLink("MAILTO:user@example.com"))
+        assertFalse(isExternalLink("file:///tmp/readme.md"))
+        assertFalse(isExternalLink("ftp://example.com/file"))
+    }
+
     private class RecordingView : RenderedDiffView {
         val shown = mutableListOf<RenderedDiff>()
         val visited = mutableListOf<Int>()

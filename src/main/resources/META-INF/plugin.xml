@@ -43,6 +43,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>1.1.1</h3>
+        <ul>
+          <li>Links in the rendered diff whose scheme is written in upper or mixed case, such as <code>HTTPS://</code>,
+              now open in the browser.</li>
+        </ul>
         <h3>1.1.0</h3>
         <ul>
           <li>Expanded plugin description: why a rendered diff helps, navigation between changes and the supported IDE

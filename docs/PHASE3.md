@@ -16,13 +16,13 @@ Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 | P3.1 | Feedback loop after 1.0: issue triage, crash reports, 1.0.x fixes | 1.0 | 1.2 | In 1.2.0: issue templates, triage labels, crash reporter; fixes from reports to follow |
 | P3.2 | Deferred from phase 2: block source editing, moved blocks | 1.0 | 1.2 | Done, in 1.2.0 |
 | P3.3 | Other JetBrains IDEs and remote development | 1.0 | 1.3 | Not started |
-| P3.4 | VCS and code review integration | P3.3 | 1.2 | In 1.2.0: block menu (text diff at a block for review comments, block history); merge view later |
+| P3.4 | VCS and code review integration | P3.3 | 1.2 | In 1.2.0: block menu (text diff at a block for review comments, block history); Show Rendered Diff in Git history and the Commit window after 1.2.1; merge view dropped |
 | P3.5 | Performance and large documents | 1.0 | 1.3 | Not started |
-| P3.6 | Rendering options and sharing | P3.5 | 1.4 | Not started |
-| P3.7 | Community, sponsorship and licensing | 1.0 | ongoing | `FUNDING.yml` only |
+| P3.6 | Rendering options and sharing | P3.5 | 1.4 | In RC-3: custom stylesheet, HTML and PDF export, wiki links |
+| P3.7 | Community, sponsorship and licensing | 1.0 | ongoing | Docs, Sponsors tier and docs site in place |
 
 P3.4 went ahead of P3.3: the block menu uses only the platform's diff window and VCS actions, so it does not depend on
-how other IDEs lay out their review windows. The rendered merge view stays behind P3.3.
+how other IDEs lay out their review windows. The rendered merge view was dropped from the plan.
 
 P3.2, P3.3, P3.5 and P3.7 are independent and can run in parallel. P3.4 waits for P3.3, because review windows look
 different in each IDE and remote setup. P3.6 waits for P3.5, because both change how the page is built and updated.
@@ -88,25 +88,31 @@ Scope:
   window's diff preview, not only in the separate diff window.
 - **History and blame**: "Show Rendered Diff" in the Git log and file history for a selected revision of a `.md` file,
   and a per-block "Show when this changed" that opens the history at the block's lines.
-- **Merge conflicts**: a rendered view in the three-way merge window for `.md` files, read-only first (left, result,
-  right rendered, conflicts highlighted), resolution still in the text merge. The specification lists three-way merge
-  as out of scope for 1.0; this is the first step past it.
+- **Merge conflicts** (dropped): a rendered view in the three-way merge window for `.md` files, read-only first (left,
+  result, right rendered, conflicts highlighted), resolution still in the text merge. The specification lists
+  three-way merge as out of scope for 1.0; this would have been the first step past it.
 
 Done when:
 - A review comment started from a rendered block lands on the right line of a GitHub pull request (and GitLab merge
   request, if the API allows).
 - The commit window's preview shows the rendered diff for `.md` files.
-- A `.md` merge conflict can be viewed rendered, and the text merge remains the default for resolving it.
 
 Status:
 - The bundled GitHub and GitLab plugins add review comments only to the text viewer and have no public extension
   point for other viewers, so the fallback applies: a block's right-click menu has **Open in Text Diff Here**, which
   reopens the window in the text viewer at the block's line, where the comment gutter is.
 - The commit window's diff preview and file history already use the diff window's viewers, so the rendered viewers
-  are there with the viewer switcher; nothing to add.
+  are there with the viewer switcher. The platform's preview processors open at `DiffPlaces.CHANGES_VIEW` (Commit
+  tool window), `DiffPlaces.DEFAULT` (preview in an editor tab) and `DiffPlaces.COMMIT_DIALOG`, all in
+  `DefaultViewerOrder.KNOWN_PLACES`, so the preview opens rendered unless the default viewer setting is Text.
+- **Show Rendered Diff** (`ShowRenderedDiffAction`) in the context menus of the Git log's changed files
+  (`Vcs.Log.ChangesBrowser.Popup`), file history (`Vcs.FileHistory.ContextMenu`) and the Commit window
+  (`ChangesViewPopupMenu`) opens the selected Markdown changes rendered whatever the default viewer is. Its window has
+  its own diff place, `MarkdownReview.RenderedDiff`, where a rendered viewer is moved first on every open; the viewer
+  switcher and the block menu work as in other windows.
 - **Show History for This Block** in the same menu runs the platform's "Show History for Selection" on the block's
   lines.
-- The rendered merge view is not started.
+- The rendered merge view is dropped from P3.4.
 
 ## P3.5 Performance and large documents
 
@@ -138,6 +144,24 @@ Done when:
 - A custom CSS file changes the rendered view and survives theme switches.
 - An exported HTML diff opens in a browser offline and looks like the in-IDE view.
 
+Status:
+- **Custom stylesheet**: Settings | Tools | Markdown Review | Custom stylesheet. The file is applied after the page's
+  own styles, re-read when it changes, and the page's root element carries `mdr-theme-light` or `mdr-theme-dark`, so
+  one file can style both themes. Saving the settings page re-renders open viewers.
+- **Export**: *Export as HTML...* and *Export as PDF...* behind the Export button on the rendered viewer's toolbar and in
+  every block's right-click menu. The HTML file is a
+  snapshot of the page as drawn (Mermaid diagrams and formulas included), with no scripts, a policy that allows none,
+  and local images inlined. The PDF comes from JCEF's `printToPDF`, with the diff colors kept for print.
+- **More syntax**: wiki links (`[[page]]`, `[[page|label]]`), fixture `41-wiki-links`.
+- **Multi-file export**: *Export Rendered Diff | HTML...* and *PDF...* next to *Show Rendered Diff* (Git log, file
+  history and the Commit window's Changes list) export every selected Markdown change
+  as one document (table of contents, a section per file), drawn in a hidden off-screen browser and saved as a
+  no-script HTML file or printed to PDF.
+- **P3.5**: none of this needed it. The custom stylesheet is a `<style>` in the page head and the export reads the
+  page as drawn, so they keep working when P3.5 patches rows in place. Two things for P3.5 to keep: incremental updates
+  must leave the user stylesheet alone (or reload it when the file changes), and with lazy rendering the export must
+  draw every row before it takes the snapshot.
+
 ## P3.7 Community, sponsorship and licensing
 
 Scope:
@@ -149,6 +173,12 @@ Scope:
   through GitHub Sponsors. Add a sponsor tier for commercial use, state its terms in the README and `LICENSE` notes,
   and link it from the Marketplace listing. The plugin itself has no license check.
 - A short documentation page (GitHub Pages) with screenshots, supported elements and settings.
+
+Status: `CONTRIBUTING.md` (with a contribution license, so contributions can also be licensed commercially), the pull
+request template, `CHANGELOG.md` (rendered into the Marketplace change notes by the Gradle changelog plugin) and the
+`good first issue` label are in place. The README, the Marketplace description and the settings page link to GitHub
+Sponsors and to the commercial terms in [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md): US$1 per user, paid once, for
+life. The one-time Commercial license tier is live on GitHub Sponsors. The documentation site is `site/`, published to GitHub Pages by `.github/workflows/pages.yml`.
 
 Done when:
 - A first outside contribution is merged following `CONTRIBUTING.md`.

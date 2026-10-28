@@ -8,6 +8,8 @@
 
 An IntelliJ IDEA plugin for reviewing changes to Markdown files in **rendered** form instead of as raw text.
 
+Documentation: <https://agadek.github.io/markdown-review/>
+
 ## Why
 
 A text diff of Markdown shows syntax instead of content: a rewritten paragraph becomes a few red and green lines,
@@ -46,6 +48,10 @@ The viewers work in the Commit window (Show Diff, Ctrl+D), in file history, when
 request windows. Compare any two files with **Compare Markdown Files...** from the project view context menu or the
 Tools menu. F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.
 
+**Show Rendered Diff** in the context menu of a Git log commit's changed files, of file history and of the Commit
+window opens the selected Markdown changes in the rendered viewer, even when diffs open with the text viewer by
+default.
+
 Right-click a block for **Go to Source**, **Open in Text Diff Here** and **Show History for This Block**. Open in Text
 Diff Here switches the window to the text viewer at the block's line; in a pull request window, that is where the
 comment gutter starts a review comment on the block. Show History for This Block lists only the commits that changed
@@ -56,11 +62,13 @@ the block's lines, for a file under version control.
 Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with (rendered side by side, rendered
 merged, or text) and holds the whitespace, collapse, pairing threshold, large-file, remote-image, Mermaid and math
 options. The colors of added, removed and modified blocks and of changed words are set per color scheme in
-Settings | Editor | Color Scheme | Markdown Review; a color left unset follows the scheme's Diff colors.
+Settings | Editor | Color Scheme | Markdown Review; a color left unset follows the scheme's Diff colors. A custom
+stylesheet (a CSS file on the same settings page) can restyle the rendered view, for example to match a documentation
+site, and the Export button on the viewer's toolbar saves the rendered diff as a standalone HTML file or a PDF.
 
 Supported Markdown: CommonMark with GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks,
 footnotes, alerts), HTML blocks and inline HTML (sanitized), `<details>`, HTML comments, hard line breaks, emoji
-shortcodes, YAML front matter, Mermaid and math. The user interface is in English.
+shortcodes, wiki links (`[[page]]`, `[[page|label]]`), YAML front matter, Mermaid and math. The user interface is in English.
 
 Status: 1.0. What the plugin does and does not do is described in [docs/SPECIFICATION.md](docs/SPECIFICATION.md),
 what comes next in [docs/PHASE3.md](docs/PHASE3.md), and releases in [docs/RELEASING.md](docs/RELEASING.md). The
@@ -85,7 +93,8 @@ JCEF the plugin stays out of the way: the diff window keeps the text viewer.
 
 ## Development
 
-Developed with the help of Claude Code, with every change reviewed by the maintainer.
+Developed with the help of Claude Code, with every change reviewed by the maintainer. Contributions are welcome: see
+[CONTRIBUTING.md](CONTRIBUTING.md), and [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ## Reporting problems
 
@@ -99,7 +108,8 @@ Markdown Review on GitHub**, which opens a prefilled issue in the browser; nothi
 Markdown Review is free for noncommercial use and maintained in spare time. It is developed with the help of Claude
 Code, and sponsorships help cover the AI token budget that goes into new features and fixes. If the plugin saves you
 time in reviews, you can chip in through [GitHub Sponsors](https://github.com/sponsors/agadek) or
-[Ko-fi](https://ko-fi.com/gadek).
+[Ko-fi](https://ko-fi.com/gadek). Companies get a lifetime commercial license for $1 per user through GitHub Sponsors; see
+[Commercial use](#commercial-use).
 
 ## License
 
@@ -108,4 +118,15 @@ The plugin bundles [Mermaid](https://github.com/mermaid-js/mermaid) 11.17.2 and 
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 [PolyForm Noncommercial License 1.0.0](LICENSE). Noncommercial use (personal, educational, research, nonprofit
-organizations) is allowed free of charge. Commercial use requires a separate license from the author.
+organizations) is allowed free of charge.
+
+### Commercial use
+
+Using the plugin for work at a company needs a commercial license, which comes with the one-time **Commercial
+license** tier on [GitHub Sponsors](https://github.com/sponsors/agadek). In short:
+
+- It costs US$1 per user, paid once: pay $25 for 25 people who use the plugin.
+- It lasts for life and covers all future versions.
+- The plugin has no license key or check.
+
+The full terms are in [docs/COMMERCIAL_LICENSE.md](docs/COMMERCIAL_LICENSE.md).

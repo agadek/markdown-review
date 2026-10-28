@@ -10,7 +10,16 @@ import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.requests.ContentDiffRequest
 import com.intellij.diff.util.LineCol
 import com.intellij.diff.util.Side
+import com.intellij.icons.AllIcons
+import com.intellij.ide.BrowserUtil
 import com.intellij.ide.DataManager
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.actionSystem.Separator
+import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.fileChooser.FileSaverDescriptor
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.DefaultActionGroup
@@ -57,6 +66,8 @@ import pl.mdreview.api.TextEdit
 import pl.mdreview.api.ViewMode
 import java.awt.BorderLayout
 import java.awt.Point
+import java.nio.file.Files
+import java.nio.file.Path
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -106,6 +117,8 @@ class RenderedDiffViewer(
         }
         ApplicationManager.getApplication().messageBus.connect(disposable)
             .subscribe(EditorColorsManager.TOPIC, EditorColorsListener { browserPanel.refreshTheme() })
+        ApplicationManager.getApplication().messageBus.connect(disposable)
+            .subscribe(MarkdownReviewSettings.TOPIC, MarkdownReviewSettingsListener { scheduleRender(0) })
         browserPanel.onBlockAction { action ->
             ApplicationManager.getApplication().invokeLater({
                 if (!performBlockAction(action) && action.action.editSide != null) browserPanel.editRefused()
@@ -126,6 +139,8 @@ class RenderedDiffViewer(
                     settings.collapseUnchanged = it
                 },
             )
+            // On the toolbar itself: since 2026.2 the diff window shows no gear menu for popupActions.
+            toolbarActions = listOf<AnAction>(exportGroup)
             statusPanel = statusLabel.apply { border = JBUI.Borders.empty(0, 8) }
         }
     }
@@ -321,7 +336,7 @@ class RenderedDiffViewer(
         val component = browserPanel.component
         JBPopupFactory.getInstance().createActionGroupPopup(
             null,
-            DefaultActionGroup(blockMenuActions(target, range)),
+            DefaultActionGroup(blockMenuActions(target, range) + Separator.getInstance() + exportActions),
             DataManager.getInstance().getDataContext(component),
             JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
             false,
@@ -437,6 +452,72 @@ class RenderedDiffViewer(
 
         fun defaultView(parent: Disposable, onSourceClick: (String, Int) -> Unit): RenderedDiffView =
             if (JBCefApp.isSupported()) MarkdownDiffPanel(parent, onSourceClick) else JcefUnavailableView()
+    }
+
+    /**
+     * Asks where to save the rendered diff and writes it there: a standalone HTML file ([HtmlExport]) or a PDF printed
+     * by the browser (P3.6). Shows a notification with the outcome.
+     */
+    private fun export(pdf: Boolean) {
+        if (rendered == null || !browserPanel.canExport) return
+        val ext = if (pdf) "pdf" else "html"
+        val descriptor = FileSaverDescriptor(
+            MarkdownReviewBundle.message("export.$ext.title"),
+            MarkdownReviewBundle.message("export.$ext.description"),
+            ext,
+        )
+        val name = HtmlExport.defaultFileName((contents.getOrNull(1) as? DocumentContent)?.highlightFile?.name, ext)
+        val target = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, context.project)
+            .save(null as Path?, name)?.file?.toPath() ?: return
+        val finished = { ok: Boolean -> exported(target, ok) }
+        if (pdf) {
+            browserPanel.printToPdf(target, finished)
+            return
+        }
+        val title = request.title ?: name
+        val remoteImages = settings.loadRemoteImages
+        browserPanel.snapshot { snapshot ->
+            ApplicationManager.getApplication().executeOnPooledThread {
+                val ok = snapshot != null && runCatching {
+                    Files.writeString(target, HtmlExport.finish(snapshot, title, remoteImages))
+                }.isSuccess
+                finished(ok)
+            }
+        }
+    }
+
+    private fun exported(target: Path, ok: Boolean) {
+        if (ok) LocalFileSystem.getInstance().refreshNioFiles(listOf(target))
+        val notification = NotificationGroupManager.getInstance().getNotificationGroup(ExportRenderedDiffAction.NOTIFICATION_GROUP).createNotification(
+            MarkdownReviewBundle.message(if (ok) "export.done" else "export.failed", target.toString()),
+            if (ok) NotificationType.INFORMATION else NotificationType.ERROR,
+        )
+        if (ok) {
+            notification.addAction(NotificationAction.createSimpleExpiring(MarkdownReviewBundle.message("export.open")) {
+                BrowserUtil.browse(target.toUri().toString())
+            })
+        }
+        notification.notify(context.project)
+    }
+
+    /** Export as HTML and as PDF, in the block menu and behind [exportGroup]. */
+    internal val exportActions: List<AnAction> = listOf(ExportAction(pdf = false), ExportAction(pdf = true))
+
+    /** The toolbar's Export button, which opens [exportActions]. */
+    internal val exportGroup: DefaultActionGroup =
+        DefaultActionGroup(MarkdownReviewBundle.message("action.export.group"), exportActions).apply {
+            isPopup = true
+            templatePresentation.icon = AllIcons.ToolbarDecorator.Export
+            templatePresentation.description = MarkdownReviewBundle.message("action.export.group.description")
+        }
+
+    private inner class ExportAction(private val pdf: Boolean) :
+        DumbAwareAction(MarkdownReviewBundle.message(if (pdf) "action.export.pdf" else "action.export.html")) {
+        override fun getActionUpdateThread() = ActionUpdateThread.EDT
+        override fun update(e: AnActionEvent) {
+            e.presentation.isEnabled = rendered != null && browserPanel.canExport
+        }
+        override fun actionPerformed(e: AnActionEvent) = export(pdf)
     }
 
     private inner class OptionToggle(

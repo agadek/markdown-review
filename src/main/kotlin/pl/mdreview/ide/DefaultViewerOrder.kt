@@ -34,6 +34,12 @@ object DefaultViewerOrder {
         DiffPlaces.EXTERNAL,
     )
 
+    /**
+     * The diff window kind of **Show Rendered Diff** ([ShowRenderedDiffAction]). Its own place, so opening it rendered
+     * does not change what the other windows open with.
+     */
+    const val RENDERED_DIFF_PLACE = "MarkdownReview.RenderedDiff"
+
     private val RENDERED_TOOLS = listOf(RenderedSideBySideTool::class.java, RenderedMergedTool::class.java)
         .map { it.canonicalName }
     private val TEXT_TOOLS = listOf(SimpleDiffTool::class.java, UnifiedDiffTool::class.java)
@@ -68,6 +74,23 @@ object DefaultViewerOrder {
             val withText = if (rest.any { it in TEXT_TOOLS }) rest else listOf(TEXT_TOOLS[0]) + rest
             withText + RENDERED_TOOLS
         }
+    }
+
+    /**
+     * Puts a rendered viewer first at [RENDERED_DIFF_PLACE] before the window opens: the one last chosen there, or
+     * the merged viewer if that is the default viewer setting, otherwise side by side. A text viewer chosen in that
+     * window is remembered as usual but does not outlast the window.
+     */
+    fun preferRendered(settings: MarkdownReviewSettings = MarkdownReviewSettings.getInstance()) {
+        val place = DiffSettings.getSettings(RENDERED_DIFF_PLACE)
+        place.diffToolsOrder = preferRendered(place.diffToolsOrder, settings.defaultViewer)
+    }
+
+    /** New order for [RENDERED_DIFF_PLACE]: the first rendered viewer in [current], or one picked by [viewer], first. */
+    fun preferRendered(current: List<String>, viewer: DefaultViewer): List<String> {
+        val tool = current.firstOrNull { it in RENDERED_TOOLS }
+            ?: RENDERED_TOOLS[if (viewer == DefaultViewer.RENDERED_MERGED) 1 else 0]
+        return moveToFront(current, tool)
     }
 
     private fun moveToFront(current: List<String>, tool: String) = listOf(tool) + current.filter { it != tool }

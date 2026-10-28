@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Markdown Review: rendered Markdown diffs for JetBrains IDEs</title>
+<meta name="description" content="An IntelliJ IDEA plugin for reviewing changes to Markdown files in rendered form instead of as raw text.">
+<link rel="icon" href="icon.png">
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1f2328; --muted: #59636e; --line: #d1d9e0; --soft: #f6f8fa;
+    --accent: #0969da; --added: #dafbe1; --removed: #ffebe9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --fg: #e6edf3; --muted: #9198a1; --line: #3d444d; --soft: #151b23;
+      --accent: #4493f8; --added: #12261e; --removed: #25171c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  a { color: var(--accent); }
+  main, header .inner, footer .inner { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  header { border-bottom: 1px solid var(--line); background: var(--soft); }
+  header .inner { display: flex; gap: 24px; align-items: center; padding-top: 40px; padding-bottom: 40px; }
+  header img { width: 96px; height: 96px; flex: none; }
+  h1 { margin: 0 0 8px; font-size: 2.2rem; line-height: 1.2; }
+  .lead { margin: 0 0 16px; font-size: 1.15rem; color: var(--muted); }
+  .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+  .button {
+    display: inline-block; padding: 8px 16px; border-radius: 6px; border: 1px solid var(--line);
+    text-decoration: none; color: var(--fg); background: var(--bg); font-weight: 600;
+  }
+  .button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  nav { display: flex; flex-wrap: wrap; gap: 4px 16px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+  nav a { text-decoration: none; }
+  section { padding: 24px 0; border-bottom: 1px solid var(--line); }
+  h2 { margin: 0 0 12px; font-size: 1.5rem; }
+  h3 { margin: 20px 0 8px; font-size: 1.1rem; }
+  figure { margin: 16px 0; }
+  figure img { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+  figcaption { color: var(--muted); font-size: 0.9rem; }
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; padding: 0; list-style: none; }
+  .features li { padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--soft); }
+  .features b { display: block; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; vertical-align: top; padding: 8px; border-bottom: 1px solid var(--line); }
+  th { width: 34%; }
+  code, kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.9em; }
+  code { background: var(--soft); padding: 1px 4px; border-radius: 4px; }
+  .note { padding: 12px 16px; border-left: 4px solid var(--accent); background: var(--soft); }
+  footer { color: var(--muted); font-size: 0.9rem; }
+  footer .inner { padding-top: 24px; padding-bottom: 40px; }
+  @media (max-width: 600px) {
+    header .inner { flex-direction: column; align-items: flex-start; }
+    th { width: auto; }
+    th, td { display: block; border: 0; padding: 4px 0; }
+    tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <img src="icon.png" alt="Markdown Review icon">
+    <div>
+      <h1>Markdown Review</h1>
+      <p class="lead">Review changes to Markdown files the way they look once rendered, right inside the diff window of
+        IntelliJ IDEA and other JetBrains IDEs.</p>
+      <div class="buttons">
+        <a class="button primary" href="https://plugins.jetbrains.com/plugin/35246-markdown-review">Get it on JetBrains Marketplace</a>
+        <a class="button" href="https://github.com/agadek/markdown-review">Source on GitHub</a>
+        <a class="button" href="https://github.com/sponsors/agadek">&#10084; Sponsor</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <nav aria-label="Sections">
+    <a href="#install">Install</a>
+    <a href="#features">Features</a>
+    <a href="#markdown">Supported Markdown</a>
+    <a href="#settings">Settings</a>
+    <a href="#license">License and commercial use</a>
+    <a href="#help">Help</a>
+  </nav>
+
+  <section>
+    <p>A text diff of Markdown shows syntax instead of content: a rewritten paragraph becomes a few red and green lines,
+      a change in a table becomes shifted <code>|</code> characters, and re-indenting a list looks like everything
+      changed. Markdown Review shows the same comparison the way the document looks once rendered, so the reviewer
+      judges the content, not the markup. It does not open a window of its own: it adds viewers to the IDE's regular
+      diff window, so it works wherever the IDE shows a diff of an <code>.md</code> file.</p>
+    <figure>
+      <picture>
+        <source srcset="screenshots/side-by-side-dark.png" media="(prefers-color-scheme: dark)">
+        <img src="screenshots/side-by-side-light.png" alt="Rendered side-by-side diff of a Markdown file">
+      </picture>
+      <figcaption>The rendered side-by-side diff: removed blocks on red, added on green, changed words highlighted.</figcaption>
+    </figure>
+  </section>
+
+  <section id="install">
+    <h2>Install</h2>
+    <ol>
+      <li>In the IDE, open <b>Settings | Plugins | Marketplace</b>.</li>
+      <li>Search for <b>Markdown Review</b> and click <b>Install</b>.</li>
+      <li>Open the diff of any Markdown file, for example from the Commit window (<kbd>Ctrl+D</kbd>). It opens in the
+        rendered side-by-side viewer.</li>
+    </ol>
+    <p>Requires IntelliJ IDEA (Community or Ultimate) or another IntelliJ-based IDE, version 2025.1 or newer, with JCEF
+      (the default in JetBrains Runtime). Without JCEF the plugin stays out of the way and the diff window keeps the
+      text viewer.</p>
+    <p>A build from GitHub installs with <b>Settings | Plugins | &#9881; | Install Plugin from Disk...</b>; such an
+      install does not update itself.</p>
+  </section>
+
+  <section id="features">
+    <h2>Features</h2>
+    <ul class="features">
+      <li><b>Rendered side-by-side diff</b> Headings, paragraphs, list items, table rows and code blocks aligned in
+        rows, with changed words highlighted inside changed blocks.</li>
+      <li><b>Merged view</b> One column: removed parts red and struck through, added parts green. Handy for a large
+        change.</li>
+      <li><b>Mermaid diagrams</b> Drawn offline in the editor's theme. A changed diagram shows the old and new drawing,
+        with a toggle for the line diff of its source.</li>
+      <li><b>Math</b> <code>$...$</code> and <code>$$...$$</code> formulas drawn offline with KaTeX; a changed formula
+        is highlighted as a whole.</li>
+      <li><b>Moved blocks</b> Labeled at both ends with a link to the other end, instead of a deletion and an
+        addition. Reverting moves the block back.</li>
+      <li><b>Per-block revert and apply</b> Buttons on a changed block copy it to the other side, one Undo step each,
+        on sides that can be edited.</li>
+      <li><b>Block source editing</b> Double-click a block to edit its raw Markdown in place; <kbd>Ctrl/Cmd+Enter</kbd>
+        saves, <kbd>Esc</kbd> cancels.</li>
+      <li><b>Block menu</b> Right-click a block for Go to Source, Open in Text Diff Here (where pull request windows
+        take review comments) and Show History for This Block.</li>
+      <li><b>Show Rendered Diff</b> From the Git log, file history and the Commit window, even when diffs open with the
+        text viewer by default.</li>
+      <li><b>Export</b> Save the rendered diff as a standalone HTML file or a PDF to attach to a review or a ticket.</li>
+      <li><b>Custom stylesheet</b> A CSS file of your own on top of the rendered view, for example to match your
+        documentation site.</li>
+      <li><b>Text diff</b> The IDE's built-in diff is always one click away in the viewer switcher.</li>
+    </ul>
+    <p>The viewers work in the Commit window, file history, branch comparison and pull request windows. Compare any two
+      files with <b>Compare Markdown Files...</b> from the project view's context menu or the Tools menu.
+      <kbd>F7</kbd> and <kbd>Shift+F7</kbd> move between changes; <kbd>Ctrl/Cmd</kbd>+click on a block opens its source
+      in the editor.</p>
+    <figure>
+      <picture>
+        <source srcset="screenshots/merged-dark.png" media="(prefers-color-scheme: dark)">
+        <img src="screenshots/merged-light.png" alt="Rendered merged diff">
+      </picture>
+      <figcaption>The merged view: removals struck through, additions in green.</figcaption>
+    </figure>
+  </section>
+
+  <section id="markdown">
+    <h2>Supported Markdown</h2>
+    <p>CommonMark with GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts.
+      Also HTML blocks and inline HTML (sanitized), <code>&lt;details&gt;</code>, HTML comments, hard line breaks,
+      thematic breaks, emoji shortcodes, wiki links (<code>[[page]]</code>, <code>[[page|label]]</code>), YAML front
+      matter, Mermaid diagrams and math. Relative images resolve against the file; remote images load only when
+      enabled. The user interface is in English.</p>
+  </section>
+
+  <section id="settings">
+    <h2>Settings</h2>
+    <p>In <b>Settings | Tools | Markdown Review</b>:</p>
+    <table>
+      <tr><th>Default viewer for Markdown diffs</th><td>Rendered side by side, rendered merged, or the IDE's text
+        viewer. Switching the viewer in a diff window is remembered for that kind of window until this setting
+        changes.</td></tr>
+      <tr><th>Ignore whitespace and line wrapping</th><td>Changes that only re-wrap or re-indent text do not show as
+        changes.</td></tr>
+      <tr><th>Collapse unchanged blocks</th><td>Long runs of unchanged blocks fold away.</td></tr>
+      <tr><th>Pairing threshold</th><td>How similar a removed and an added block must be to show as one modified
+        block with a word diff. Lower pairs more rewrites, higher pairs fewer.</td></tr>
+      <tr><th>Load remote images</th><td>Off by default: images from <code>http(s)</code> URLs are not loaded and
+        nothing is fetched from the network.</td></tr>
+      <tr><th>Render Mermaid diagrams</th><td>Off: diagrams are diffed line by line as code.</td></tr>
+      <tr><th>Render math</th><td>Off: formulas show as their TeX source.</td></tr>
+      <tr><th>Custom stylesheet</th><td>A CSS file applied on top of the rendered view. It can set the
+        <code>--md-*</code> theme variables and override any rule; the root element has the class
+        <code>mdr-theme-light</code> or <code>mdr-theme-dark</code>.</td></tr>
+      <tr><th>Revert and apply buttons</th><td>Show them on changed blocks of sides that can be edited.</td></tr>
+      <tr><th>Large files</th><td>Above a number of lines or a size, the rendered viewer shows a message with a button
+        to open the text viewer instead.</td></tr>
+    </table>
+    <p>The colors of added, removed and modified blocks and of changed words are set per color scheme in
+      <b>Settings | Editor | Color Scheme | Markdown Review</b>; a color left unset follows the scheme's Diff
+      colors.</p>
+  </section>
+
+  <section id="license">
+    <h2>License and commercial use</h2>
+    <p>Markdown Review is free for noncommercial use under the
+      <a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial License 1.0.0</a>:
+      personal, educational, research, open source and nonprofit use.</p>
+    <p class="note">Using the plugin for work at a company needs a <b>commercial license: US$1 per user, paid once, for
+      life</b>, including all future versions. Get it from the one-time <b>Commercial license</b> tier on
+      <a href="https://github.com/sponsors/agadek">GitHub Sponsors</a>, entering the number of users as the amount
+      ($25 for 25 users). There is no license key; the GitHub receipt is the record.</p>
+    <p>The full terms are in
+      <a href="https://github.com/agadek/markdown-review/blob/main/docs/COMMERCIAL_LICENSE.md">COMMERCIAL_LICENSE.md</a>.
+      If the plugin saves you time in reviews, you can also support it on
+      <a href="https://github.com/sponsors/agadek">GitHub Sponsors</a> or <a href="https://ko-fi.com/gadek">Ko-fi</a>.</p>
+  </section>
+
+  <section id="help">
+    <h2>Help</h2>
+    <p><a href="https://github.com/agadek/markdown-review/issues/new/choose">Open an issue</a> with the bug report
+      template. The most useful part is a small pair of Markdown files (old and new) that shows the problem. When the
+      plugin throws an exception, the IDE's error dialog offers <b>Report to Markdown Review on GitHub</b>, which opens
+      a prefilled issue; nothing is sent until you submit it.</p>
+    <p>Contributions are welcome: see
+      <a href="https://github.com/agadek/markdown-review/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>, and
+      <a href="https://github.com/agadek/markdown-review/blob/main/CHANGELOG.md">CHANGELOG.md</a> for what changed in
+      each release.</p>
+  </section>
+</main>
+
+<footer>
+  <div class="inner">Markdown Review by <a href="https://github.com/agadek">agadek</a>. Bundles Mermaid and KaTeX (MIT
+    License). JetBrains and IntelliJ IDEA are trademarks of JetBrains s.r.o.</div>
+</footer>
+</body>
+</html>

@@ -11,4 +11,5 @@ object MarkdownReviewIcons {
 
     const val SPONSORS_URL = "https://github.com/sponsors/agadek"
     const val KO_FI_URL = "https://ko-fi.com/gadek"
+    const val COMMERCIAL_LICENSE_URL = "https://github.com/agadek/markdown-review/blob/main/docs/COMMERCIAL_LICENSE.md"
 }

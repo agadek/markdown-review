@@ -167,6 +167,18 @@ class RenderedDiffViewerTest : BasePlatformTestCase() {
         assertEquals(listOf("Go to Source"), names(viewer.blockMenuActions(1, LineRange(0, 1))))
     }
 
+    fun `test export is on the toolbar, not only in the options menu (P3_6)`() {
+        val request = SimpleDiffRequest("test", content("x1.md", "a\n"), content("x2.md", "b\n"), "x1", "x2")
+        val viewer = RenderedDiffViewer(TestDiffContext(project), request, ViewMode.SIDE_BY_SIDE) { _, _ -> RecordingView() }
+        Disposer.register(testRootDisposable, Disposable { viewer.dispose() })
+        val toolbar = viewer.init()
+        assertEquals(listOf<AnAction>(viewer.exportGroup), toolbar.toolbarActions)
+        assertTrue(viewer.exportGroup.isPopup)
+        assertNotNull(viewer.exportGroup.templatePresentation.icon)
+        assertEquals(listOf("Export as HTML...", "Export as PDF..."), names(viewer.exportActions))
+        assertEquals(viewer.exportActions, viewer.exportGroup.childActionsOrStubs.toList())
+    }
+
     fun `test open in text diff reopens the window once in the text viewer at the block's line (P3_4)`() {
         val context = ReopeningContext(project)
         val request = SimpleDiffRequest("test", content("t1.md", "# A\n\nold\n"), content("t2.md", "# A\n\nnew\n"), "t1", "t2")

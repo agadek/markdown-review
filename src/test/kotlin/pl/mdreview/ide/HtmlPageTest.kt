@@ -117,4 +117,16 @@ class HtmlPageTest : BasePlatformTestCase() {
         assertEquals(page.attributeDescriptors.map { it.key }.toSet(), tags.values.toSet())
         for (tag in tags.keys) assertTrue(tag, page.demoText.contains("<$tag>"))
     }
+
+    fun `test custom stylesheet comes after every other style and the page names its theme (P3_6)`() {
+        val diff = CoreMarkdownDiffRenderer().render(RenderRequest("# A\n", "# B\n", ViewMode.SIDE_BY_SIDE))
+        val html = HtmlPage.build(diff, "void 0", 0, userCss = UserStylesheet.inline("h1 { color: red; } /* </style> */"))
+        val user = html.indexOf("<style id=\"mdr-user-css\">h1 { color: red; } /* <\\/style> */</style>")
+        assertTrue(user > 0)
+        assertTrue(user > html.lastIndexOf("<style>", user))
+        assertEquals(-1, html.indexOf("<style>", user))
+        assertTrue(html.contains("<html class=\"mdr-theme-light\">") || html.contains("<html class=\"mdr-theme-dark\">"))
+        assertFalse(HtmlPage.build(diff, "void 0", 0).contains("mdr-user-css"))
+        assertFalse(HtmlPage.build(diff, "void 0", 0, userCss = "  ").contains("mdr-user-css"))
+    }
 }

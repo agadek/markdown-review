@@ -8,6 +8,8 @@
 
 An IntelliJ IDEA plugin for reviewing changes to Markdown files in **rendered** form instead of as raw text.
 
+Documentation: <https://agadek.github.io/markdown-review/>
+
 ## Why
 
 A text diff of Markdown shows syntax instead of content: a rewritten paragraph becomes a few red and green lines,

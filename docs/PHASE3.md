@@ -16,9 +16,9 @@ Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 | P3.1 | Feedback loop after 1.0: issue triage, crash reports, 1.0.x fixes | 1.0 | 1.2 | In 1.2.0: issue templates, triage labels, crash reporter; fixes from reports to follow |
 | P3.2 | Deferred from phase 2: block source editing, moved blocks | 1.0 | 1.2 | Done, in 1.2.0 |
 | P3.3 | Other JetBrains IDEs and remote development | 1.0 | 1.3 | Not started |
-| P3.4 | VCS and code review integration | P3.3 | 1.2 | In 1.2.0: block menu (text diff at a block for review comments, block history); Show Rendered Diff in Git history and the Commit window after 1.2.1; merge view dropped |
+| P3.4 | VCS and code review integration | P3.3 | 1.2 | In 1.2.0: block menu (text diff at a block for review comments, block history); Show Rendered Diff in Git history and the Commit window in 1.3.0; merge view dropped |
 | P3.5 | Performance and large documents | 1.0 | 1.3 | Not started |
-| P3.6 | Rendering options and sharing | P3.5 | 1.4 | In RC-3: custom stylesheet, HTML and PDF export, wiki links |
+| P3.6 | Rendering options and sharing | P3.5 | 1.4 | In 1.3.0: custom stylesheet, HTML and PDF export, wiki links |
 | P3.7 | Community, sponsorship and licensing | 1.0 | ongoing | Docs, Sponsors tier and docs site in place |
 
 P3.4 went ahead of P3.3: the block menu uses only the platform's diff window and VCS actions, so it does not depend on

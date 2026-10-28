@@ -337,6 +337,12 @@ object HtmlPage {
               mdrSend('edit|' + button.getAttribute('data-action') + '|' + row.getAttribute('data-idx') + '|' + stamp);
               return;
             }
+            var moved = e.target.closest('a.mdr-moved-link[data-goto]');
+            if (moved) {
+              e.preventDefault();
+              mdr.goTo(moved.getAttribute('data-goto'));
+              return;
+            }
             var a = e.target.closest('a[href]');
             if (a) {
               var href = a.getAttribute('href');

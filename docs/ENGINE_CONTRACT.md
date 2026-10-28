@@ -72,6 +72,13 @@ with an **Open Text Viewer** button instead.
   A fenced code block, front matter or table added or removed as a whole is one region for all its blocks, closing
   fence or delimiter row included. `null` for equal blocks and for changes no line edit can undo, such as a block
   that changed only through a link reference definition.
+- `movedFrom` / `movedTo` (P2.7, FR-15, additive): a removed and an added block with equal keys are one move. The
+  statuses stay `REMOVED` and `ADDED`; the added end's `movedFrom` and the removed end's `movedTo` name the other end's
+  `idx`. In `bodyHtml` both ends' block elements carry `mdr-moved` and `data-moved-from` / `data-moved-to`, and end
+  with `div.mdr-moved-note` holding `a.mdr-moved-link[data-goto="<idx>"]` ("Moved down", "Moved here from above", ...).
+  A move has no word diff. Code lines, fences, front matter lines, thematic breaks, comments and blocks without visible
+  text never move. Reverting or applying either end applies both ends' `edit` regions in one command, so the block
+  goes back to its old place.
 
 ## Supported Markdown
 commonmark-java with these extensions: GFM tables, strikethrough, task list items, autolinks, footnotes, GitHub

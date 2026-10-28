@@ -36,6 +36,7 @@ import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.ui.components.panels.VerticalLayout
 import com.intellij.util.ui.JBUI
 import pl.mdreview.api.BlockInfo
+import pl.mdreview.api.EditRegion
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.RenderedDiff
 import pl.mdreview.api.TextEdit
@@ -173,18 +174,29 @@ class RenderedDiffViewer(
             return false
         }
         if (!blockActions(stamp).allows(request.action)) return false
-        val region = diff.blocks.getOrNull(request.idx)?.edit ?: return false
+        val block = diff.blocks.getOrNull(request.idx) ?: return false
+        val region = block.edit ?: return false
+        // A moved block goes back as a whole: both ends' regions change in one command (FR-15).
+        val regions = listOf(region) + listOfNotNull(block.movePartner?.let { diff.blocks.getOrNull(it)?.edit })
         val (target, source) = if (request.action == BlockAction.REVERT) 1 to 0 else 0 to 1
         val document = documents[target] ?: return false
-        val lines = { side: Int -> if (side == 0) region.left else region.right }
-        val edit = TextEdit.replaceLines(document.charsSequence, lines(target), documents[source]?.charsSequence ?: "", lines(source))
+        val sourceText = documents[source]?.charsSequence ?: ""
+        fun edit(r: EditRegion): TextEdit {
+            val (to, from) = if (target == 0) r.left to r.right else r.right to r.left
+            return TextEdit.replaceLines(document.charsSequence, to, sourceText, from)
+        }
+        // Computed on the text before any of them applies, then applied from the end so earlier offsets stay valid.
+        // Ends whose regions overlap cannot both apply: then only the clicked end changes, like any added or removed block.
+        val both = regions.map(::edit).sortedByDescending { it.start }
+        val overlap = both.zipWithNext().any { (later, earlier) -> earlier.end > later.start }
+        val edits = if (overlap) listOf(edit(region)) else both
         val project = context.project
         if (!DiffUtil.makeWritable(project, document)) return false
         val name = MarkdownReviewBundle.message(if (request.action == BlockAction.REVERT) "command.revert.block" else "command.apply.block")
         WriteCommandAction.writeCommandAction(project).withName(name).run<RuntimeException> {
             // Global, so Undo works from the diff window, which has no editor for the document.
             if (project != null) CommandProcessor.getInstance().markCurrentCommandAsGlobal(project)
-            document.replaceString(edit.start, edit.end, edit.replacement)
+            for (edit in edits) document.replaceString(edit.start, edit.end, edit.replacement)
         }
         scheduleRender(0)
         return true

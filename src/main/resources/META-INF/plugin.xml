@@ -15,6 +15,7 @@
           <li><b>Merged view:</b> one column, removals struck through, additions in green.</li>
           <li><b>Mermaid diagrams</b> drawn offline, in the editor's light or dark theme; a changed diagram shows the
               old and the new drawing, with a toggle for the line diff of its source.</li>
+          <li><b>Moved blocks</b> are labeled at both ends, with a link to the other end, and revert as a move.</li>
           <li><b>Math</b> (<code>$...$</code>, <code>$$...$$</code>) drawn offline with KaTeX; a changed formula is
               highlighted as a whole.</li>
           <li><b>Per-block revert and apply:</b> buttons on a changed block copy it to the other side, through the

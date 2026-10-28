@@ -300,5 +300,26 @@ class MarkdownDiffEngineTest {
         assertEquals("Mass \$\$E = mc^2\$\$ and \$x\$.", inline.plainText)
         assertEquals(listOf(5..16, 22..24), inline.atoms)
     }
+
+    @Test
+    fun `a moved paragraph links its two ends`() {
+        val diff = engine.diff("First.\n\nMoved text here.\n\nSecond.\n\nThird.\n", "First.\n\nSecond.\n\nThird.\n\nMoved text here.\n")
+        val removed = diff.blocks.indexOfFirst { it.status == DiffStatus.REMOVED }
+        val added = diff.blocks.indexOfFirst { it.status == DiffStatus.ADDED }
+        assertEquals(added, diff.blocks[removed].movedTo)
+        assertEquals(removed, diff.blocks[added].movedFrom)
+        assertEquals(null, diff.blocks[removed].movedFrom)
+        assertTrue(diff.blocks.none { it.status == DiffStatus.MODIFIED })
+    }
+
+    @Test
+    fun `code lines and edited blocks are not moves`() {
+        val code = engine.diff("```\na\n}\nb\n```\n", "```\nb\n}\na\n```\n")
+        assertTrue(code.blocks.none { it.movedTo != null || it.movedFrom != null })
+        // Two equal removed blocks and one added: only the first removed one moves.
+        val twice = engine.diff("Same words.\n\nOther.\n\nSame words.\n\nEnd.\n", "Other.\n\nEnd.\n\nSame words.\n")
+        assertEquals(1, twice.blocks.count { it.movedTo != null })
+        assertEquals(1, twice.blocks.count { it.movedFrom != null })
+    }
 }
 

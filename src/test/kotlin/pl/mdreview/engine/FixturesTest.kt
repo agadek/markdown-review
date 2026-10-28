@@ -70,6 +70,45 @@ class FixturesTest {
     }
 
     @Test
+    fun `04 moved section is labeled as moved at both ends (P2_7)`() {
+        val rendered = CoreMarkdownDiffRenderer().render(
+            RenderRequest(read("04-block-moved", "old.md"), read("04-block-moved", "new.md"), ViewMode.SIDE_BY_SIDE, ApiDiffOptions(collapseUnchanged = false)),
+        )
+        // Statuses stay ADDED and REMOVED, so the IDE side and block actions keep working; the pairing is extra.
+        val added = rendered.changes.filter { it.status == pl.mdreview.api.BlockStatus.ADDED }.map { it.idx }
+        val removed = rendered.changes.filter { it.status == pl.mdreview.api.BlockStatus.REMOVED }.map { it.idx }
+        assertEquals(2, added.size)
+        assertEquals(2, removed.size)
+        for (mode in ViewMode.entries) {
+            val html = if (mode == ViewMode.SIDE_BY_SIDE) rendered.bodyHtml else html("04-block-moved", mode)
+            // The heading and the paragraph each point at their other end: added at the top, removed at the end.
+            for ((to, from) in added.zip(removed)) {
+                assertContains(html, "data-idx=\"$to\"", message = mode.name)
+                assertTrue(Regex("data-idx=\"$to\"[^>]*data-moved-from=\"$from\"").containsMatchIn(html), "$mode: block $to moved from $from")
+                assertTrue(Regex("data-idx=\"$from\"[^>]*data-moved-to=\"$to\"").containsMatchIn(html), "$mode: block $from moved to $to")
+            }
+            assertEquals(4, Regex("class=\"mdr-moved-link\"").findAll(html).count(), mode.name)
+            // A move has no word diff.
+            assertFalse(html.contains("mdr-ins"), mode.name)
+            assertFalse(html.contains("mdr-del"), mode.name)
+        }
+    }
+
+    @Test
+    fun `04 an edited or duplicated block is not a move (P2_7)`() {
+        // The moved paragraph was also edited: keys differ, so it stays removed plus added.
+        val edited = read("04-block-moved", "new.md").replace("All JetBrains IDEs", "Every JetBrains IDE")
+        val html = CoreMarkdownDiffRenderer().render(
+            RenderRequest(read("04-block-moved", "old.md"), edited, ViewMode.SIDE_BY_SIDE, ApiDiffOptions(collapseUnchanged = false)),
+        ).bodyHtml
+        assertEquals(1, Regex("data-moved-from=").findAll(html).count())
+        assertEquals(1, Regex("data-moved-to=").findAll(html).count())
+        // A copy added while the original stays in place is an addition, not a move.
+        val copy = CoreMarkdownDiffRenderer().render(RenderRequest("A one\n\nB two\n", "A one\n\nB two\n\nA one\n", ViewMode.SIDE_BY_SIDE)).bodyHtml
+        assertFalse(copy.contains("data-moved-"))
+    }
+
+    @Test
     fun `05 headings`() {
         assertEquals(
             listOf(

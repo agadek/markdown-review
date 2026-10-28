@@ -93,6 +93,13 @@ A `<details>` element spanning several Markdown blocks is rendered as `<details 
 | `mdr-mermaid-row` | `.mdr-row` (side by side) or `.mdr-item` (merged) of a changed diagram | Starts with `details.mdr-mermaid-source`. In the merged view the drawings sit in `.mdr-mermaid-pair`: `.mdr-mermaid-old` (the old one, dimmed), then the new one. |
 | `mdr-mermaid-source` | `details` with a `summary` ("Show source changes") | Its `.mdr-mermaid-lines` hold the source line diff as nested rows or items without `data-idx`. While open, the drawings are hidden. The page script opens it when a drawing fails. |
 
+## Moved blocks
+
+| Class | Where | Meaning |
+|---|---|---|
+| `mdr-moved` | `.mdr-row` / `.mdr-item` of either end of a move, next to `blk-removed` or `blk-added` | The block moved without changes (FR-15). The element also has `data-moved-to` (old place) or `data-moved-from` (new place) with the other end's `data-idx`. In the merged view the old place is dimmed, not struck through. |
+| `mdr-moved-note` | `div` at the end of the side (side by side) or item (merged) | Holds `a.mdr-moved-link` with `data-goto="<idx>"` and a label such as "Moved down"; the page script scrolls to that block on click. |
+
 ## Math
 
 | Class | Where | Meaning |

@@ -100,7 +100,7 @@ Markdown Review on GitHub**, which opens a prefilled issue in the browser; nothi
 Markdown Review is free for noncommercial use and maintained in spare time. It is developed with the help of Claude
 Code, and sponsorships help cover the AI token budget that goes into new features and fixes. If the plugin saves you
 time in reviews, you can chip in through [GitHub Sponsors](https://github.com/sponsors/agadek) or
-[Ko-fi](https://ko-fi.com/gadek). Companies get a commercial license with the GitHub Sponsors commercial tier; see
+[Ko-fi](https://ko-fi.com/gadek). Companies get a lifetime commercial license for $1 per user through GitHub Sponsors; see
 [Commercial use](#commercial-use).
 
 ## License
@@ -114,11 +114,11 @@ organizations) is allowed free of charge.
 
 ### Commercial use
 
-Using the plugin for work at a company needs a commercial license, which comes with the **Commercial license** tier on
-[GitHub Sponsors](https://github.com/sponsors/agadek). In short:
+Using the plugin for work at a company needs a commercial license, which comes with the one-time **Commercial
+license** tier on [GitHub Sponsors](https://github.com/sponsors/agadek). In short:
 
-- It covers the sponsoring organization and all its employees and contractors, with no seat count.
-- It lasts as long as the sponsorship on that tier is active.
-- The plugin has no license key or check, and the price is the one shown on the tier.
+- It costs US$1 per user, paid once: pay $25 for 25 people who use the plugin.
+- It lasts for life and covers all future versions.
+- The plugin has no license key or check.
 
 The full terms are in [docs/COMMERCIAL_LICENSE.md](docs/COMMERCIAL_LICENSE.md).

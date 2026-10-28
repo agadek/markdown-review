@@ -153,7 +153,8 @@ Scope:
 Status: `CONTRIBUTING.md` (with a contribution license, so contributions can also be licensed commercially), the pull
 request template, `CHANGELOG.md` (rendered into the Marketplace change notes by the Gradle changelog plugin) and the
 `good first issue` label are in place. The README, the Marketplace description and the settings page link to GitHub
-Sponsors and to the commercial terms in [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md). Still to do: create the
+Sponsors and to the commercial terms in [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md): US$1 per user, paid once, for
+life. Still to do: create the one-time
 Commercial license tier on GitHub Sponsors, and the documentation site.
 
 Done when:

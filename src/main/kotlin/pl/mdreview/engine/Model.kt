@@ -93,6 +93,10 @@ class DiffBlock(
     val right: Block?,
     /** Word-level diff of [Block.plainText]; filled only for [DiffStatus.MODIFIED]. */
     val inline: List<InlineSegment> = emptyList(),
+    /** For an [DiffStatus.ADDED] block that was moved: the index of its [DiffStatus.REMOVED] other end in [MarkdownDiff.blocks]. */
+    val movedFrom: Int? = null,
+    /** For a [DiffStatus.REMOVED] block that was moved: the index of its [DiffStatus.ADDED] other end. */
+    val movedTo: Int? = null,
 ) {
     val isChange: Boolean get() = status != DiffStatus.EQUAL
 

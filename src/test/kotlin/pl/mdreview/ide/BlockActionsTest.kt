@@ -241,5 +241,26 @@ class BlockActionsTest : BasePlatformTestCase() {
         assertEquals("\"a\\u0022\\u003c\\u002fscript\\u003e\"", HtmlPage.jsString("a\"</script>"))
     }
 
+    fun `test reverting a moved block moves it back (P2_7)`() {
+        val leftText = fixture("04-block-moved", "old.md")
+        val right = content(fixture("04-block-moved", "new.md"))
+        open(content(leftText), right)
+        val original = right.document.text
+        // The heading and the paragraph each move back with one click: a delete and an insert in one command.
+        assertTrue(click(BlockAction.REVERT, view.diff.changes.first()))
+        assertEquals(2, view.diff.changes.size)
+        UndoManager.getInstance(project).undo(null)
+        assertEquals(original, right.document.text)
+        waitFor { view.diff.changes.size == 4 && view.actions.stamp.endsWith(right.document.modificationStamp.toString()) }
+
+        var clicks = 0
+        while (view.diff.changes.isNotEmpty()) {
+            assertTrue(click(BlockAction.REVERT, view.diff.changes.first()))
+            assertTrue("too many clicks", ++clicks < 10)
+        }
+        assertEquals(2, clicks)
+        assertEquals(leftText, right.document.text)
+    }
+
     private fun runWriteCommand(action: () -> Unit) = WriteCommandAction.runWriteCommandAction(project, action)
 }

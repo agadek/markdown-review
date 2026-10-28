@@ -32,6 +32,9 @@ diff window, so it works wherever the IDE shows a diff of an `.md` file.
 - **Math.** `$...$` and `$$...$$` formulas are drawn with KaTeX, offline. A changed formula is highlighted as a whole,
   and a changed block formula has the same "Show source changes" toggle. A formula that does not parse keeps its
   source, marked with KaTeX's error.
+- **Moved blocks.** A paragraph, heading or list item that moved without changes is labeled at both ends ("Moved
+  down", "Moved here from above"), with a link to the other end, instead of reading as a deletion and an addition.
+  Reverting it moves it back.
 - **Text diff.** IntelliJ's built-in diff is always one click away in the diff window's viewer switcher.
 - **Per-block revert and apply.** Buttons on a changed block copy it to the other side, like the arrows in the text
   diff. They appear only on a side that can be edited (a local file, not a VCS revision), and each click goes through

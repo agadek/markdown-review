@@ -117,6 +117,9 @@ data class LineRange(val start: Int, val end: Int)
  * @property left source lines on the left side, `null` for [BlockStatus.ADDED].
  * @property right source lines on the right side, `null` for [BlockStatus.REMOVED].
  * @property edit the lines that per-block revert and apply exchange (FR-12), `null` for [BlockStatus.EQUAL].
+ * @property movedFrom for an [BlockStatus.ADDED] block that was moved (FR-15): the [idx] of its removed other end.
+ * @property movedTo for a [BlockStatus.REMOVED] block that was moved: the [idx] of its added other end. Reverting or
+ *   applying either end of a move exchanges both ends' [edit] regions, so the block moves back.
  */
 data class BlockInfo(
     val idx: Int,
@@ -124,7 +127,12 @@ data class BlockInfo(
     val left: LineRange?,
     val right: LineRange?,
     val edit: EditRegion? = null,
-)
+    val movedFrom: Int? = null,
+    val movedTo: Int? = null,
+) {
+    /** The other end of a move, if this block is one. */
+    val movePartner: Int? get() = movedFrom ?: movedTo
+}
 
 /**
  * Line ranges, one per side, that make a block's change undone when one replaces the other: replacing [right]

@@ -49,6 +49,10 @@ data class Labels(
     val markupChanged: String = "HTML changed",
     /** Summary of a `<details>` element without a `<summary>`, as browsers show it. */
     val details: String = "Details",
+    /** Label on the new place of a moved block; true when the old place is further down. */
+    val movedFrom: (Boolean) -> String = { below -> if (below) "Moved here from below" else "Moved here from above" },
+    /** Label on the old place of a moved block; true when the new place is further down. */
+    val movedTo: (Boolean) -> String = { below -> if (below) "Moved down" else "Moved up" },
 )
 
 /**
@@ -182,15 +186,17 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
      */
     private fun block(block: DiffBlock, index: Int?): String {
         val status = block.status.name.lowercase()
-        val idx = if (index == null) "" else " data-idx=\"$index\" data-block-id=\"b$index\""
+        val idx = if (index == null) "" else " data-idx=\"$index\" data-block-id=\"b$index\"" + moveAttributes(block)
         if (isChangedDiagram(block)) return changedDiagram(block, status, idx)
+        val moved = if (index != null && (block.movedFrom != null || block.movedTo != null)) " mdr-moved" else ""
+        val moveNote = if (moved.isEmpty()) "" else moveNote(block, index!!)
         val sb = StringBuilder()
         when (options.mode) {
             ViewMode.SIDE_BY_SIDE -> {
-                sb.append("<div class=\"mdr-row blk-").append(status).append("\"").append(idx).append(hidden(block)).append(">")
+                sb.append("<div class=\"mdr-row blk-").append(status).append(moved).append("\"").append(idx).append(hidden(block)).append(">")
                 val links = linkChanges(block)
-                sb.append(side("left", block.left, block.status, leftMarks(block), null, links.left))
-                sb.append(side("right", block.right, block.status, rightMarks(block, withRemoved = false), changeNote(block), links.right))
+                sb.append(side("left", block.left, block.status, leftMarks(block), null, links.left, moveNote))
+                sb.append(side("right", block.right, block.status, rightMarks(block, withRemoved = false), changeNote(block), links.right, moveNote))
                 sb.append("</div>\n")
             }
             ViewMode.MERGED -> {
@@ -199,15 +205,30 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                     DiffStatus.MODIFIED -> Triple(block.right!!, "right", rightMarks(block, withRemoved = true))
                     else -> Triple(block.right!!, "right", InlineMarks.NONE)
                 }
-                sb.append("<div class=\"mdr-item blk-").append(status).append("\"").append(idx).append(hidden(block)).append(" data-side=\"").append(side)
+                sb.append("<div class=\"mdr-item blk-").append(status).append(moved).append("\"").append(idx).append(hidden(block)).append(" data-side=\"").append(side)
                     .append("\" data-line=\"").append(content.source.startLine).append("\">")
                 val note = if (block.status == DiffStatus.MODIFIED) changeNote(block) else null
                 val links = if (side == "right") linkChanges(block).right else emptyMap()
                 sb.append(quote(renderBlock(content, block.status, marks, side, note, links), content.context))
+                sb.append(moveNote)
                 sb.append("</div>\n")
             }
         }
         return sb.toString()
+    }
+
+    private fun moveAttributes(block: DiffBlock): String =
+        (block.movedFrom?.let { " data-moved-from=\"$it\"" } ?: "") + (block.movedTo?.let { " data-moved-to=\"$it\"" } ?: "")
+
+    /**
+     * The label on either end of a moved block (FR-15), a link to the other end. The page script scrolls to the block
+     * whose `data-idx` is the link's `data-goto`; without it the link does nothing.
+     */
+    private fun moveNote(block: DiffBlock, index: Int): String {
+        val other = block.movedFrom ?: block.movedTo ?: return ""
+        val label = if (block.movedFrom != null) options.labels.movedFrom(other > index) else options.labels.movedTo(other > index)
+        return "<div class=\"mdr-moved-note\"><a class=\"mdr-moved-link\" href=\"#\" data-goto=\"$other\">" +
+            escape(label) + "</a></div>"
     }
 
     private fun isChangedDiagram(block: DiffBlock): Boolean {
@@ -262,11 +283,13 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         marks: InlineMarks,
         note: String?,
         links: Map<Node, String>,
+        /** HTML after the block, inside the side, when the side has content. */
+        after: String = "",
     ): String {
         val open = "<div class=\"mdr-side mdr-$side\" data-side=\"$side\""
         if (content == null) return "$open><div class=\"mdr-placeholder\"></div></div>"
         val inner = renderBlock(content, status, marks, side, note, links)
-        return "$open data-line=\"${content.source.startLine}\">" + quote(inner, content.context) + "</div>"
+        return "$open data-line=\"${content.source.startLine}\">" + quote(inner, content.context) + after + "</div>"
     }
 
     /** Wraps a block in its quotes; inside a GitHub alert the outermost quote carries the alert's classes. */

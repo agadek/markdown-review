@@ -371,6 +371,24 @@ details.mdr-math-source > summary {
 /* In the merged view the old formula is dimmed instead of struck through. */
 .mdr-merged .mdr-math-old .mdr-math-block.mdr-removed { text-decoration: none; opacity: 0.6; }
 
+/* ---------- Moved blocks ---------- */
+/*
+ * Both ends of a moved block (FR-15) keep their removed / added status and get .mdr-moved, plus
+ * data-moved-to (old place) or data-moved-from (new place) naming the other end's data-idx. Each
+ * end ends with div.mdr-moved-note holding a.mdr-moved-link[data-goto], which the page script
+ * turns into a jump to the other end. The block has no word diff: its text did not change.
+ */
+.mdr-moved-note { margin: 0.1em 0 0.2em; font-size: 0.85em; }
+/* The block fills its cell; on a moved row it shares the cell with the note below it. */
+.mdr-sbs .mdr-moved > .mdr-side { display: flex; flex-direction: column; }
+.mdr-sbs .mdr-moved > .mdr-side > :not(.mdr-moved-note) { flex: 1 1 auto; height: auto; }
+a.mdr-moved-link { color: var(--mdr-link); text-decoration: none; }
+a.mdr-moved-link:hover { text-decoration: underline; }
+.mdr-moved.blk-removed .mdr-moved-link::before { content: "\21C5  "; }
+.mdr-moved.blk-added .mdr-moved-link::before { content: "\21C5  "; }
+/* The old place of a move is not deleted text: no strike-through, only dimmed. */
+.mdr-merged .mdr-moved.blk-removed .mdr-block { text-decoration: none; opacity: 0.6; }
+
 /* ---------- Per-block action buttons ---------- */
 /*
  * <div class="mdr-actions"><button class="mdr-revert" data-block-id="…">…</button></div>

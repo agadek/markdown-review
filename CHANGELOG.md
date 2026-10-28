@@ -6,6 +6,8 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-28
+
 ### Added
 
 - **Show Rendered Diff** in the context menu of the Git log's changed files, of file history and of the Commit window
@@ -19,7 +21,7 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
   Markdown change, rendered, as one HTML file or PDF, with a table of contents and a section per file.
 - Settings | Tools | Markdown Review links to the commercial license terms, next to the sponsorship links.
 
-## [1.2.1]
+## [1.2.1] - 2026-10-28
 
 ### Fixed
 

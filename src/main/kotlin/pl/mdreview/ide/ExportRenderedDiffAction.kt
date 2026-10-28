@@ -9,7 +9,7 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.FileDocumentManager
@@ -68,8 +68,9 @@ open class ExportRenderedDiffAction : DumbAwareAction() {
         val descriptor = FileSaverDescriptor(
             MarkdownReviewBundle.message("export.changes.title"),
             MarkdownReviewBundle.message("export.changes.description"),
-            "html", "pdf",
         )
+        // The constructor that takes extensions is deprecated; the filter offers both formats.
+        descriptor.withExtensionFilter(MarkdownReviewBundle.message("export.changes.filter"), "html", "pdf")
         val target = FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
             .save(null as Path?, DEFAULT_FILE_NAME)?.file?.toPath() ?: return
         export(project, changes, target)
@@ -135,7 +136,7 @@ open class ExportRenderedDiffAction : DumbAwareAction() {
         if (revision is CurrentContentRevision) {
             val file = revision.virtualFile
             if (file != null) {
-                runReadAction { FileDocumentManager.getInstance().getDocument(file)?.text }?.let { return StringUtil.convertLineSeparators(it) }
+                ReadAction.compute<String?, RuntimeException> { FileDocumentManager.getInstance().getDocument(file)?.text }?.let { return StringUtil.convertLineSeparators(it) }
             }
         }
         val text = revision.content ?: throw VcsException(MarkdownReviewBundle.message("rendered.diff.no.content", revision.file.name))

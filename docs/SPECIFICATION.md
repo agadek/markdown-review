@@ -27,7 +27,7 @@ The plugin adds viewers to IntelliJ's own diff window; it has no window of its o
 | FR-9 | Compare any two Markdown files, not only VCS revisions (**Compare Markdown Files...**). | Shipped |
 | FR-11 | Settings page under Settings \| Tools \| Markdown Review, including the default viewer for Markdown diffs (rendered side by side, rendered merged, or text). | Shipped, see [ADR 0001](adr/0001-default-diff-viewer.md) |
 | FR-12 | Revert and apply a change per block, like the arrows in the text diff, through the IDE document so Undo works. | Shipped (P2.5) |
-| FR-13 | Edit a block's raw Markdown in place (double-click). | Not in 1.0, planned in P3.2 |
+| FR-13 | Edit a block's raw Markdown in place (double-click). | Shipped (P2.6) |
 | FR-14 | Ctrl/Cmd+click on a block opens its source line in the editor. | Shipped |
 | FR-15 | Detect moved blocks and show them as moved rather than removed and added. | Shipped (P2.7) |
 
@@ -106,6 +106,6 @@ list, are now supported.
   rewrites the remembered order per kind of diff window; `DiffToolSubstitutor` was rejected
   ([ADR 0001](adr/0001-default-diff-viewer.md)).
 - **Mermaid and math**: Mermaid moved from out of scope into 1.0; math rendering followed after 1.0.
-- **Block source editing and moved blocks** (FR-13, FR-15): deferred past 1.0 to P3.2; moved blocks followed after 1.0.
+- **Block source editing and moved blocks** (FR-13, FR-15): deferred past 1.0 to P3.2; both followed after 1.0.
 - **Pairing of rewritten blocks**: a user setting, default 0.5, range 0.2 to 0.8.
 - **Renderer**: commonmark-java for parsing, JCEF for display, diff on the AST rather than on the finished HTML.

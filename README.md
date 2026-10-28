@@ -39,6 +39,8 @@ diff window, so it works wherever the IDE shows a diff of an `.md` file.
 - **Per-block revert and apply.** Buttons on a changed block copy it to the other side, like the arrows in the text
   diff. They appear only on a side that can be edited (a local file, not a VCS revision), and each click goes through
   the IDE document as one Undo step.
+- **Block source editing.** Double-click a block on a side that can be edited to change its raw Markdown in place;
+  Ctrl/Cmd+Enter saves it as one Undo step, Esc cancels. The view waits with re-rendering while you type.
 
 The viewers work in the Commit window (Show Diff, Ctrl+D), in file history, when comparing with a branch and in pull
 request windows. Compare any two files with **Compare Markdown Files...** from the project view context menu or the

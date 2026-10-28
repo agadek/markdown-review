@@ -2,6 +2,7 @@ package pl.mdreview.ide
 
 import com.intellij.openapi.diff.DiffColors
 import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.ColorUtil
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
@@ -107,8 +108,19 @@ object HtmlPage {
 
     private fun isDark() = ColorUtil.isDark(EditorColorsManager.getInstance().globalScheme.defaultBackground)
 
-    /** The call that adds the block buttons, or nothing when the page has none. */
-    fun actionsJs(diff: RenderedDiff, actions: BlockActions): String {
+    /** The calls that add the block buttons and turn on source editing, or nothing when the page has neither. */
+    fun actionsJs(diff: RenderedDiff, actions: BlockActions): String = buttonsJs(diff, actions) + editingJs(actions)
+
+    /** Double-click editing of the sides [actions] allows (FR-13), with the editor's hints. */
+    private fun editingJs(actions: BlockActions): String {
+        if (!actions.edits) return ""
+        val save = (if (SystemInfo.isMac) "Cmd" else "Ctrl") + "+Enter"
+        return "mdr.editing({left: ${actions.editLeft}, right: ${actions.editRight}}, ${jsString(actions.stamp)}, " +
+            "${jsString(MarkdownReviewBundle.message("block.editor.hint", save))}, " +
+            "${jsString(MarkdownReviewBundle.message("block.editor.refused"))});"
+    }
+
+    private fun buttonsJs(diff: RenderedDiff, actions: BlockActions): String {
         if (!actions.any) return ""
         val blocks = diff.blocks.filter { it.edit != null }.joinToString(",") { it.idx.toString() }
         fun button(action: BlockAction, enabled: Boolean): String {
@@ -300,12 +312,23 @@ object HtmlPage {
         [data-side][data-line] { cursor: text; }
         .mdr-merged .mdr-item { position: relative; }
         .mdr-item:hover > .mdr-actions { opacity: 1; }
+        .mdr-editing > :not(.mdr-editor) { display: none; }
+        .mdr-editor { padding: 4px 0; }
+        .mdr-editor textarea {
+          box-sizing: border-box; width: 100%; resize: vertical; padding: 6px 8px; border-radius: 4px;
+          border: 1px solid var(--md-link); background: var(--md-bg); color: var(--md-fg);
+          font-family: var(--md-mono-font, monospace); font-size: 0.9em; line-height: 1.45; outline: none;
+        }
+        .mdr-editor-hint { margin-top: 2px; font-size: 0.8em; color: var(--md-muted); }
+        .mdr-editor-refused { color: var(--md-alert-caution); }
     """
 
     /**
      * Messages to Kotlin are `action|arg|arg` strings:
      * `scroll|<idx>` topmost visible block, `source|<side>|<line>` Ctrl/Cmd+click on a block,
-     * `link|<href>` external link click, `edit|<revert|apply>|<idx>|<stamp>` a block button click.
+     * `link|<href>` external link click, `edit|<revert|apply>|<idx>|<stamp>` a block button click,
+     * `open|<side>|<idx>|<stamp>` a double-click that asks for a block's source (answered with `mdr.openEditor`),
+     * `edit|edit-<side>|<idx>|<stamp>|<markdown>` saving the editor, `closed` the editor closed without saving.
      */
     private const val BRIDGE_JS = """
         var mdr = (function() {
@@ -326,6 +349,25 @@ object HtmlPage {
             }, 150);
           });
           var stamp = '';
+          var editSides = {}, editHint = '', editRefused = '', asked = null, editor = null;
+          function closeEditor() {
+            if (!editor) return;
+            editor.cell.classList.remove('mdr-editing');
+            editor.box.remove();
+            editor = null;
+            mdrSend('closed');
+          }
+          document.addEventListener('dblclick', function(e) {
+            if (editor || e.ctrlKey || e.metaKey || e.target.closest('a, button, summary, .mdr-editor')) return;
+            var cell = e.target.closest('[data-side][data-line]');
+            var row = cell && cell.closest('[data-idx]');
+            if (!row || !editSides[cell.getAttribute('data-side')]) return;
+            e.preventDefault();
+            var sel = window.getSelection();
+            if (sel) sel.removeAllRanges();
+            asked = {cell: cell, side: cell.getAttribute('data-side'), idx: row.getAttribute('data-idx')};
+            mdrSend('open|' + asked.side + '|' + asked.idx + '|' + stamp);
+          });
           document.addEventListener('click', function(e) {
             var button = e.target.closest('.mdr-actions button[data-action]');
             if (button) {
@@ -357,6 +399,45 @@ object HtmlPage {
             }
           });
           return {
+            editing: function(sides, pageStamp, hint, refused) {
+              editSides = sides; stamp = pageStamp; editHint = hint; editRefused = refused;
+            },
+            openEditor: function(side, idx, text) {
+              if (editor || !asked || asked.side !== side || String(asked.idx) !== String(idx) || !asked.cell.isConnected) return false;
+              var cell = asked.cell;
+              asked = null;
+              var box = document.createElement('div');
+              box.className = 'mdr-editor';
+              var area = document.createElement('textarea');
+              area.value = text;
+              area.spellcheck = false;
+              area.rows = Math.max(2, text.split('\n').length + 1);
+              var note = document.createElement('div');
+              note.className = 'mdr-editor-hint';
+              note.textContent = editHint;
+              box.appendChild(area);
+              box.appendChild(note);
+              cell.appendChild(box);
+              cell.classList.add('mdr-editing');
+              editor = {cell: cell, box: box, area: area, note: note};
+              area.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') { e.preventDefault(); closeEditor(); return; }
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                  e.preventDefault();
+                  if (area.readOnly) return;
+                  area.readOnly = true;
+                  mdrSend('edit|edit-' + side + '|' + idx + '|' + stamp + '|' + area.value);
+                }
+              });
+              area.focus();
+              return true;
+            },
+            editorRefused: function() {
+              if (!editor) return;
+              editor.area.readOnly = false;
+              editor.note.textContent = editRefused;
+              editor.note.classList.add('mdr-editor-refused');
+            },
             goTo: function(idx) {
               var el = block(idx);
               if (!el) return;

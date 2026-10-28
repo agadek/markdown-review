@@ -20,6 +20,8 @@
               highlighted as a whole.</li>
           <li><b>Per-block revert and apply:</b> buttons on a changed block copy it to the other side, through the
               IDE document, so Undo works.</li>
+          <li><b>Block source editing:</b> double-click a block to edit its raw Markdown in place; saved as one Undo
+              step.</li>
           <li><b>Text diff</b> one click away in the diff window's viewer switcher.</li>
           <li>Works for local changes (Commit window), file history, branch comparison and pull requests, plus
               <i>Compare Markdown Files...</i> for any two files.</li>

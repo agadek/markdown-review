@@ -2,6 +2,8 @@ package pl.mdreview.ide
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.jcef.JBCefBrowser
 import com.intellij.ui.jcef.JBCefBrowserBase
@@ -22,13 +24,25 @@ interface RenderedDiffView {
     fun refreshTheme()
     fun goTo(blockIdx: Int)
 
-    /** Sets what a click on a block button calls (on the CEF thread). */
+    /** Sets what a click on a block button, or saving an edited block, calls (on the CEF thread). */
     fun onBlockAction(handler: (BlockActionRequest) -> Unit) = Unit
+
+    /**
+     * Sets where a double-click gets the source of block `idx` on `side` for the page rendered at `stamp`
+     * (on the CEF thread); `null` keeps the page as it is (FR-13).
+     */
+    fun onSourceRequest(provider: (side: String, idx: Int, stamp: String) -> String?) = Unit
+
+    /** An edited block was not saved, for example because the file changed meanwhile; the editor stays open. */
+    fun editRefused() = Unit
 }
 
 /**
  * JCEF view of one [RenderedDiff]. Knows nothing about diff requests: it shows a page, scrolls to
  * changes on request and reports clicks back through [onSourceClick] (called on the CEF thread).
+ *
+ * While a block's source editor is open (FR-13), a new page is held back and shown when the editor closes, so a
+ * re-render never takes what is being typed.
  */
 class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: String, line: Int) -> Unit) : RenderedDiffView {
 
@@ -41,6 +55,13 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
     private var current: RenderedDiff? = null
     private var currentActions = BlockActions.NONE
     private var blockActionHandler: (BlockActionRequest) -> Unit = {}
+    private var sourceProvider: (String, Int, String) -> String? = { _, _, _ -> null }
+
+    /** Whether the page has a block editor open; read and written on the EDT. */
+    private var editing = false
+
+    /** The page held back while [editing]. */
+    private var pending: Pair<RenderedDiff, BlockActions>? = null
 
     override val component: JComponent get() = browser.component
 
@@ -48,11 +69,25 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
         Disposer.register(parent, browser)
         Disposer.register(parent, query)
         query.addHandler { msg ->
-            val parts = msg.split('|', limit = 3)
+            val parts = msg.split('|', limit = 4)
             when (parts[0]) {
                 "scroll" -> parts.getOrNull(1)?.toIntOrNull()?.let { topIdx = it }
                 "link" -> parts.getOrNull(1)?.takeIf(::isExternalLink)?.let(BrowserUtil::browse)
-                "edit" -> BlockActionRequest.parse(msg)?.let { blockActionHandler(it) }
+                "edit" -> BlockActionRequest.parse(msg)?.let { request ->
+                    // Saving closes the editor; the page that follows the edit replaces the one held back.
+                    if (request.action.editSide != null) onEdt { editing = false; pending = null }
+                    blockActionHandler(request)
+                }
+                "open" -> {
+                    val idx = parts.getOrNull(2)?.toIntOrNull()
+                    val stamp = parts.getOrNull(3)
+                    val text = if (idx != null && stamp != null) sourceProvider(parts[1], idx, stamp) else null
+                    if (idx != null && text != null) onEdt { openEditor(parts[1], idx, text) }
+                }
+                "closed" -> onEdt {
+                    editing = false
+                    pending?.let { (diff, actions) -> pending = null; show(diff, actions) }
+                }
                 "source" -> {
                     val line = parts.getOrNull(2)?.toIntOrNull()
                     if (line != null) onSourceClick(parts[1], line)
@@ -65,6 +100,10 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
     override fun show(diff: RenderedDiff) = show(diff, BlockActions.NONE)
 
     override fun show(diff: RenderedDiff, actions: BlockActions) {
+        if (editing) {
+            pending = diff to actions
+            return
+        }
         current = diff
         currentActions = actions
         val settings = MarkdownReviewSettings.getInstance()
@@ -80,9 +119,26 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
         blockActionHandler = handler
     }
 
-    override fun goTo(blockIdx: Int) {
-        browser.cefBrowser.executeJavaScript("mdr.goTo($blockIdx)", browser.cefBrowser.url, 0)
+    override fun onSourceRequest(provider: (side: String, idx: Int, stamp: String) -> String?) {
+        sourceProvider = provider
     }
+
+    override fun editRefused() {
+        editing = true
+        execute("mdr.editorRefused()")
+    }
+
+    /** Opens the editor of block [idx] on [side] with [text], unless the page was replaced meanwhile. */
+    private fun openEditor(side: String, idx: Int, text: String) {
+        editing = true
+        execute("if (!mdr.openEditor(${HtmlPage.jsString(side)}, $idx, ${HtmlPage.jsString(text)})) mdrSend('closed')")
+    }
+
+    private fun execute(js: String) = browser.cefBrowser.executeJavaScript(js, browser.cefBrowser.url, 0)
+
+    private fun onEdt(action: () -> Unit) = ApplicationManager.getApplication().invokeLater(action, ModalityState.any())
+
+    override fun goTo(blockIdx: Int) = execute("mdr.goTo($blockIdx)")
 }
 
 /** Whether a sanitized link should be opened by the system browser. URI schemes are case-insensitive. */

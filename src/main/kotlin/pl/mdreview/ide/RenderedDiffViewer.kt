@@ -37,6 +37,7 @@ import com.intellij.ui.components.panels.VerticalLayout
 import com.intellij.util.ui.JBUI
 import pl.mdreview.api.BlockInfo
 import pl.mdreview.api.EditRegion
+import pl.mdreview.api.LineRange
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.RenderedDiff
 import pl.mdreview.api.TextEdit
@@ -49,7 +50,8 @@ import javax.swing.JPanel
 /**
  * One rendered diff inside IntelliJ's diff window. Recomputes off the EDT whenever a side's document
  * changes (debounced), keeps change navigation (F7 / Shift+F7, see [ChangeNavigation]),
- * Ctrl/Cmd+click navigation to the source (FR-14) and the per-block revert and apply buttons (FR-12).
+ * Ctrl/Cmd+click navigation to the source (FR-14), the per-block revert and apply buttons (FR-12) and editing a
+ * block's source on a double-click (FR-13).
  */
 class RenderedDiffViewer(
     private val context: DiffContext,
@@ -73,8 +75,9 @@ class RenderedDiffViewer(
 
     private var changes: List<BlockInfo> = emptyList()
 
-    /** The diff on screen and the document stamps it was computed from; block actions edit against it. */
-    private var rendered: Pair<RenderedDiff, String>? = null
+    /** The diff on screen, with the document stamps and texts it was computed from; block actions edit against it. */
+    @Volatile
+    private var rendered: Rendered? = null
     private var currentChange = -1
 
     override fun getComponent(): JComponent = root
@@ -90,8 +93,11 @@ class RenderedDiffViewer(
         ApplicationManager.getApplication().messageBus.connect(disposable)
             .subscribe(EditorColorsManager.TOPIC, EditorColorsListener { browserPanel.refreshTheme() })
         browserPanel.onBlockAction { action ->
-            ApplicationManager.getApplication().invokeLater({ performBlockAction(action) }, ModalityState.any())
+            ApplicationManager.getApplication().invokeLater({
+                if (!performBlockAction(action) && action.action.editSide != null) browserPanel.editRefused()
+            }, ModalityState.any())
         }
+        browserPanel.onSourceRequest(::blockSource)
         for (action in navigationActions) {
             action.registerCustomShortcutSet(KeymapUtil.getActiveKeymapShortcuts(action.shortcutActionId), root, disposable)
         }
@@ -118,11 +124,11 @@ class RenderedDiffViewer(
 
     private fun render() {
         val options = settings.options()
-        ReadAction.nonBlocking<Pair<RenderedDiff, String>?> {
+        ReadAction.nonBlocking<Rendered?> {
             if (RenderedMarkdownDiffTool.isTooLarge(contents)) return@nonBlocking null
             val stamp = stamp()
             val texts = documents.map { it?.let { doc -> StringUtil.convertLineSeparators(doc.text) } }
-            RendererProvider.renderer.render(RenderRequest(texts[0], texts[1], mode, options, baseUris[0], baseUris[1])) to stamp
+            Rendered(RendererProvider.renderer.render(RenderRequest(texts[0], texts[1], mode, options, baseUris[0], baseUris[1])), stamp, texts)
         }
             .expireWith(disposable)
             .coalesceBy(this)
@@ -130,7 +136,7 @@ class RenderedDiffViewer(
             .submit(AppExecutorUtil.getAppExecutorService())
     }
 
-    private fun show(result: Pair<RenderedDiff, String>?) {
+    private fun show(result: Rendered?) {
         rendered = result
         if (result == null) {
             changes = emptyList()
@@ -150,10 +156,21 @@ class RenderedDiffViewer(
     /** `left:right` modification stamps of the documents, `-1` for a side without one. */
     private fun stamp(): String = documents.joinToString(":") { (it?.modificationStamp ?: -1).toString() }
 
-    /** The block buttons for a page rendered at [stamp]: only for sides that can be edited. */
+    /**
+     * The block buttons and source editing for a page rendered at [stamp]: only for sides that can be edited.
+     * The merged view shows the right side, apart from removed blocks, so only the right side is edited there.
+     */
     internal fun blockActions(stamp: String): BlockActions {
-        if (!settings.showBlockActions) return BlockActions.NONE.copy(stamp = stamp)
-        return BlockActions(revert = canEdit(1), apply = mode == ViewMode.SIDE_BY_SIDE && canEdit(0), stamp = stamp)
+        val editLeft = mode == ViewMode.SIDE_BY_SIDE && canEdit(0)
+        val editRight = canEdit(1)
+        val buttons = settings.showBlockActions
+        return BlockActions(
+            revert = buttons && editRight,
+            apply = buttons && editLeft,
+            stamp = stamp,
+            editLeft = editLeft,
+            editRight = editRight,
+        )
     }
 
     /** False for VCS revisions, read-only files and requests marked read-only. */
@@ -164,8 +181,8 @@ class RenderedDiffViewer(
     }
 
     /**
-     * Replaces the block's lines on the target side with the other side's lines, as one undoable command.
-     * Refused, with a re-render, when a document changed after the page was rendered. Returns whether it edited.
+     * Replaces the block's lines on the target side with the other side's lines, or for a source edit with the
+     * edited Markdown, as one undoable command. Refused, with a re-render, when a document changed after the page was rendered. Returns whether it edited.
      */
     internal fun performBlockAction(request: BlockActionRequest): Boolean {
         val (diff, stamp) = rendered ?: return false
@@ -175,6 +192,7 @@ class RenderedDiffViewer(
         }
         if (!blockActions(stamp).allows(request.action)) return false
         val block = diff.blocks.getOrNull(request.idx) ?: return false
+        request.action.editSide?.let { side -> return saveSource(block, side, request.source ?: return false) }
         val region = block.edit ?: return false
         // A moved block goes back as a whole: both ends' regions change in one command (FR-15).
         val regions = listOf(region) + listOfNotNull(block.movePartner?.let { diff.blocks.getOrNull(it)?.edit })
@@ -197,6 +215,40 @@ class RenderedDiffViewer(
             // Global, so Undo works from the diff window, which has no editor for the document.
             if (project != null) CommandProcessor.getInstance().markCurrentCommandAsGlobal(project)
             for (edit in edits) document.replaceString(edit.start, edit.end, edit.replacement)
+        }
+        scheduleRender(0)
+        return true
+    }
+
+    /**
+     * The raw Markdown of block [idx] on [side] (`left` or `right`) as it was when the page at [stamp] was rendered,
+     * for the editor a double-click opens (FR-13); `null` when that page is stale. Called on the CEF thread, so it
+     * reads only the rendered snapshot; whether the side may be edited is the page's [BlockActions], and saving
+     * checks it again.
+     */
+    internal fun blockSource(side: String, idx: Int, stamp: String): String? {
+        val shown = rendered ?: return null
+        if (shown.stamp != stamp) return null
+        val target = if (side == "left") 0 else 1
+        val block = shown.diff.blocks.getOrNull(idx) ?: return null
+        val range = (if (target == 0) block.left else block.right) ?: return null
+        val text = shown.texts[target] ?: return null
+        return text.split('\n').subList(range.start, range.end).joinToString("\n")
+    }
+
+    /** Replaces the lines of [block] on [side] with [markdown], as one undoable command. */
+    private fun saveSource(block: BlockInfo, side: Int, markdown: String): Boolean {
+        val range = (if (side == 0) block.left else block.right) ?: return false
+        val document = documents[side] ?: return false
+        // Trailing line breaks would add blank lines after the block; an emptied editor removes the block's lines.
+        val source = StringUtil.convertLineSeparators(markdown).trimEnd('\n')
+        val sourceLines = if (source.isBlank()) LineRange(0, 0) else LineRange(0, source.count { it == '\n' } + 1)
+        val edit = TextEdit.replaceLines(document.charsSequence, range, source, sourceLines)
+        val project = context.project
+        if (!DiffUtil.makeWritable(project, document)) return false
+        WriteCommandAction.writeCommandAction(project).withName(MarkdownReviewBundle.message("command.edit.block")).run<RuntimeException> {
+            if (project != null) CommandProcessor.getInstance().markCurrentCommandAsGlobal(project)
+            document.replaceString(edit.start, edit.end, edit.replacement)
         }
         scheduleRender(0)
         return true
@@ -269,6 +321,9 @@ class RenderedDiffViewer(
             if (target in changes.indices) goToChange(target)
         }
     }
+
+    /** A diff on screen, the documents' stamps it was computed from and their texts, `\n`-separated, per side. */
+    private data class Rendered(val diff: RenderedDiff, val stamp: String, val texts: List<String?>)
 
     private inner class RootPanel : JPanel(BorderLayout()) {
         init {

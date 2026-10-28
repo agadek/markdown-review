@@ -262,5 +262,116 @@ class BlockActionsTest : BasePlatformTestCase() {
         assertEquals(leftText, right.document.text)
     }
 
+    /** Saves [markdown] as the new source of [block] on [side], as Ctrl/Cmd+Enter in the block's textarea does (P2.6). */
+    private fun saveSource(block: BlockInfo, side: String, markdown: String, stamp: String = view.actions.stamp): Boolean {
+        val request = BlockActionRequest.parse("edit|edit-$side|${block.idx}|$stamp|$markdown")
+        assertNotNull("the page's edit message must parse", request)
+        val before = view.shown.size
+        val done = viewer.performBlockAction(request!!)
+        if (done) waitFor { view.shown.size > before && view.actions.stamp != stamp }
+        return done
+    }
+
+    fun `test editing a paragraph saves its source as one undo step (P2_6)`() {
+        val right = content("# Title\n\nnew text here\n\nlast\n")
+        open(content("# Title\n\nold text here\n\nlast\n"), right)
+        val original = right.document.text
+        assertTrue(saveSource(view.diff.changes.single(), "right", "edited *text* here"))
+        assertEquals("# Title\n\nedited *text* here\n\nlast\n", right.document.text)
+
+        val undo = UndoManager.getInstance(project)
+        undo.undo(null)
+        assertEquals(original, right.document.text)
+        undo.redo(null)
+        assertEquals("# Title\n\nedited *text* here\n\nlast\n", right.document.text)
+    }
+
+    fun `test editing keeps pipes and line breaks of the source (P2_6)`() {
+        val right = content("intro\n\nnew text\n")
+        open(content("intro\n\nold text\n"), right)
+        assertTrue(saveSource(view.diff.changes.single(), "right", "first | line\nsecond line"))
+        assertEquals("intro\n\nfirst | line\nsecond line\n", right.document.text)
+    }
+
+    fun `test editing a table row saves the row only (P2_6)`() {
+        val table = "| Name | Value |\n| --- | --- |\n| a | 1 |\n| b | 2 |\n"
+        val right = content(table.replace("| b | 2 |", "| b | 3 |"))
+        open(content(table), right)
+        assertTrue(saveSource(view.diff.changes.single(), "right", "| b | 4 |"))
+        assertEquals(table.replace("| b | 2 |", "| b | 4 |"), right.document.text)
+    }
+
+    fun `test editing a list item keeps its nested items (P2_6)`() {
+        val right = content("- one\n- two changed\n  - nested\n- three\n")
+        open(content("- one\n- two\n  - nested\n- three\n"), right)
+        val item = view.diff.changes.single()
+        assertTrue(saveSource(item, "right", "- two edited"))
+        assertEquals("- one\n- two edited\n  - nested\n- three\n", right.document.text)
+    }
+
+    fun `test an unchanged block and the left side can be edited too (P2_6)`() {
+        val left = content("# Title\n\nsame\n")
+        open(left, content("# Title\n\nsame\n"))
+        assertTrue(saveSource(view.diff.blocks[1], "left", "changed"))
+        assertEquals("# Title\n\nchanged\n", left.document.text)
+        assertEquals(1, view.diff.changes.size)
+    }
+
+    fun `test editing is refused on read-only sides and stale pages (P2_6)`() {
+        val factory = DiffContentFactory.getInstance()
+        open(content("old text\n"), factory.create(project, "new text\n"))
+        assertFalse(saveSource(view.diff.changes.single(), "right", "edited"))
+
+        val right = content("same\n\nadded\n")
+        open(content("same\n"), right)
+        val stamp = view.actions.stamp
+        runWriteCommand { right.document.insertString(0, "typed ") }
+        assertFalse(saveSource(view.diff.blocks[0], "right", "edited", stamp))
+        assertEquals("typed same\n\nadded\n", right.document.text)
+    }
+
+    fun `test the source a double-click opens is the block's lines on that side (P2_6)`() {
+        val right = content("# Title\n\n> a quoted text\n> more\n\n- one\n- two\n  - nested\n")
+        open(content("# Title\n\n> a quoted text\n> less\n\n- one\n- two\n  - nested\n"), right)
+        val stamp = view.actions.stamp
+        val quote = view.diff.changes.single()
+        assertEquals("> a quoted text\n> more", viewer.blockSource("right", quote.idx, stamp))
+        assertEquals("> a quoted text\n> less", viewer.blockSource("left", quote.idx, stamp))
+        assertEquals("- two", viewer.blockSource("right", view.diff.blocks.last().idx - 1, stamp))
+        assertNull(viewer.blockSource("right", quote.idx, "0:0"))
+    }
+
+    fun `test emptying the editor removes the block (P2_6)`() {
+        val right = content("one\n\ntwo\n\nthree\n")
+        open(content("one\n\ntwo\n\nthree\n"), right)
+        assertTrue(saveSource(view.diff.blocks[1], "right", ""))
+        assertEquals("one\n\n\nthree\n", right.document.text)
+    }
+
+    fun `test the merged view edits the right side only (P2_6)`() {
+        open(content("a\n"), content("b\n"), ViewMode.MERGED)
+        assertTrue(view.actions.editRight)
+        assertFalse(view.actions.editLeft)
+        assertFalse(saveSource(view.diff.changes.single(), "left", "edited"))
+    }
+
+    fun `test editing does not need the buttons setting (P2_6)`() {
+        MarkdownReviewSettings.getInstance().showBlockActions = false
+        open(content("a\n"), content("b\n"))
+        assertFalse(view.actions.any)
+        assertTrue(view.actions.editLeft && view.actions.editRight)
+        assertTrue(HtmlPage.actionsJs(view.diff, view.actions).startsWith("mdr.editing({left: true, right: true}"))
+    }
+
+    fun `test the page's edit message keeps pipes in the source (P2_6)`() {
+        assertEquals(
+            BlockActionRequest(BlockAction.EDIT_RIGHT, 2, "3:4", "| a | b |\n"),
+            BlockActionRequest.parse("edit|edit-right|2|3:4|| a | b |\n"),
+        )
+        assertEquals(BlockActionRequest(BlockAction.EDIT_LEFT, 0, "3:4", ""), BlockActionRequest.parse("edit|edit-left|0|3:4|"))
+        assertNull(BlockActionRequest.parse("edit|edit-left|0|3:4"))
+        assertNull(BlockActionRequest.parse("edit|revert|0|3:4|text"))
+    }
+
     private fun runWriteCommand(action: () -> Unit) = WriteCommandAction.runWriteCommandAction(project, action)
 }

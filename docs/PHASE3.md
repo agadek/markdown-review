@@ -18,7 +18,7 @@ Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 | P3.3 | Other JetBrains IDEs and remote development | 1.0 | 1.3 | Not started |
 | P3.4 | VCS and code review integration | P3.3 | 1.2 | In 1.2.0: block menu (text diff at a block for review comments, block history); Show Rendered Diff in Git history and the Commit window after 1.2.1; merge view dropped |
 | P3.5 | Performance and large documents | 1.0 | 1.3 | Not started |
-| P3.6 | Rendering options and sharing | P3.5 | 1.4 | Not started |
+| P3.6 | Rendering options and sharing | P3.5 | 1.4 | In RC-3: custom stylesheet, HTML and PDF export, wiki links |
 | P3.7 | Community, sponsorship and licensing | 1.0 | ongoing | `FUNDING.yml` only |
 
 P3.4 went ahead of P3.3: the block menu uses only the platform's diff window and VCS actions, so it does not depend on
@@ -143,6 +143,19 @@ Scope:
 Done when:
 - A custom CSS file changes the rendered view and survives theme switches.
 - An exported HTML diff opens in a browser offline and looks like the in-IDE view.
+
+Status:
+- **Custom stylesheet**: Settings | Tools | Markdown Review | Custom stylesheet. The file is applied after the page's
+  own styles, re-read when it changes, and the page's root element carries `mdr-theme-light` or `mdr-theme-dark`, so
+  one file can style both themes. Saving the settings page re-renders open viewers.
+- **Export**: *Export as HTML...* and *Export as PDF...* in the rendered viewer's options menu. The HTML file is a
+  snapshot of the page as drawn (Mermaid diagrams and formulas included), with no scripts, a policy that allows none,
+  and local images inlined. The PDF comes from JCEF's `printToPDF`, with the diff colors kept for print.
+- **More syntax**: wiki links (`[[page]]`, `[[page|label]]`), fixture `41-wiki-links`.
+- **P3.5**: none of this needed it. The custom stylesheet is a `<style>` in the page head and the export reads the
+  page as drawn, so they keep working when P3.5 patches rows in place. Two things for P3.5 to keep: incremental updates
+  must leave the user stylesheet alone (or reload it when the file changes), and with lazy rendering the export must
+  draw every row before it takes the snapshot.
 
 ## P3.7 Community, sponsorship and licensing
 

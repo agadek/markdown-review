@@ -24,6 +24,7 @@ object HtmlPage {
      * @param remoteImages also allow `http:` / `https:` images (NFR-8, off by default).
      * @param actions block buttons to add to every block with an edit region (FR-12).
      * @param renderMath draw formulas with the bundled KaTeX (P2.8); off, they stay monospace source.
+     * @param userCss the custom stylesheet ([UserStylesheet]), applied after every other style (P3.6).
      */
     fun build(
         diff: RenderedDiff,
@@ -32,6 +33,7 @@ object HtmlPage {
         remoteImages: Boolean = false,
         actions: BlockActions = BlockActions.NONE,
         renderMath: Boolean = true,
+        userCss: String? = null,
     ): String {
         val nonce = UUID.randomUUID().toString().replace("-", "")
         val math = renderMath && diff.bodyHtml.contains(MATH_CLASS)
@@ -39,11 +41,12 @@ object HtmlPage {
         val fonts = if (math) " font-src data:;" else ""
         return """
             <!DOCTYPE html>
-            <html><head><meta charset="utf-8">
+            <html class="mdr-theme-${if (isDark()) "dark" else "light"}"><head><meta charset="utf-8">
             <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${imgSources(remoteImages)}; style-src 'unsafe-inline';$fonts script-src 'nonce-$nonce'">
             <style>${themeCss()}</style>
             <style>${diff.css}</style>
             <style>$PANEL_CSS</style>
+            ${if (userCss.isNullOrBlank()) "" else "<style id=\"mdr-user-css\">$userCss</style>"}
             </head><body>
             ${diff.bodyHtml}
             <script nonce="$nonce">
@@ -322,6 +325,9 @@ object HtmlPage {
         }
         .mdr-editor-hint { margin-top: 2px; font-size: 0.8em; color: var(--md-muted); }
         .mdr-editor-refused { color: var(--md-alert-caution); }
+        /* Printing (PDF export) keeps the diff colors and leaves out what only works in the IDE. */
+        * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @media print { .mdr-actions, .mdr-editor { display: none !important; } .mdr-current, .mdr-current > [data-side] { outline: none; } }
     """
 
     /**
@@ -330,7 +336,8 @@ object HtmlPage {
      * `link|<href>` external link click, `edit|<revert|apply>|<idx>|<stamp>` a block button click,
      * `open|<side>|<idx>|<stamp>` a double-click that asks for a block's source (answered with `mdr.openEditor`),
      * `edit|edit-<side>|<idx>|<stamp>|<markdown>` saving the editor, `closed` the editor closed without saving,
-     * `menu|<side>|<idx>|<stamp>|<x>|<y>` a right-click on a block, at the given point of the page.
+     * `menu|<side>|<idx>|<stamp>|<x>|<y>` a right-click on a block, at the given point of the page,
+     * `export|<html>` the page as drawn, without scripts and block controls, for [HtmlExport] (P3.6).
      */
     private const val BRIDGE_JS = """
         var mdr = (function() {
@@ -479,6 +486,16 @@ object HtmlPage {
                 }
                 el.appendChild(box);
               }
+            },
+            snapshot: function() {
+              var doc = document.documentElement.cloneNode(true);
+              var drop = doc.querySelectorAll('script, .mdr-actions, .mdr-editor');
+              for (var i = 0; i < drop.length; i++) drop[i].remove();
+              ['mdr-current', 'mdr-editing'].forEach(function(cls) {
+                var marked = doc.querySelectorAll('.' + cls);
+                for (var j = 0; j < marked.length; j++) marked[j].classList.remove(cls);
+              });
+              mdrSend('export|' + '<!DOCTYPE html>\n' + doc.outerHTML);
             },
             restore: function(idx) {
               var el = idx > 0 ? block(idx) : null;

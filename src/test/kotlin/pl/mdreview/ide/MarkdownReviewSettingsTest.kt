@@ -19,6 +19,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertTrue(settings.renderMermaid)
         assertTrue(settings.renderMath)
         assertEquals(DiffOptions.DEFAULT_PAIRING_THRESHOLD, settings.pairingThreshold)
+        assertEquals("", settings.customCssPath)
     }
 
     fun `test pairing threshold stays in range`() {
@@ -51,6 +52,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
             renderMermaid = false
             renderMath = false
             pairingThreshold = 0.7
+            customCssPath = " /home/me/docs.css "
             appliedDefaultViewer = DefaultViewer.TEXT
         }
         val element = XmlSerializer.serialize(settings.state)
@@ -66,6 +68,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertFalse(restored.renderMermaid)
         assertFalse(restored.renderMath)
         assertEquals(0.7, restored.pairingThreshold)
+        assertEquals("/home/me/docs.css", restored.customCssPath)
         assertEquals(DefaultViewer.TEXT, restored.appliedDefaultViewer)
     }
 

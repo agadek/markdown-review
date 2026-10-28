@@ -1,5 +1,6 @@
 package pl.mdreview.ide
 
+import pl.mdreview.api.RenderedDiff
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -43,6 +44,58 @@ object HtmlExport {
         else CHARSET.replaceFirst(html, "$0" + Regex.escapeReplacement(head))
         return html
     }
+
+    /**
+     * One file of a multi-file export: its path as shown, how it changed (for example "Modified" or "Added"), and its
+     * rendered diff, or [error] when its content could not be loaded.
+     */
+    data class ExportedFile(val path: String, val change: String, val diff: RenderedDiff?, val error: String? = null)
+
+    /**
+     * Several rendered diffs as one page body: a title, a table of contents that links to each file, and one section
+     * per file with its path, how it changed and its diff. Block indices repeat between files, which only the IDE's
+     * page script would mind; an exported page has none. The stylesheet is the renderer's, the same for every file,
+     * plus the rules for the parts added here.
+     *
+     * @param noChanges shown for a file whose two sides render the same.
+     */
+    fun combine(title: String, files: List<ExportedFile>, noChanges: String): RenderedDiff {
+        val body = StringBuilder()
+        body.append("<div class=\"mdr-export\">\n<h1 class=\"mdr-export-title\">").append(escape(title)).append("</h1>\n")
+        body.append("<ul class=\"mdr-export-toc\">\n")
+        files.forEachIndexed { i, file ->
+            body.append("<li><a href=\"#mdr-file-").append(i + 1).append("\">").append(escape(file.path)).append("</a> ")
+                .append("<span class=\"mdr-export-change\">").append(escape(file.change)).append("</span></li>\n")
+        }
+        body.append("</ul>\n")
+        files.forEachIndexed { i, file ->
+            body.append("<section class=\"mdr-export-file\" id=\"mdr-file-").append(i + 1).append("\">\n")
+            body.append("<h2 class=\"mdr-export-file-title\">").append(escape(file.path))
+                .append(" <span class=\"mdr-export-change\">").append(escape(file.change)).append("</span></h2>\n")
+            when {
+                file.diff == null -> body.append("<p class=\"mdr-export-note\">").append(escape(file.error.orEmpty())).append("</p>\n")
+                file.diff.identical -> body.append("<p class=\"mdr-export-note\">").append(escape(noChanges)).append("</p>\n")
+                else -> body.append(file.diff.bodyHtml).append("\n")
+            }
+            body.append("</section>\n")
+        }
+        body.append("</div>")
+        val css = (files.firstNotNullOfOrNull { it.diff?.css } ?: "") + "\n" + COMBINED_CSS
+        return RenderedDiff(body.toString(), css, emptyList())
+    }
+
+    private const val COMBINED_CSS = """
+.mdr-export { padding: 0 12px 24px; }
+.mdr-export-title { font-family: var(--md-font); font-size: 1.6em; margin: 0.8em 0 0.4em; }
+.mdr-export-toc { margin: 0 0 1.2em; padding-left: 1.4em; font-family: var(--md-font); }
+.mdr-export-toc a { color: var(--md-link); }
+.mdr-export-change { color: var(--md-muted); font-size: 0.85em; font-weight: normal; }
+.mdr-export-file { margin-top: 1.6em; }
+.mdr-export-file-title { font-family: var(--md-mono-font, monospace); font-size: 1.05em; margin: 0 0 0.4em;
+  padding: 6px 10px; border: 1px solid var(--md-border); border-radius: 4px; background: var(--md-code-bg); }
+.mdr-export-note { color: var(--md-muted); font-style: italic; padding: 0 10px; }
+@media print { .mdr-export-file { break-before: page; } .mdr-export-file:first-of-type { break-before: auto; } }
+"""
 
     /** `name.diff.html` for a compared file `name.md`, or a generic name when there is no file. */
     fun defaultFileName(fileName: String?, extension: String): String {

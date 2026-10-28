@@ -1,5 +1,8 @@
 package pl.mdreview.ide
 
+import pl.mdreview.api.BlockInfo
+import pl.mdreview.api.BlockStatus
+import pl.mdreview.api.RenderedDiff
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
@@ -91,5 +94,32 @@ class HtmlExportTest {
         } finally {
             dir.toFile().deleteRecursively()
         }
+    }
+
+    @Test
+    fun `several files combine into one page with a table of contents`() {
+        val diff = RenderedDiff("<div class=\"mdr-root\">changed</div>", "/* diff.css */", listOf(BlockInfo(0, BlockStatus.MODIFIED, null, null)))
+        val same = RenderedDiff("<div class=\"mdr-root\">same</div>", "/* diff.css */", listOf(BlockInfo(0, BlockStatus.EQUAL, null, null)))
+        val page = HtmlExport.combine(
+            "Changes <3>",
+            listOf(
+                HtmlExport.ExportedFile("docs/a&b.md", "Modified", diff),
+                HtmlExport.ExportedFile("README.md", "Modified", same),
+                HtmlExport.ExportedFile("gone.md", "Deleted", null, "Cannot load the content of gone.md"),
+            ),
+            "No differences",
+        )
+        val html = page.bodyHtml
+        assertContains(html, "<h1 class=\"mdr-export-title\">Changes &lt;3&gt;</h1>")
+        assertContains(html, "<li><a href=\"#mdr-file-1\">docs/a&amp;b.md</a> <span class=\"mdr-export-change\">Modified</span></li>")
+        assertContains(html, "<li><a href=\"#mdr-file-3\">gone.md</a>")
+        assertContains(html, "<section class=\"mdr-export-file\" id=\"mdr-file-1\">\n<h2 class=\"mdr-export-file-title\">docs/a&amp;b.md")
+        assertContains(html, "<div class=\"mdr-root\">changed</div>")
+        assertFalse(html.contains(">same<"))
+        assertContains(html, "<p class=\"mdr-export-note\">No differences</p>")
+        assertContains(html, "<p class=\"mdr-export-note\">Cannot load the content of gone.md</p>")
+        assertTrue(page.css.startsWith("/* diff.css */"))
+        assertContains(page.css, "break-before: page")
+        assertTrue(page.blocks.isEmpty())
     }
 }

@@ -1,6 +1,6 @@
 # Phase 3 plan
 
-Phase 2 ([PHASE2.md](PHASE2.md)) ends with the 1.0 release on JetBrains Marketplace. Phase 3 covers what comes after:
+Phase 2 ended with the 1.0 release on JetBrains Marketplace. Phase 3 covers what comes after:
 the features phase 2 deferred past 1.0, more IDEs, deeper VCS and code-review integration, performance, and the work
 around the project itself (contributors, sponsorship, licensing).
 
@@ -54,7 +54,7 @@ Scope:
 - **Moved-block detection** (FR-15, P2.7): shipped in 1.2.0.
 
 Done when:
-- The done criteria of P2.6 and P2.7 in PHASE2.md are met.
+- Block source editing and moved-block detection meet their phase 2 done criteria.
 
 ## P3.3 Other JetBrains IDEs and remote development
 

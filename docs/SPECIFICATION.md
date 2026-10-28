@@ -1,11 +1,11 @@
 # Specification: Markdown Review 1.0
 
-This is the specification of the plugin as shipped in 1.0. The plans ([PLAN.md](../PLAN.md),
-[PHASE2.md](PHASE2.md), [PHASE3.md](PHASE3.md)), the code and the [engine contract](ENGINE_CONTRACT.md) refer to its
-requirement IDs (FR-*, NFR-*).
+This is the specification of the plugin as shipped in 1.0. The plan ([PHASE3.md](PHASE3.md)), the code and the
+[engine contract](ENGINE_CONTRACT.md) refer to its requirement IDs (FR-*, NFR-*). Milestone IDs such as M1 or P2.5
+come from the phase 1 and phase 2 plans, which were completed and removed; they remain in the git history.
 
 The original specification was written before the repository and was never committed. This file restores it from
-the IDs and descriptions used in the repository and updates it to the 1.0 product, as P2.9 asks. IDs that nothing in
+the IDs and descriptions used in the repository and updates it to the 1.0 product. IDs that nothing in
 the repository mentions (FR-5, FR-8, FR-10, NFR-1, NFR-3, NFR-9) are not restored, so their text is not guessed;
 the numbering is kept so existing references stay valid.
 

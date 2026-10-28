@@ -15,8 +15,8 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 - **Custom stylesheet:** a CSS file of your own on top of the rendered view, set in Settings | Tools | Markdown Review.
 - **Wiki links:** `[[page]]`, `[[page|label]]` and `[[page#section]]` are rendered as links, and a changed target is
   marked like any changed link.
-- **Export Rendered Diff...** in the same context menus as Show Rendered Diff saves every selected Markdown change,
-  rendered, as one HTML file or PDF, with a table of contents and a section per file.
+- **Export Rendered Diff | HTML... / PDF...** in the same context menus as Show Rendered Diff saves every selected
+  Markdown change, rendered, as one HTML file or PDF, with a table of contents and a section per file.
 - Settings | Tools | Markdown Review links to the commercial license terms, next to the sponsorship links.
 
 ## [1.2.1]

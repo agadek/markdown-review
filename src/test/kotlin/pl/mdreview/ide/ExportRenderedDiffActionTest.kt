@@ -1,6 +1,9 @@
 package pl.mdreview.ide
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.VcsDataKeys
@@ -13,7 +16,7 @@ import com.intellij.ui.jcef.JBCefApp
 import com.intellij.vcsUtil.VcsUtil
 import pl.mdreview.api.ViewMode
 
-/** "Export Rendered Diff..." for the selected changes (P3.6); the hidden browser is left to manual checks. */
+/** "Export Rendered Diff | HTML... / PDF..." for the selected changes (P3.6); the hidden browser is left to manual checks. */
 class ExportRenderedDiffActionTest : BasePlatformTestCase() {
 
     private class Revision(private val path: FilePath, private val text: String?) : ContentRevision {
@@ -56,8 +59,24 @@ class ExportRenderedDiffActionTest : BasePlatformTestCase() {
         assertTrue(HtmlPage.build(page, "void 0", 0).contains("<h1 class=\"mdr-export-title\">Markdown changes (2 files)</h1>"))
     }
 
-    fun `test action shows only for Markdown changes`() {
-        val action = ExportRenderedDiffAction()
+    fun `test the submenu and both formats show only for Markdown changes`() {
+        for (action in listOf(ExportRenderedDiffAction.Group(), ExportRenderedDiffAction.Html(), ExportRenderedDiffAction.Pdf())) {
+            assertActionShowsOnlyForMarkdown(action)
+        }
+    }
+
+    fun `test the default file name follows the format`() {
+        assertEquals("markdown-changes.diff.html", ExportRenderedDiffAction.defaultFileName(pdf = false))
+        assertEquals("markdown-changes.diff.pdf", ExportRenderedDiffAction.defaultFileName(pdf = true))
+    }
+
+    fun `test the submenu holds the HTML and PDF actions`() {
+        val group = ActionManager.getInstance().getAction("MarkdownReview.ExportRenderedDiff") as DefaultActionGroup
+        val children = group.childActionsOrStubs.map { ActionManager.getInstance().getId(it) }
+        assertEquals(listOf("MarkdownReview.ExportRenderedDiff.Html", "MarkdownReview.ExportRenderedDiff.Pdf"), children)
+    }
+
+    private fun assertActionShowsOnlyForMarkdown(action: AnAction) {
         fun visible(vararg selected: Change): Boolean {
             val e = TestActionEvent.createTestEvent(
                 action,

@@ -310,10 +310,10 @@ class BlockActionsTest : BasePlatformTestCase() {
     }
 
     fun `test an unchanged block and the left side can be edited too (P2_6)`() {
-        val left = content("# Title\n\nsame\n")
-        open(left, content("# Title\n\nsame\n"))
-        assertTrue(saveSource(view.diff.blocks[1], "left", "changed"))
-        assertEquals("# Title\n\nchanged\n", left.document.text)
+        val left = content("# Title\n\nsame words here\n")
+        open(left, content("# Title\n\nsame words here\n"))
+        assertTrue(saveSource(view.diff.blocks[1], "left", "changed words here"))
+        assertEquals("# Title\n\nchanged words here\n", left.document.text)
         assertEquals(1, view.diff.changes.size)
     }
 
@@ -352,7 +352,8 @@ class BlockActionsTest : BasePlatformTestCase() {
         open(content("a\n"), content("b\n"), ViewMode.MERGED)
         assertTrue(view.actions.editRight)
         assertFalse(view.actions.editLeft)
-        assertFalse(saveSource(view.diff.changes.single(), "left", "edited"))
+        // "a" and "b" show as a removed and an added block; the removed one is the left side's.
+        assertFalse(saveSource(view.diff.changes.first(), "left", "edited"))
     }
 
     fun `test editing does not need the buttons setting (P2_6)`() {

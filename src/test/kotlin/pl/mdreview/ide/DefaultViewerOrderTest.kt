@@ -58,6 +58,17 @@ class DefaultViewerOrderTest : BasePlatformTestCase() {
         assertEquals(listOf(unified, sideBySide, merged), DefaultViewerOrder.reorder(listOf(sideBySide, unified), DefaultViewer.TEXT))
     }
 
+    fun `test Show Rendered Diff keeps the rendered viewer last chosen in its window`() {
+        assertEquals(listOf(merged, simple, sideBySide), DefaultViewerOrder.preferRendered(listOf(simple, merged, sideBySide), DefaultViewer.RENDERED_SIDE_BY_SIDE))
+        assertEquals(listOf(sideBySide, simple, merged), DefaultViewerOrder.preferRendered(listOf(simple, sideBySide, merged), DefaultViewer.RENDERED_MERGED))
+    }
+
+    fun `test Show Rendered Diff starts with the rendered default viewer`() {
+        assertEquals(listOf(sideBySide), DefaultViewerOrder.preferRendered(emptyList(), DefaultViewer.TEXT))
+        assertEquals(listOf(sideBySide, simple), DefaultViewerOrder.preferRendered(listOf(simple), DefaultViewer.RENDERED_SIDE_BY_SIDE))
+        assertEquals(listOf(merged, simple), DefaultViewerOrder.preferRendered(listOf(simple), DefaultViewer.RENDERED_MERGED))
+    }
+
     fun `test plugin viewers are registered`() {
         val tools = DiffManagerEx.getInstance().diffTools
         assertTrue(tools.any { it is RenderedSideBySideTool })

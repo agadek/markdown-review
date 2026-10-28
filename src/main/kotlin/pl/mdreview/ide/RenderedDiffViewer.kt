@@ -447,9 +447,6 @@ class RenderedDiffViewer(
     }
 
     private companion object {
-        /** Registered in plugin.xml. */
-        const val NOTIFICATION_GROUP = "Markdown Review"
-
         /** The platform's "Show History for Selection" action. */
         const val SHOW_HISTORY_FOR_SELECTION = "Vcs.ShowHistoryForBlock"
 
@@ -491,7 +488,7 @@ class RenderedDiffViewer(
 
     private fun exported(target: Path, ok: Boolean) {
         if (ok) LocalFileSystem.getInstance().refreshNioFiles(listOf(target))
-        val notification = NotificationGroupManager.getInstance().getNotificationGroup(NOTIFICATION_GROUP).createNotification(
+        val notification = NotificationGroupManager.getInstance().getNotificationGroup(ExportRenderedDiffAction.NOTIFICATION_GROUP).createNotification(
             MarkdownReviewBundle.message(if (ok) "export.done" else "export.failed", target.toString()),
             if (ok) NotificationType.INFORMATION else NotificationType.ERROR,
         )

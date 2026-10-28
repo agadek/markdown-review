@@ -29,8 +29,8 @@
               <i>Compare Markdown Files...</i> for any two files.</li>
           <li>F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.</li>
           <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts, plus HTML
-              blocks, <code>&lt;details&gt;</code>, HTML comments, hard line breaks, emoji shortcodes and YAML front
-              matter.</li>
+              blocks, <code>&lt;details&gt;</code>, HTML comments, hard line breaks, emoji shortcodes, wiki links and YAML
+              front matter.</li>
           <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with and how readily a
               rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
               large-file, remote-image, Mermaid and math options. The diff colors are set per color scheme in

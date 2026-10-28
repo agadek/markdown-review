@@ -60,7 +60,7 @@ Settings | Editor | Color Scheme | Markdown Review; a color left unset follows t
 
 Supported Markdown: CommonMark with GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks,
 footnotes, alerts), HTML blocks and inline HTML (sanitized), `<details>`, HTML comments, hard line breaks, emoji
-shortcodes, YAML front matter, Mermaid and math. The user interface is in English.
+shortcodes, wiki links (`[[page]]`, `[[page|label]]`), YAML front matter, Mermaid and math. The user interface is in English.
 
 Status: 1.0. What the plugin does and does not do is described in [docs/SPECIFICATION.md](docs/SPECIFICATION.md),
 what comes next in [docs/PHASE3.md](docs/PHASE3.md), and releases in [docs/RELEASING.md](docs/RELEASING.md). The

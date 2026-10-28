@@ -80,6 +80,13 @@ JCEF the plugin stays out of the way: the diff window keeps the text viewer.
 
 Developed with the help of Claude Code, with every change reviewed by the maintainer.
 
+## Reporting problems
+
+[Open an issue](https://github.com/agadek/markdown-review/issues/new/choose) with the bug report template. The most
+useful part is a small pair of Markdown files (old and new) that shows the problem: every confirmed bug gets one as a
+test fixture before it is fixed. When the plugin throws an exception, the IDE's error dialog offers **Report to
+Markdown Review on GitHub**, which opens a prefilled issue in the browser; nothing is sent until you submit it there.
+
 ## Support
 
 Markdown Review is free for noncommercial use and maintained in spare time. It is developed with the help of Claude

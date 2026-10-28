@@ -33,8 +33,8 @@ Goal: review changes to `.md` files in rendered form. Requirements:
 
 ## Roadmap
 - Phase 1: M1–M4 in their core form.
-- Phase 2 ([docs/PHASE2.md](docs/PHASE2.md)): complete. 1.0.0 on JetBrains Marketplace, then 1.1.x; math, moved blocks and block source editing are in the `RC-1.2.0` release candidate.
-- Phase 3 ([docs/PHASE3.md](docs/PHASE3.md)): in progress. The feedback loop (P3.1) and the block menu from P3.4 are in `RC-1.2.0`.
+- Phase 2 ([docs/PHASE2.md](docs/PHASE2.md)): complete. 1.0.0 on JetBrains Marketplace, then 1.1.x; math, moved blocks and block source editing in 1.2.0.
+- Phase 3 ([docs/PHASE3.md](docs/PHASE3.md)): in progress. The feedback loop (P3.1) and the block menu from P3.4 shipped in 1.2.0.
 
 ## Risks
 - Block matching heuristics (rewritten paragraph vs removal + addition).

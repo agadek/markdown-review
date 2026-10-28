@@ -24,8 +24,8 @@ Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 | P2.8 | Mermaid diagrams and math rendering | P2.2, P2.4 | 1.0 | Mermaid shipped in 1.0.0; math in 1.2.0 |
 | P2.9 | Release 1.0 | P2.4, P2.5, P2.8 (P2.6 if kept in 1.0) | 1.0 | Shipped: 1.0.0 on JetBrains Marketplace |
 
-**Phase 2 is complete.** Everything above is either released (1.0.0 to 1.1.1) or merged into the `RC-1.2.0` release
-candidate (math, moved blocks, block source editing). Work after 1.0 continues in [PHASE3.md](PHASE3.md).
+**Phase 2 is complete.** Everything above is released: 1.0.0 to 1.1.1, then math, moved blocks and block source
+editing in 1.2.0. Work after 1.0 continues in [PHASE3.md](PHASE3.md).
 
 P2.2, P2.3 and P2.4 are independent and can run in parallel; P2.4 should follow P2.3 into `BlockExtractor` to
 avoid conflicts if one person does both. P2.5 waits for P2.2 and P2.3: it needs the settings page for its toggle

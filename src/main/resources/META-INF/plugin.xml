@@ -50,6 +50,19 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>1.2.0</h3>
+        <ul>
+          <li><b>Math:</b> <code>$...$</code> and <code>$$...$$</code> formulas are drawn offline with KaTeX; a changed
+              formula is highlighted as a whole, and a changed block formula can show its source diff. Turn it off with
+              the new <i>Render math</i> setting.</li>
+          <li><b>Moved blocks</b> are labeled at both ends with a link to the other end, and reverting either end moves
+              the block back in one Undo step.</li>
+          <li><b>Block source editing:</b> double-click a block to edit its raw Markdown in place; saving is one Undo
+              step.</li>
+          <li><b>Block menu:</b> right-click a block to go to its source, open the text diff at its line or show the
+              history of just that block.</li>
+          <li>Plugin errors reported from the IDE open a prefilled crash report on GitHub.</li>
+        </ul>
         <h3>1.1.1</h3>
         <ul>
           <li>Links in the rendered diff whose scheme is written in upper or mixed case, such as <code>HTTPS://</code>,

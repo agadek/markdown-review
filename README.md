@@ -85,7 +85,8 @@ JCEF the plugin stays out of the way: the diff window keeps the text viewer.
 
 ## Development
 
-Developed with the help of Claude Code, with every change reviewed by the maintainer.
+Developed with the help of Claude Code, with every change reviewed by the maintainer. Contributions are welcome: see
+[CONTRIBUTING.md](CONTRIBUTING.md), and [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
 
 ## Reporting problems
 
@@ -99,7 +100,8 @@ Markdown Review on GitHub**, which opens a prefilled issue in the browser; nothi
 Markdown Review is free for noncommercial use and maintained in spare time. It is developed with the help of Claude
 Code, and sponsorships help cover the AI token budget that goes into new features and fixes. If the plugin saves you
 time in reviews, you can chip in through [GitHub Sponsors](https://github.com/sponsors/agadek) or
-[Ko-fi](https://ko-fi.com/gadek).
+[Ko-fi](https://ko-fi.com/gadek). Companies get a commercial license with the GitHub Sponsors commercial tier; see
+[Commercial use](#commercial-use).
 
 ## License
 
@@ -108,4 +110,15 @@ The plugin bundles [Mermaid](https://github.com/mermaid-js/mermaid) 11.17.2 and 
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 [PolyForm Noncommercial License 1.0.0](LICENSE). Noncommercial use (personal, educational, research, nonprofit
-organizations) is allowed free of charge. Commercial use requires a separate license from the author.
+organizations) is allowed free of charge.
+
+### Commercial use
+
+Using the plugin for work at a company needs a commercial license, which comes with the **Commercial license** tier on
+[GitHub Sponsors](https://github.com/sponsors/agadek). In short:
+
+- It covers the sponsoring organization and all its employees and contractors, with no seat count.
+- It lasts as long as the sponsorship on that tier is active.
+- The plugin has no license key or check, and the price is the one shown on the tier.
+
+The full terms are in [docs/COMMERCIAL_LICENSE.md](docs/COMMERCIAL_LICENSE.md).

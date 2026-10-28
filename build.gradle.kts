@@ -1,3 +1,4 @@
+import org.jetbrains.changelog.Changelog
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel
 
@@ -5,6 +6,7 @@ plugins {
     id("java")
     id("org.jetbrains.kotlin.jvm") version "2.1.20"
     id("org.jetbrains.intellij.platform") version "2.19.0"
+    id("org.jetbrains.changelog") version "2.5.0"
 }
 
 group = "pl.mdreview"
@@ -47,6 +49,12 @@ intellijPlatform {
         ideaVersion {
             sinceBuild = "251"
         }
+        // The Marketplace change notes are every released section of CHANGELOG.md, newest first.
+        changeNotes = provider {
+            changelog.instance.get().releasedItems.joinToString("") {
+                changelog.renderItem(it.withHeader(true).withLinkedHeader(false).withLinks(false).withEmptySections(false), Changelog.OutputType.HTML)
+            }
+        }
     }
     // Secrets come from the environment (GitHub Actions secrets in the release workflow), never from the repository.
     // Signing runs only when the certificate chain and the private key are set; see docs/RELEASING.md.
@@ -81,6 +89,11 @@ intellijPlatform {
             create("IU", "263.7307.44")
         }
     }
+}
+
+changelog {
+    // The sections that patchChangelog adds to a new [Unreleased] section.
+    groups = listOf("Added", "Changed", "Fixed")
 }
 
 kotlin {

@@ -78,6 +78,9 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
                 icon(MarkdownReviewIcons.KO_FI).gap(RightGap.SMALL)
                 browserLink(MarkdownReviewBundle.message("settings.support.kofi"), MarkdownReviewIcons.KO_FI_URL)
             }.rowComment(MarkdownReviewBundle.message("settings.support.comment"))
+            row {
+                browserLink(MarkdownReviewBundle.message("settings.support.commercial"), MarkdownReviewIcons.COMMERCIAL_LICENSE_URL)
+            }.rowComment(MarkdownReviewBundle.message("settings.support.commercial.comment"))
         }
     }
 

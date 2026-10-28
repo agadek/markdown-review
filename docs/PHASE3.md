@@ -19,7 +19,7 @@ Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 | P3.4 | VCS and code review integration | P3.3 | 1.2 | In 1.2.0: block menu (text diff at a block for review comments, block history); Show Rendered Diff in Git history and the Commit window after 1.2.1; merge view dropped |
 | P3.5 | Performance and large documents | 1.0 | 1.3 | Not started |
 | P3.6 | Rendering options and sharing | P3.5 | 1.4 | In RC-3: custom stylesheet, HTML and PDF export, wiki links |
-| P3.7 | Community, sponsorship and licensing | 1.0 | ongoing | Docs and Sponsors tier in place; docs site to do |
+| P3.7 | Community, sponsorship and licensing | 1.0 | ongoing | Docs, Sponsors tier and docs site in place |
 
 P3.4 went ahead of P3.3: the block menu uses only the platform's diff window and VCS actions, so it does not depend on
 how other IDEs lay out their review windows. The rendered merge view was dropped from the plan.
@@ -177,7 +177,7 @@ Status: `CONTRIBUTING.md` (with a contribution license, so contributions can als
 request template, `CHANGELOG.md` (rendered into the Marketplace change notes by the Gradle changelog plugin) and the
 `good first issue` label are in place. The README, the Marketplace description and the settings page link to GitHub
 Sponsors and to the commercial terms in [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md): US$1 per user, paid once, for
-life. The one-time Commercial license tier is live on GitHub Sponsors. Still to do: the documentation site.
+life. The one-time Commercial license tier is live on GitHub Sponsors. The documentation site is `site/`, published to GitHub Pages by `.github/workflows/pages.yml`.
 
 Done when:
 - A first outside contribution is merged following `CONTRIBUTING.md`.

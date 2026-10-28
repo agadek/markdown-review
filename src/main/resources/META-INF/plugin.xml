@@ -24,6 +24,8 @@
               request windows take review comments) or show the history of just that block.</li>
           <li><b>Block source editing:</b> double-click a block to edit its raw Markdown in place; saved as one Undo
               step.</li>
+          <li><b>Show Rendered Diff</b> in the context menu of the Git log's changed files, of file history and of the
+              Commit window opens a Markdown change rendered, whichever viewer diffs open with by default.</li>
           <li><b>Text diff</b> one click away in the diff window's viewer switcher.</li>
           <li>Works for local changes (Commit window), file history, branch comparison and pull requests, plus
               <i>Compare Markdown Files...</i> for any two files.</li>
@@ -130,6 +132,13 @@
         <action id="MarkdownReview.CompareFiles" class="pl.mdreview.ide.CompareMarkdownFilesAction">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        <!-- P3.4: changed files of a Git log commit, file history revisions and the Commit window's changes. -->
+        <action id="MarkdownReview.ShowRenderedDiff" class="pl.mdreview.ide.ShowRenderedDiffAction"
+                icon="pl.mdreview.ide.MarkdownReviewIcons.RENDERED_SIDE_BY_SIDE">
+            <add-to-group group-id="Vcs.Log.ChangesBrowser.Popup" anchor="first"/>
+            <add-to-group group-id="Vcs.FileHistory.ContextMenu" anchor="after" relative-to-action="Diff.ShowStandaloneDiff"/>
+            <add-to-group group-id="ChangesViewPopupMenu" anchor="after" relative-to-action="Diff.ShowStandaloneDiff"/>
         </action>
     </actions>
 </idea-plugin>

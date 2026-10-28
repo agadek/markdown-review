@@ -46,6 +46,10 @@ The viewers work in the Commit window (Show Diff, Ctrl+D), in file history, when
 request windows. Compare any two files with **Compare Markdown Files...** from the project view context menu or the
 Tools menu. F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.
 
+**Show Rendered Diff** in the context menu of a Git log commit's changed files, of file history and of the Commit
+window opens the selected Markdown changes in the rendered viewer, even when diffs open with the text viewer by
+default.
+
 Right-click a block for **Go to Source**, **Open in Text Diff Here** and **Show History for This Block**. Open in Text
 Diff Here switches the window to the text viewer at the block's line; in a pull request window, that is where the
 comment gutter starts a review comment on the block. Show History for This Block lists only the commits that changed

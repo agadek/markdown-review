@@ -92,6 +92,16 @@ Done when:
 - The commit window's preview shows the rendered diff for `.md` files.
 - A `.md` merge conflict can be viewed rendered, and the text merge remains the default for resolving it.
 
+Status:
+- The bundled GitHub and GitLab plugins add review comments only to the text viewer and have no public extension
+  point for other viewers, so the fallback applies: a block's right-click menu has **Open in Text Diff Here**, which
+  reopens the window in the text viewer at the block's line, where the comment gutter is.
+- The commit window's diff preview and file history already use the diff window's viewers, so the rendered viewers
+  are there with the viewer switcher; nothing to add.
+- **Show History for This Block** in the same menu runs the platform's "Show History for Selection" on the block's
+  lines.
+- The rendered merge view is not started.
+
 ## P3.5 Performance and large documents
 
 Scope:

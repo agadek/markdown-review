@@ -9,6 +9,19 @@ import com.intellij.diff.util.DiffUserDataKeys
 import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.requests.ContentDiffRequest
 import com.intellij.diff.util.LineCol
+import com.intellij.diff.util.Side
+import com.intellij.ide.DataManager
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.DefaultActionGroup
+import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.ui.popup.JBPopupFactory
+import com.intellij.openapi.vcs.ProjectLevelVcsManager
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ui.awt.RelativePoint
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -43,6 +56,7 @@ import pl.mdreview.api.RenderedDiff
 import pl.mdreview.api.TextEdit
 import pl.mdreview.api.ViewMode
 import java.awt.BorderLayout
+import java.awt.Point
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -98,6 +112,7 @@ class RenderedDiffViewer(
             }, ModalityState.any())
         }
         browserPanel.onSourceRequest(::blockSource)
+        browserPanel.onBlockMenu(::showBlockMenu)
         for (action in navigationActions) {
             action.registerCustomShortcutSet(KeymapUtil.getActiveKeymapShortcuts(action.shortcutActionId), root, disposable)
         }
@@ -293,6 +308,81 @@ class RenderedDiffViewer(
         updateStatus()
     }
 
+    /**
+     * The right-click menu of block [idx] on [side] (P3.4), shown at [at] in the page's component, for the page
+     * rendered at [stamp]; nothing for a stale page.
+     */
+    private fun showBlockMenu(side: String, idx: Int, stamp: String, at: Point) {
+        val shown = rendered ?: return
+        if (shown.stamp != stamp) return
+        val block = shown.diff.blocks.getOrNull(idx) ?: return
+        val target = if (side == "left") 0 else 1
+        val range = (if (target == 0) block.left else block.right) ?: return
+        val component = browserPanel.component
+        JBPopupFactory.getInstance().createActionGroupPopup(
+            null,
+            DefaultActionGroup(blockMenuActions(target, range)),
+            DataManager.getInstance().getDataContext(component),
+            JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
+            false,
+        ).show(RelativePoint(component, at))
+    }
+
+    /** The actions of a block's menu: its source, the text diff at its line, and its history when it has one. */
+    internal fun blockMenuActions(side: Int, range: LineRange): List<AnAction> = listOfNotNull(
+        menuAction("block.menu.source") { navigateToSource(if (side == 0) "left" else "right", range.start) },
+        if (context is DiffContextEx) menuAction("block.menu.text.diff") { openTextDiffAt(side, range.start) } else null,
+        historyFile(side)?.let { file -> menuAction("block.menu.history") { showHistory(file, range) } },
+    )
+
+    private fun menuAction(key: String, perform: () -> Unit): AnAction =
+        object : DumbAwareAction(MarkdownReviewBundle.message(key)) {
+            override fun getActionUpdateThread() = ActionUpdateThread.EDT
+            override fun actionPerformed(e: AnActionEvent) = perform()
+        }
+
+    /**
+     * Shows this request in the text viewer, scrolled to [line] of [side]. In a pull request window that viewer has
+     * the review comment gutter, which is how a review comment starts from a rendered block. The rendered viewers
+     * step aside for this one reopen only, so the viewer switcher offers them again right after.
+     */
+    internal fun openTextDiffAt(side: Int, line: Int) {
+        val reopen = context as? DiffContextEx ?: return
+        request.putUserData(DiffUserDataKeys.SCROLL_TO_LINE, com.intellij.openapi.util.Pair.create(if (side == 0) Side.LEFT else Side.RIGHT, line))
+        context.putUserData(RenderedMarkdownDiffTool.TEXT_VIEWER_ONCE, true)
+        try {
+            reopen.reopenDiffRequest()
+        } finally {
+            ApplicationManager.getApplication().invokeLater({
+                context.putUserData(RenderedMarkdownDiffTool.TEXT_VIEWER_ONCE, null)
+                request.putUserData(DiffUserDataKeys.SCROLL_TO_LINE, null)
+            }, ModalityState.any())
+        }
+    }
+
+    /** The local file under version control that [side] shows, for its history; `null` for revisions and other files. */
+    private fun historyFile(side: Int): VirtualFile? {
+        val project = context.project ?: return null
+        val file = (contents[side] as? DocumentContent)?.highlightFile?.takeIf { it.isInLocalFileSystem } ?: return null
+        if (FileDocumentManager.getInstance().getDocument(file) !== documents[side]) return null
+        return file.takeIf { ProjectLevelVcsManager.getInstance(project).getVcsFor(it) != null }
+    }
+
+    /**
+     * Opens [file] with the block's lines selected and runs the platform's "Show History for Selection" on them, so
+     * the history lists only the commits that changed this block.
+     */
+    private fun showHistory(file: VirtualFile, range: LineRange) {
+        val project = context.project ?: return
+        val editor = FileEditorManager.getInstance(project)
+            .openTextEditor(OpenFileDescriptor(project, file, range.start, 0), true) ?: return
+        val document = editor.document
+        val last = (range.end - 1).coerceIn(range.start, document.lineCount - 1)
+        editor.selectionModel.setSelection(document.getLineStartOffset(range.start), document.getLineEndOffset(last))
+        val action = ActionManager.getInstance().getAction(SHOW_HISTORY_FOR_SELECTION) ?: return
+        ActionUtil.invokeAction(action, editor.contentComponent, ActionPlaces.EDITOR_POPUP, null, null)
+    }
+
     private fun navigateToSource(side: String, line: Int) {
         val content = contents[if (side == "left") 0 else 1] as? DocumentContent ?: return
         content.getNavigatable(LineCol(line, 0))?.let { OpenSourceUtil.navigate(true, it) }
@@ -340,6 +430,9 @@ class RenderedDiffViewer(
     }
 
     private companion object {
+        /** The platform's "Show History for Selection" action. */
+        const val SHOW_HISTORY_FOR_SELECTION = "Vcs.ShowHistoryForBlock"
+
         fun defaultView(parent: Disposable, onSourceClick: (String, Int) -> Unit): RenderedDiffView =
             if (JBCefApp.isSupported()) MarkdownDiffPanel(parent, onSourceClick) else JcefUnavailableView()
     }

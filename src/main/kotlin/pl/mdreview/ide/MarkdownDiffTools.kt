@@ -36,6 +36,8 @@ abstract class RenderedMarkdownDiffTool(
 
     override fun canShow(context: DiffContext, request: DiffRequest): Boolean {
         if (!accepts(request)) return false
+        // "Open in Text Diff Here" from a block's menu, for one reopen of this window.
+        if (context.getUserData(TEXT_VIEWER_ONCE) == true) return false
         // The user chose the text viewer from the large-file notice in this window.
         if (context.getUserData(TEXT_VIEWER_FOR_LARGE_FILES) == true && isTooLarge((request as ContentDiffRequest).contents)) return false
         return JBCefApp.isSupported()
@@ -56,6 +58,9 @@ abstract class RenderedMarkdownDiffTool(
 
         /** Set on the diff context by the large-file notice's button; rendered viewers then step aside. */
         val TEXT_VIEWER_FOR_LARGE_FILES: Key<Boolean> = Key.create("MarkdownReview.textViewerForLargeFiles")
+
+        /** Set on the diff context while a block's menu reopens the window in the text viewer (P3.4). */
+        val TEXT_VIEWER_ONCE: Key<Boolean> = Key.create("MarkdownReview.textViewerOnce")
 
         fun isTooLarge(contents: List<DiffContent>, limit: SizeLimit = LargeFiles.limit()): Boolean =
             contents.any { limit.exceeds((it as? DocumentContent)?.document?.immutableCharSequence) }

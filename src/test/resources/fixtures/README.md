@@ -5,6 +5,9 @@ Each `<case>/` directory contains:
 - `new.md`: version after the change (right side),
 - `EXPECTED.md`: expected changes at block level (`equal` / `modified` / `added` / `removed`, optionally `moved`) and in the word diff.
 
+Every confirmed rendering or diff bug gets a case here before it is fixed, built from the reporter's files cut down to
+the smallest pair that still shows the problem.
+
 The files are input for the diff engine tests (M1), the HTML generator (M2) and the preview. `.gitattributes` disables line-ending normalization because some cases depend on exact bytes.
 
 | Case | What it checks |
@@ -49,3 +52,4 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 37-pairing-threshold | rewritten paragraphs of different similarity, expectations at pairing thresholds 0.3 and 0.7 |
 | 38-pairing-threshold-lone | one rewritten paragraph alone on each side, which pairs at half the threshold |
 | 39-short-list-items | a short list item replaced by another that shares only common words, which must not pair |
+| 40-math | inline and block formulas: equal, changed, added, unparsable, and dollar signs that are not formulas |

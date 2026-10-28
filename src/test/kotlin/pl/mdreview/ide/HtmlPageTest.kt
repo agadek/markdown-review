@@ -37,6 +37,46 @@ class HtmlPageTest : BasePlatformTestCase() {
         assertEquals(1, Regex("<script nonce=").findAll(html).count())
     }
 
+    private val formula = "Area: \$A = \\pi r^2\$\n\n\$\$\nE = mc^2\n\$\$\n"
+
+    fun `test page with a formula inlines the bundled KaTeX under the page nonce (P2_8)`() {
+        val html = page(formula, formula.replace("mc^2", "mc^3"))
+        val nonce = Regex("script-src 'nonce-([0-9a-f]+)'").find(html)!!.groupValues[1]
+        val scripts = Regex("<script nonce=\"([0-9a-f]+)\">").findAll(html).map { it.groupValues[1] }.toList()
+        assertTrue(scripts.size > 1)
+        assertTrue(scripts.all { it == nonce })
+        assertTrue(html.contains("katex.render("))
+        assertTrue(html.contains("mdrDrawMath("))
+        // Offline: nothing in the page's policy reaches the network for the library or its fonts.
+        val csp = Regex("Content-Security-Policy\" content=\"([^\"]+)\"").find(html)!!.groupValues[1]
+        assertFalse(csp, csp.contains("http"))
+        assertFalse(csp, csp.contains("unsafe-eval"))
+        assertEquals(scripts.size, Regex("</script>").findAll(html).count())
+        assertTrue(html.endsWith("</body></html>"))
+    }
+
+    fun `test page without formulas does not load KaTeX (P2_8)`() {
+        for (text in listOf("# Title\n", "Plans cost \$5 a month, or \$10 with support.\n", "Code: `\$x\$`\n")) {
+            val html = page(text, text.replace("Title", "Other title"))
+            assertFalse(text, html.contains("mdrDrawMath("))
+            assertFalse(text, html.contains("katex.render("))
+        }
+    }
+
+    fun `test with math rendering off formulas stay source and KaTeX is not loaded (P2_8)`() {
+        val diff = CoreMarkdownDiffRenderer().render(RenderRequest(formula, formula.replace("mc^2", "mc^3"), ViewMode.SIDE_BY_SIDE))
+        val html = HtmlPage.build(diff, "void 0", 0, renderMath = false)
+        assertTrue(html.contains("<div class=\"mdr-math mdr-math-display\">E = mc^3</div>"))
+        assertFalse(html.contains("katex.render("))
+        assertFalse(html.contains("font-src"))
+    }
+
+    fun `test page with diagrams and formulas loads both libraries (P2_8)`() {
+        val html = page(diagram + "\n" + formula, diagram.replace("B", "C") + "\n" + formula)
+        assertTrue(html.contains("mdrDrawDiagrams("))
+        assertTrue(html.contains("mdrDrawMath("))
+    }
+
     fun `test dark word marks are saturated and keep their hue`() {
         val inserted = java.awt.Color(0x294436)
         val word = HtmlPage.vivid(inserted)

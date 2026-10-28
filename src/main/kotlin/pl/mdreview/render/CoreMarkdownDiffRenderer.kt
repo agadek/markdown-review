@@ -39,7 +39,7 @@ class CoreMarkdownDiffRenderer : MarkdownDiffRenderer {
         )
         val edits = EditRegions(diff, left, right).compute()
         val blocks = diff.blocks.mapIndexed { i, b ->
-            BlockInfo(i, status(b.status), b.left?.source?.let(::lines), b.right?.source?.let(::lines), edits[i])
+            BlockInfo(i, status(b.status), b.left?.source?.let(::lines), b.right?.source?.let(::lines), edits[i], b.movedFrom, b.movedTo)
         }
         return RenderedDiff(renderer.renderBody(diff), renderer.css(), blocks)
     }

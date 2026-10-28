@@ -1,0 +1,27 @@
+name: Crash report
+description: An exception from the plugin. The IDE's error dialog fills this in when you choose "Report to Markdown Review".
+labels: [bug, crash, triage]
+body:
+  - type: textarea
+    id: steps
+    attributes:
+      label: What were you doing
+      description: For example "opened the diff of README.md in the Commit window". The Markdown involved helps too.
+    validations:
+      required: true
+  - type: textarea
+    id: stacktrace
+    attributes:
+      label: Exception
+      description: Filled in by the IDE. Remove anything you do not want to share, such as file paths.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Filled in by the IDE (IDE, plugin version, operating system, JCEF).
+      render: text
+    validations:
+      required: true

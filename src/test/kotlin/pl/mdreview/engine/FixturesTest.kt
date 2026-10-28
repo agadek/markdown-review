@@ -70,6 +70,45 @@ class FixturesTest {
     }
 
     @Test
+    fun `04 moved section is labeled as moved at both ends (P2_7)`() {
+        val rendered = CoreMarkdownDiffRenderer().render(
+            RenderRequest(read("04-block-moved", "old.md"), read("04-block-moved", "new.md"), ViewMode.SIDE_BY_SIDE, ApiDiffOptions(collapseUnchanged = false)),
+        )
+        // Statuses stay ADDED and REMOVED, so the IDE side and block actions keep working; the pairing is extra.
+        val added = rendered.changes.filter { it.status == pl.mdreview.api.BlockStatus.ADDED }.map { it.idx }
+        val removed = rendered.changes.filter { it.status == pl.mdreview.api.BlockStatus.REMOVED }.map { it.idx }
+        assertEquals(2, added.size)
+        assertEquals(2, removed.size)
+        for (mode in ViewMode.entries) {
+            val html = if (mode == ViewMode.SIDE_BY_SIDE) rendered.bodyHtml else html("04-block-moved", mode)
+            // The heading and the paragraph each point at their other end: added at the top, removed at the end.
+            for ((to, from) in added.zip(removed)) {
+                assertContains(html, "data-idx=\"$to\"", message = mode.name)
+                assertTrue(Regex("data-idx=\"$to\"[^>]*data-moved-from=\"$from\"").containsMatchIn(html), "$mode: block $to moved from $from")
+                assertTrue(Regex("data-idx=\"$from\"[^>]*data-moved-to=\"$to\"").containsMatchIn(html), "$mode: block $from moved to $to")
+            }
+            assertEquals(4, Regex("class=\"mdr-moved-link\"").findAll(html).count(), mode.name)
+            // A move has no word diff.
+            assertFalse(html.contains("mdr-ins"), mode.name)
+            assertFalse(html.contains("mdr-del"), mode.name)
+        }
+    }
+
+    @Test
+    fun `04 an edited or duplicated block is not a move (P2_7)`() {
+        // The moved paragraph was also edited: keys differ, so it stays removed plus added.
+        val edited = read("04-block-moved", "new.md").replace("All JetBrains IDEs", "Every JetBrains IDE")
+        val html = CoreMarkdownDiffRenderer().render(
+            RenderRequest(read("04-block-moved", "old.md"), edited, ViewMode.SIDE_BY_SIDE, ApiDiffOptions(collapseUnchanged = false)),
+        ).bodyHtml
+        assertEquals(1, Regex("data-moved-from=").findAll(html).count())
+        assertEquals(1, Regex("data-moved-to=").findAll(html).count())
+        // A copy added while the original stays in place is an addition, not a move.
+        val copy = CoreMarkdownDiffRenderer().render(RenderRequest("A one\n\nB two\n", "A one\n\nB two\n\nA one\n", ViewMode.SIDE_BY_SIDE)).bodyHtml
+        assertFalse(copy.contains("data-moved-"))
+    }
+
+    @Test
     fun `05 headings`() {
         assertEquals(
             listOf(
@@ -588,5 +627,63 @@ class FixturesTest {
         assertContains(d.changes[1].right!!.plainText, ":still_not_an_emoji: and 10:30:00")
         assertEquals("Status \ud83d\ude80", d.blocks[0].right!!.plainText)
         assertContains(html("36-emoji"), "<code>:smile:</code>")
+    }
+
+    @Test
+    fun `40 math formulas are compared as units (P2_4)`() {
+        val d = diff("40-math")
+        assertEquals(
+            listOf(
+                "MODIFIED PARAGRAPH",
+                "MODIFIED MATH",
+                "ADDED PARAGRAPH",
+                "ADDED MATH",
+                "ADDED PARAGRAPH",
+                "MODIFIED PARAGRAPH",
+            ),
+            d.changes.map { "${it.status} ${(it.right ?: it.left)!!.kind.name}" },
+        )
+        // A block formula is one block holding the whole formula.
+        val formulas = d.blocks.filter { (it.right ?: it.left)!!.kind.name == "MATH" }
+        assertEquals(
+            listOf(
+                DiffStatus.EQUAL to "E = mc^2",
+                DiffStatus.MODIFIED to "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2 a}",
+                DiffStatus.ADDED to "e^{i\\pi} + 1 = 0",
+            ),
+            formulas.map { it.status to (it.right ?: it.left)!!.plainText.trim() },
+        )
+        assertEquals("x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}", formulas[1].left!!.plainText.trim())
+        // An inline formula is one segment of the word diff, never split into words.
+        fun formula(text: String) = text.trim().removeSurrounding("\$")
+        val circle = d.changes[0]
+        assertEquals(listOf("C = 2 \\pi r"), circle.inline.filter { it.status == DiffStatus.REMOVED }.map { formula(it.text) })
+        assertEquals(listOf("C = \\tau r"), circle.inline.filter { it.status == DiffStatus.ADDED }.map { formula(it.text) })
+        // Prices are not formulas: a plain word diff.
+        assertEquals("10", removed(d.changes[5]))
+        assertEquals("12", added(d.changes[5]))
+    }
+
+    @Test
+    fun `40 math formulas render as inert monospace source (P2_4, P2_8)`() {
+        for (mode in ViewMode.entries) {
+            val html = html("40-math", mode)
+            assertFalse(html.contains("<script"), mode.name)
+            assertContains(html, "<span class=\"mdr-math mdr-math-inline\">", message = mode.name)
+            assertContains(html, "<div class=\"mdr-math mdr-math-display\">", message = mode.name)
+            assertContains(html, "e^{i\\pi} + 1 = 0", message = mode.name)
+            // The unparsable formula is still a formula node; drawing it fails in the page, not here.
+            assertContains(html, "\\frac{1}{", message = mode.name)
+            // A changed block formula has the same toggle to its source diff as a changed diagram.
+            assertContains(html, "<details class=\"mdr-math-source\"><summary>Show source changes</summary>", message = mode.name)
+            // Code spans keep their dollar signs as code.
+            assertContains(html, "<code>\$x\$</code>", message = mode.name)
+        }
+        val sideBySide = html("40-math")
+        // Two inline formulas on each side of the circle paragraph, one in the added paragraph.
+        assertEquals(5, Regex("class=\"mdr-math mdr-math-inline\"").findAll(sideBySide).count())
+        // Two block formulas on the left, three on the right.
+        assertEquals(5, Regex("class=\"mdr-math mdr-math-display\"").findAll(sideBySide).count())
+        assertFalse(Regex("mdr-math[^>]*>[^<]*\\\$5").containsMatchIn(sideBySide))
     }
 }

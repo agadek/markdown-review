@@ -48,6 +48,11 @@ with an **Open Text Viewer** button instead.
   page script draws. A modified diagram's row (or merged item) also carries `mdr-mermaid-row` and starts with
   `details.mdr-mermaid-source`, holding the source line diff as nested rows or items with `data-side` / `data-line`
   but no `data-idx`. See `CLASSES.md`.
+- Math (P2.4, P2.8): an inline formula is `span.mdr-math.mdr-math-inline` holding its TeX source, marked as a whole by
+  the word diff (`<del class="mdr-del">` / `<ins class="mdr-ins">` around the span). A block formula is one `MATH`
+  block whose line range covers the whole `$$ ... $$`; its side holds `div.mdr-block.mdr-math-block` with the source
+  in `div.mdr-math.mdr-math-display`. A modified block formula's row (or merged item) carries `mdr-math-row` and starts
+  with `details.mdr-math-source`, like a changed diagram. The IDE's page script draws the formulas.
 - Raw HTML (NFR-8): blocks and inline HTML go through an allowlist sanitizer (`HtmlFragment`): GitHub's set of
   tags and attributes, `http`, `https`, `mailto`, `file` and relative URLs (`data:image/*` for images); the content of
   `<script>`, `<style>`, `<iframe>` and similar elements is dropped. Changes only in HTML markup or in an HTML comment
@@ -67,6 +72,13 @@ with an **Open Text Viewer** button instead.
   A fenced code block, front matter or table added or removed as a whole is one region for all its blocks, closing
   fence or delimiter row included. `null` for equal blocks and for changes no line edit can undo, such as a block
   that changed only through a link reference definition.
+- `movedFrom` / `movedTo` (P2.7, FR-15, additive): a removed and an added block with equal keys are one move. The
+  statuses stay `REMOVED` and `ADDED`; the added end's `movedFrom` and the removed end's `movedTo` name the other end's
+  `idx`. In `bodyHtml` both ends' block elements carry `mdr-moved` and `data-moved-from` / `data-moved-to`, and end
+  with `div.mdr-moved-note` holding `a.mdr-moved-link[data-goto="<idx>"]` ("Moved down", "Moved here from above", ...).
+  A move has no word diff. Code lines, fences, front matter lines, thematic breaks, comments and blocks without visible
+  text never move. Reverting or applying either end applies both ends' `edit` regions in one command, so the block
+  goes back to its old place.
 
 ## Supported Markdown
 commonmark-java with these extensions: GFM tables, strikethrough, task list items, autolinks, footnotes, GitHub
@@ -84,14 +96,27 @@ unknown ones stay as text). Front matter is recognized before parsing. Block kin
 | `FRONT_MATTER` | a line of YAML front matter |
 | `FOOTNOTE` | a footnote definition |
 | `ALERT` | the title line of a GitHub alert |
+| `MATH` | a block formula (`$$ ... $$`), compared exactly except for trailing whitespace; `Block.lines` holds its source lines for the source diff |
 
 Hard line breaks (two trailing spaces or `\`) are part of a block's key and appear as `\n` in its word diff, so
 adding or removing one is a change; switching between the two syntaxes is not. With `ignoreWhitespace` they are
-ignored. Math (`$...$`) is not recognized yet (P2.8).
+ignored.
+
+Math (`MathExtension`, P2.4): `$...$` is an inline formula (`InlineMath`) when the opening `$` is not followed by
+whitespace and the closing `$` is not preceded by whitespace or followed by a digit, as on GitHub, so prices such as
+"$5 or $10" stay text; code spans and `\$` come first. `$$` on a line of its own opens a block formula (`MathBlock`)
+closed by a line ending in `$$`; it does not interrupt a paragraph, and `$$...$$` within a line is an inline formula
+in display mode. In a block's plain text an inline formula is its source with its dollars, and `Block.atoms` lists
+those ranges so the word diff keeps each formula whole.
 
 ## What the IDE does
 - Registers two viewers in IntelliJ's diff window (`diff.DiffTool`): "Rendered Markdown (side by side)" and "(merged)"; the text diff is the built-in viewer.
 - JCEF panel, change navigation, Ctrl/Cmd+click on a block opens its source in the editor (FR-14), toggles for ignoring whitespace and collapsing unchanged blocks in the diff window's settings menu.
+- Block menu (P3.4): a right-click on an element with `data-side` and `data-line` sends
+  `menu|<side>|<idx>|<stamp>|<x>|<y>`; the viewer shows a popup there with Go to Source, Open in Text Diff Here (in a
+  diff window: reopens it once with the rendered viewers stepping aside and `DiffUserDataKeys.SCROLL_TO_LINE` at the
+  block's first line) and Show History for This Block (for a local file under VCS: selects the block's lines in the
+  editor and runs `Vcs.ShowHistoryForBlock`).
 - The "Compare Markdown Files..." action (project view context menu and Tools menu).
 - Re-runs the diff after a document change (300 ms debounce) and after a theme change, keeping the scroll position.
 - Fills `leftBaseUri` / `rightBaseUri` from the directory of each `DocumentContent`'s local file, so images next to the
@@ -102,11 +127,16 @@ ignored. Math (`$...$`) is not recognized yet (P2.8).
   and a script that draws each block with Mermaid's `default` or `dark` theme, matching the editor scheme. Both scripts
   carry the page's nonce, so the CSP is unchanged and nothing is loaded from the network. A diagram Mermaid cannot
   parse shows its error and source; for a changed diagram the source line diff opens.
+- Draws formulas when the "Render math" setting is on and `bodyHtml` has a `.mdr-math` element: the page inlines the
+  bundled `katex.min.js` and `katex.min.css` (`src/main/resources/pl/mdreview/katex`), with the WOFF2 fonts as
+  `data:` URIs and `font-src data:` added to the CSP, and a script that renders each formula in place in batches.
+  A formula KaTeX cannot parse keeps its source with `mdr-math-failed` and KaTeX's message; for a changed block
+  formula the source line diff opens. With the setting off the formulas stay monospace source.
 - Shows the large-file notice above `LargeFiles.limit()`; its button marks the diff context so the rendered viewers
   report `canShow = false` for files above the limit, then reopens the request, which falls back to the text viewer.
 - Settings | Tools | Markdown Review (`MarkdownReviewSettings`, stored in `markdownReview.xml`): the default viewer,
   `ignoreWhitespace`, `collapseUnchanged`, the large-file limits (lines, KB), loading remote images, rendering
-  Mermaid diagrams, `showBlockActions` and the pairing threshold.
+  Mermaid diagrams, rendering math, `showBlockActions` and the pairing threshold.
 - Per-block buttons (FR-12): the page's script adds `.mdr-actions` with `mdr-revert` (writes the left version into
   the right document) and, in the side-by-side view, `mdr-apply` (writes the right version into the left document)
   to every block with an `edit` region, only for sides whose `DocumentContent` can be made writable and that the
@@ -114,6 +144,14 @@ ignored. Math (`$...$`) is not recognized yet (P2.8).
   with the documents' modification stamps at render time; a different stamp refuses the edit and re-renders. The edit
   is one global `WriteCommandAction` ("Revert Markdown Block" / "Apply Markdown Block"), so one Undo restores it
   from the diff window or the editor.
+- Block source editing (FR-13): a double-click on an element with `data-side` and `data-line` of an editable side
+  (both sides side by side, the right side merged; independent of `showBlockActions`) sends
+  `open|<side>|<idx>|<stamp>`. The viewer answers with the block's lines on that side (`BlockInfo.left` / `right`)
+  from the text the page was rendered from, and the page shows them in a `.mdr-editor` textarea in place of the block.
+  Ctrl/Cmd+Enter sends `edit|edit-<side>|<idx>|<stamp>|<markdown>`, which replaces those lines in one global
+  `WriteCommandAction` ("Edit Markdown Block"), with the same stamp check as the buttons; an emptied editor removes
+  the lines. Esc closes the editor (`closed`). While the editor is open, new pages are held back and the latest is
+  shown when it closes; a refused save keeps the editor open with a note, so the text can be copied.
 - Makes the chosen default viewer the first one IntelliJ tries for Markdown diffs through the diff tool order; see
   [ADR 0001](adr/0001-default-diff-viewer.md).
 - Recognizes Markdown by extension (`md`, `markdown`, `mdown`, `mkd`) or, when the bundled Markdown plugin is enabled,

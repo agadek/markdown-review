@@ -11,15 +11,18 @@ Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 
 ## Overview
 
-| Milestone | Theme | Depends on | Release |
-|-----------|-------|------------|---------|
-| P3.1 | Feedback loop after 1.0: issue triage, crash reports, 1.0.x fixes | 1.0 | 1.0.x |
-| P3.2 | Deferred from phase 2: block source editing, moved blocks | 1.0 | 1.1 |
-| P3.3 | Other JetBrains IDEs and remote development | 1.0 | 1.1 |
-| P3.4 | VCS and code review integration | P3.3 | 1.2 |
-| P3.5 | Performance and large documents | 1.0 | 1.2 |
-| P3.6 | Rendering options and sharing | P3.5 | 1.3 |
-| P3.7 | Community, sponsorship and licensing | 1.0 | ongoing |
+| Milestone | Theme | Depends on | Release | Status |
+|-----------|-------|------------|---------|--------|
+| P3.1 | Feedback loop after 1.0: issue triage, crash reports, 1.0.x fixes | 1.0 | 1.2 | In 1.2.0: issue templates, triage labels, crash reporter; fixes from reports to follow |
+| P3.2 | Deferred from phase 2: block source editing, moved blocks | 1.0 | 1.2 | Done, in 1.2.0 |
+| P3.3 | Other JetBrains IDEs and remote development | 1.0 | 1.3 | Not started |
+| P3.4 | VCS and code review integration | P3.3 | 1.2 | In 1.2.0: block menu (text diff at a block for review comments, block history); merge view later |
+| P3.5 | Performance and large documents | 1.0 | 1.3 | Not started |
+| P3.6 | Rendering options and sharing | P3.5 | 1.4 | Not started |
+| P3.7 | Community, sponsorship and licensing | 1.0 | ongoing | `FUNDING.yml` only |
+
+P3.4 went ahead of P3.3: the block menu uses only the platform's diff window and VCS actions, so it does not depend on
+how other IDEs lay out their review windows. The rendered merge view stays behind P3.3.
 
 P3.2, P3.3, P3.5 and P3.7 are independent and can run in parallel. P3.4 waits for P3.3, because review windows look
 different in each IDE and remote setup. P3.6 waits for P3.5, because both change how the page is built and updated.
@@ -35,6 +38,9 @@ Scope:
   documents.
 - Re-rank P3.2–P3.6 from the issues and Marketplace reviews.
 
+Status: issue templates (bug, crash, feature), the `crash`, `triage` and `needs fixture` labels and the error
+reporter (`GitHubErrorReporter`) are in place for 1.2.0; the fixture rule is in `src/test/resources/fixtures/README.md`.
+
 Done when:
 - Issue templates and the error reporter are live, and a test exception from `runIde` opens a prefilled issue.
 - At least one 1.0.x release is out with fixes from user reports, each covered by a fixture.
@@ -44,9 +50,8 @@ Done when:
 What phase 2 kept out of 1.0. If a part of it ships in 1.0 after all, drop it here.
 
 Scope:
-- **Block source editing** (FR-13, P2.6): double-click a block to edit its raw Markdown, saved as one Undo step.
-- **Moved-block detection** (FR-15, P2.7): a moved section shows as moved at both ends instead of removed and added,
-  and reverting it moves it back.
+- **Block source editing** (FR-13, P2.6): shipped in 1.2.0.
+- **Moved-block detection** (FR-15, P2.7): shipped in 1.2.0.
 
 Done when:
 - The done criteria of P2.6 and P2.7 in PHASE2.md are met.
@@ -92,6 +97,16 @@ Done when:
   request, if the API allows).
 - The commit window's preview shows the rendered diff for `.md` files.
 - A `.md` merge conflict can be viewed rendered, and the text merge remains the default for resolving it.
+
+Status:
+- The bundled GitHub and GitLab plugins add review comments only to the text viewer and have no public extension
+  point for other viewers, so the fallback applies: a block's right-click menu has **Open in Text Diff Here**, which
+  reopens the window in the text viewer at the block's line, where the comment gutter is.
+- The commit window's diff preview and file history already use the diff window's viewers, so the rendered viewers
+  are there with the viewer switcher; nothing to add.
+- **Show History for This Block** in the same menu runs the platform's "Show History for Selection" on the block's
+  lines.
+- The rendered merge view is not started.
 
 ## P3.5 Performance and large documents
 

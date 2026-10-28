@@ -11,6 +11,8 @@ import org.commonmark.ext.footnotes.FootnoteDefinition
  * 3. Inside each changed window, removed and added blocks of the same kind are paired in order
  *    when their word similarity reaches [DiffOptions.pairingThreshold]; pairs become MODIFIED
  *    blocks with a word diff, the rest stay REMOVED or ADDED.
+ * 4. A REMOVED and an ADDED block with equal keys are linked as one move (FR-15): they keep their
+ *    statuses and point at each other through [DiffBlock.movedTo] and [DiffBlock.movedFrom].
  */
 class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
 
@@ -36,8 +38,33 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
             j = rs + delta.target.size()
         }
         while (i < left.size && j < right.size) result += DiffBlock(DiffStatus.EQUAL, left[i++], right[j++])
-        return MarkdownDiff(result)
+        return MarkdownDiff(linkMoves(result))
     }
+
+    /**
+     * Links each removed block to the first unlinked added block with the same key, in document order. Only blocks
+     * with visible text of their own move: a code line, fence or thematic break on its own would match too easily.
+     */
+    private fun linkMoves(blocks: List<DiffBlock>): List<DiffBlock> {
+        val added = mutableMapOf<String, ArrayDeque<Int>>()
+        blocks.forEachIndexed { k, b ->
+            if (b.status == DiffStatus.ADDED && movable(b.right!!)) added.getOrPut(compareKey(b.right)) { ArrayDeque() } += k
+        }
+        if (added.isEmpty()) return blocks
+        val movedTo = mutableMapOf<Int, Int>()
+        blocks.forEachIndexed { k, b ->
+            if (b.status == DiffStatus.REMOVED && movable(b.left!!)) {
+                added[compareKey(b.left)]?.removeFirstOrNull()?.let { movedTo[k] = it }
+            }
+        }
+        if (movedTo.isEmpty()) return blocks
+        val movedFrom = movedTo.entries.associate { (from, to) -> to to from }
+        return blocks.mapIndexed { k, b ->
+            if (k in movedTo || k in movedFrom) DiffBlock(b.status, b.left, b.right, b.inline, movedFrom[k], movedTo[k]) else b
+        }
+    }
+
+    private fun movable(block: Block) = block.kind !in UNMOVABLE_KINDS && block.plainText.isNotBlank()
 
     /** With [DiffOptions.ignoreWhitespace], hard line breaks (trailing spaces) are ignored too. */
     private fun compareKey(block: Block): String =
@@ -53,10 +80,12 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
             a = pa
             val l = removed[r++]
             val rt = added[a++]
-            out += DiffBlock(DiffStatus.MODIFIED, l, rt, WordDiff.diff(l.plainText, rt.plainText))
+            out += DiffBlock(DiffStatus.MODIFIED, l, rt, wordDiff(l, rt))
         }
         emitGap(removed.subList(r, removed.size), added.subList(a, added.size), out)
     }
+
+    private fun wordDiff(l: Block, r: Block) = WordDiff.diff(l.plainText, r.plainText, l.atoms, r.atoms)
 
     /**
      * Unpaired blocks between two pairs: removed first, then added, except that blocks continuing
@@ -68,7 +97,7 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
         if (removed.size == 1 && added.size == 1 &&
             pairScore(removed[0], added[0], lone = true, bothLone = true) > 0
         ) {
-            out += DiffBlock(DiffStatus.MODIFIED, removed[0], added[0], WordDiff.diff(removed[0].plainText, added[0].plainText))
+            out += DiffBlock(DiffStatus.MODIFIED, removed[0], added[0], wordDiff(removed[0], added[0]))
             return
         }
         val previous = out.lastOrNull()?.let { it.right ?: it.left }
@@ -166,6 +195,8 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
             BlockKind.FOOTNOTE -> return if (footnoteLabel(l) == footnoteLabel(r)) s + 1.0 else 0.0
             // A diagram is compared as a whole: the only diagram of the same type on each side is the same diagram.
             BlockKind.MERMAID -> if (bothLone && diagramType(l) == diagramType(r)) return maxOf(s, MIN_SCORE)
+            // The only formula on each side was most likely edited, however much of it changed.
+            BlockKind.MATH -> if (bothLone) return maxOf(s, MIN_SCORE)
             // A renamed heading at the same level, with no other heading around, is the same heading.
             BlockKind.HEADING -> if (bothLone && l.level == r.level) return maxOf(s, MIN_SCORE)
             // A changed summary is the same collapsible section.
@@ -200,6 +231,9 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
     companion object {
         private const val MAX_PAIRING_CELLS = 250_000
         private const val MIN_SCORE = 0.01
+        private val UNMOVABLE_KINDS = setOf(
+            BlockKind.CODE_LINE, BlockKind.CODE_FENCE, BlockKind.FRONT_MATTER, BlockKind.THEMATIC_BREAK, BlockKind.HTML_COMMENT,
+        )
         private val CONTINUING_KINDS = setOf(BlockKind.CODE_LINE, BlockKind.FRONT_MATTER, BlockKind.LIST_ITEM, BlockKind.TABLE_ROW)
     }
 }

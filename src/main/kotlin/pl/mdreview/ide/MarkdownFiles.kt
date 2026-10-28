@@ -2,6 +2,7 @@ package pl.mdreview.ide
 
 import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.fileTypes.FileType
+import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vfs.VirtualFile
 
 /**
@@ -21,6 +22,10 @@ object MarkdownFiles {
 
     fun isMarkdown(file: VirtualFile): Boolean =
         hasMarkdownExtension(file.name) || isMarkdown(file.fileType)
+
+    /** For a path from VCS, which may name a deleted file or a revision that has no [VirtualFile]. */
+    fun isMarkdown(path: FilePath): Boolean =
+        hasMarkdownExtension(path.name) || isMarkdown(path.fileType)
 
     fun isMarkdown(fileType: FileType): Boolean =
         fileType.defaultExtension.lowercase() in EXTENSIONS || RECOGNIZER_EP.extensionList.any { it.isMarkdown(fileType) }

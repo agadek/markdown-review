@@ -57,7 +57,7 @@ moderation. With the four variables exported locally:
 Upload `build/distributions/markdown-review-<version>-signed.zip` on <https://plugins.jetbrains.com/plugin/add>,
 fill in the license and source code fields (next section), add the screenshots from `docs/screenshots/`
 (`side-by-side-light.png`, `merged-light.png` and their dark versions), and wait for approval. The page text comes from
-`<description>` and `<change-notes>` in `plugin.xml`, the icon from `pluginIcon.svg` and `pluginIcon_dark.svg`.
+`<description>` in `plugin.xml` and the change notes from `CHANGELOG.md`, the icon from `pluginIcon.svg` and `pluginIcon_dark.svg`.
 
 ### 6. License on the listing
 
@@ -67,13 +67,16 @@ so it is given as a custom license URL rather than picked from a list:
 - License: `https://github.com/agadek/markdown-review/blob/main/LICENSE` (or
   `https://polyformproject.org/licenses/noncommercial/1.0.0`).
 - Source code: `https://github.com/agadek/markdown-review`.
-- Mention in the plugin page that commercial use needs a separate license (the description in `plugin.xml` already
-  does).
+- Mention in the plugin page that commercial use needs the commercial license from the GitHub Sponsors tier (the
+  description in `plugin.xml` already does, with a link to [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md)).
 
 ## Each release
 
-1. Update `<change-notes>` in `src/main/resources/META-INF/plugin.xml`.
-2. Set `pluginVersion` in `gradle.properties`, for example `0.2.0-beta` or `1.0.0`, and merge to `main`.
+1. Set `pluginVersion` in `gradle.properties`, for example `0.2.0-beta` or `1.0.0`.
+2. Run `./gradlew patchChangelog`. It moves the entries under `## [Unreleased]` in `CHANGELOG.md` to a new section
+   for `pluginVersion` with today's date and leaves an empty `[Unreleased]` section. The build renders every released
+   section of `CHANGELOG.md` into the plugin's change notes, so entries left under `[Unreleased]` do not reach
+   Marketplace. Merge to `main`.
 3. Tag the merge commit and push the tag:
 
    ```bash

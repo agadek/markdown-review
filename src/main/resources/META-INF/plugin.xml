@@ -51,64 +51,13 @@
         <br/><br/>
         Free for noncommercial use under the
         <a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial License 1.0.0</a>.
-        Commercial use requires a separate license from the author.
+        Commercial use needs a lifetime commercial license for US$1 per user, paid once through the
+        <a href="https://github.com/sponsors/agadek">Commercial license tier on GitHub Sponsors</a>; see the
+        <a href="https://github.com/agadek/markdown-review/blob/main/docs/COMMERCIAL_LICENSE.md">terms</a>.
         Source code and issues: <a href="https://github.com/agadek/markdown-review">github.com/agadek/markdown-review</a>.
     ]]></description>
 
-    <change-notes><![CDATA[
-        <h3>1.2.1</h3>
-        <ul>
-          <li>Compatibility with IntelliJ IDEA 2026.3: block history and crash reports no longer use API that 2026.3
-              deprecates or marks as internal.</li>
-        </ul>
-        <h3>1.2.0</h3>
-        <ul>
-          <li><b>Math:</b> <code>$...$</code> and <code>$$...$$</code> formulas are drawn offline with KaTeX; a changed
-              formula is highlighted as a whole, and a changed block formula can show its source diff. Turn it off with
-              the new <i>Render math</i> setting.</li>
-          <li><b>Moved blocks</b> are labeled at both ends with a link to the other end, and reverting either end moves
-              the block back in one Undo step.</li>
-          <li><b>Block source editing:</b> double-click a block to edit its raw Markdown in place; saving is one Undo
-              step.</li>
-          <li><b>Block menu:</b> right-click a block to go to its source, open the text diff at its line or show the
-              history of just that block.</li>
-          <li>Plugin errors reported from the IDE open a prefilled crash report on GitHub.</li>
-        </ul>
-        <h3>1.1.1</h3>
-        <ul>
-          <li>Links in the rendered diff whose scheme is written in upper or mixed case, such as <code>HTTPS://</code>,
-              now open in the browser.</li>
-        </ul>
-        <h3>1.1.0</h3>
-        <ul>
-          <li>Expanded plugin description: why a rendered diff helps, navigation between changes and the supported IDE
-              versions.</li>
-          <li>The rendered viewers have their own icons in the viewer switcher, which IntelliJ 2026.2 turned from a
-              drop-down into a row of icon buttons; before, they showed the text viewer's icon.</li>
-          <li>Colors of added, removed and modified blocks and of changed words can be set per color scheme in
-              Settings | Editor | Color Scheme | Markdown Review.</li>
-        </ul>
-        <h3>1.0.0</h3>
-        First release on JetBrains Marketplace.
-        <ul>
-          <li>Rendered side-by-side and merged diff viewers for Markdown files in IntelliJ's own diff window: Commit
-              window, file history, branch comparison, pull requests and <i>Compare Markdown Files...</i>.</li>
-          <li>Settings page (Settings | Tools | Markdown Review) with the default viewer for Markdown diffs, whitespace
-              and collapse options, large-file limits, remote images, Mermaid and the pairing threshold.</li>
-          <li>Pairing threshold: how similar a removed and an added block must be to show as one modified block with
-              a word diff.</li>
-          <li>Per-block revert and apply buttons on changed blocks of an editable side, each one Undo step.</li>
-          <li>Mermaid diagrams drawn offline in the editor's theme, with a "Show source changes" toggle on a changed
-              diagram.</li>
-          <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts.</li>
-          <li>HTML blocks and inline HTML (sanitized), <code>&lt;details&gt;</code> sections, HTML comments, hard line
-              breaks, thematic breaks and emoji shortcodes.</li>
-          <li>A changed link target, heading level or alert type is marked as a change.</li>
-          <li>Relative images resolve against the file; remote images load only when enabled.</li>
-          <li>Very large files show a notice with an Open Text Viewer button instead of rendering.</li>
-          <li>Plugin icon for light and dark themes.</li>
-        </ul>
-    ]]></change-notes>
+    <!-- <change-notes> is generated from CHANGELOG.md at build time, see build.gradle.kts. -->
 
     <depends>com.intellij.modules.platform</depends>
     <!-- Only to recognize the Markdown file type for files without a .md-like extension; rendering uses commonmark. -->

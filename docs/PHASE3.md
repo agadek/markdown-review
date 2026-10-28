@@ -11,15 +11,18 @@ Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 
 ## Overview
 
-| Milestone | Theme | Depends on | Release |
-|-----------|-------|------------|---------|
-| P3.1 | Feedback loop after 1.0: issue triage, crash reports, 1.0.x fixes | 1.0 | 1.0.x |
-| P3.2 | Deferred from phase 2: block source editing, moved blocks | 1.0 | 1.1 |
-| P3.3 | Other JetBrains IDEs and remote development | 1.0 | 1.1 |
-| P3.4 | VCS and code review integration | P3.3 | 1.2 |
-| P3.5 | Performance and large documents | 1.0 | 1.2 |
-| P3.6 | Rendering options and sharing | P3.5 | 1.3 |
-| P3.7 | Community, sponsorship and licensing | 1.0 | ongoing |
+| Milestone | Theme | Depends on | Release | Status |
+|-----------|-------|------------|---------|--------|
+| P3.1 | Feedback loop after 1.0: issue triage, crash reports, 1.0.x fixes | 1.0 | 1.2 | In 1.2.0: issue templates, triage labels, crash reporter; fixes from reports to follow |
+| P3.2 | Deferred from phase 2: block source editing, moved blocks | 1.0 | 1.2 | Done, in 1.2.0 |
+| P3.3 | Other JetBrains IDEs and remote development | 1.0 | 1.3 | Not started |
+| P3.4 | VCS and code review integration | P3.3 | 1.2 | In 1.2.0: block menu (text diff at a block for review comments, block history); merge view later |
+| P3.5 | Performance and large documents | 1.0 | 1.3 | Not started |
+| P3.6 | Rendering options and sharing | P3.5 | 1.4 | Not started |
+| P3.7 | Community, sponsorship and licensing | 1.0 | ongoing | `FUNDING.yml` only |
+
+P3.4 went ahead of P3.3: the block menu uses only the platform's diff window and VCS actions, so it does not depend on
+how other IDEs lay out their review windows. The rendered merge view stays behind P3.3.
 
 P3.2, P3.3, P3.5 and P3.7 are independent and can run in parallel. P3.4 waits for P3.3, because review windows look
 different in each IDE and remote setup. P3.6 waits for P3.5, because both change how the page is built and updated.

@@ -210,29 +210,33 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         return sb.toString()
     }
 
-    private fun isChangedDiagram(block: DiffBlock) =
-        block.status == DiffStatus.MODIFIED && block.left?.kind == BlockKind.MERMAID && block.right?.kind == BlockKind.MERMAID
+    private fun isChangedDiagram(block: DiffBlock): Boolean {
+        val kind = block.left?.kind
+        return block.status == DiffStatus.MODIFIED && kind in DRAWN_KINDS && block.right?.kind == kind
+    }
 
     /**
-     * A modified diagram: the old and the new drawing (side by side, or stacked in the merged view), and a
-     * "Show source changes" toggle that swaps them for the line diff of the diagram source. The toggle is
-     * a `<details>`, so it works without script; `diff.css` hides the drawings while it is open.
+     * A modified diagram or block formula: the old and the new drawing (side by side, or stacked in the merged
+     * view), and a "Show source changes" toggle that swaps them for the line diff of the source. The toggle is a
+     * `<details>`, so it works without script; `diff.css` hides the drawings while it is open. The classes are
+     * `mdr-mermaid-*` for a diagram and `mdr-math-*` for a formula.
      */
     private fun changedDiagram(block: DiffBlock, status: String, idx: String): String {
         val left = block.left!!
         val right = block.right!!
+        val prefix = if (left.kind == BlockKind.MATH) "mdr-math" else "mdr-mermaid"
         val lines = MarkdownDiffEngine().diff(left.lines, right.lines).blocks
-        val source = "<details class=\"mdr-mermaid-source\"><summary>" + escape(options.labels.showSourceChanges) +
-            "</summary><div class=\"mdr-mermaid-lines\">" + lines.joinToString("") { block(it, null) } + "</div></details>"
+        val source = "<details class=\"$prefix-source\"><summary>" + escape(options.labels.showSourceChanges) +
+            "</summary><div class=\"$prefix-lines\">" + lines.joinToString("") { block(it, null) } + "</div></details>"
         return when (options.mode) {
-            ViewMode.SIDE_BY_SIDE -> "<div class=\"mdr-row blk-$status mdr-mermaid-row\"$idx>" + source +
+            ViewMode.SIDE_BY_SIDE -> "<div class=\"mdr-row blk-$status $prefix-row\"$idx>" + source +
                 side("left", left, block.status, InlineMarks.NONE, null, emptyMap()) +
                 side("right", right, block.status, InlineMarks.NONE, null, emptyMap()) + "</div>\n"
             ViewMode.MERGED -> {
-                val drawings = "<div class=\"mdr-mermaid-old\">" + renderBlock(left, DiffStatus.REMOVED, side = "left") + "</div>" +
+                val drawings = "<div class=\"$prefix-old\">" + renderBlock(left, DiffStatus.REMOVED, side = "left") + "</div>" +
                     renderBlock(right, DiffStatus.ADDED)
-                "<div class=\"mdr-item blk-$status mdr-mermaid-row\"$idx data-side=\"right\" data-line=\"${right.source.startLine}\">" +
-                    source + "<div class=\"mdr-mermaid-pair\">" + quote(drawings, right.context) + "</div></div>\n"
+                "<div class=\"mdr-item blk-$status $prefix-row\"$idx data-side=\"right\" data-line=\"${right.source.startLine}\">" +
+                    source + "<div class=\"$prefix-pair\">" + quote(drawings, right.context) + "</div></div>\n"
             }
         }
     }
@@ -245,7 +249,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         if (block.status == DiffStatus.MODIFIED) InlineMarks.left(block.inline) else InlineMarks.NONE
 
     private fun rightMarks(block: DiffBlock, withRemoved: Boolean) =
-        if (block.status == DiffStatus.MODIFIED) InlineMarks.right(block.inline, withRemoved) else InlineMarks.NONE
+        if (block.status == DiffStatus.MODIFIED) InlineMarks.right(block.inline, withRemoved, block.left!!.atoms) else InlineMarks.NONE
 
     /** Links and images of a modified block whose text is equal but whose target changed. */
     private fun linkChanges(block: DiffBlock): LinkChanges.Result =
@@ -347,6 +351,9 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             // Inert source for the page's diagram script, which draws it in place; shown as code without the script.
             BlockKind.MERMAID -> "<div class=\"$cls mdr-mermaid\"><pre class=\"mdr-mermaid-code\"><code>" +
                 escape(block.plainText) + "</code></pre></div>"
+            // Inert TeX source for the page's math script, which draws it in place; shown as monospace source without it.
+            BlockKind.MATH -> "<div class=\"$cls mdr-math-block\"><div class=\"mdr-math mdr-math-display\">" +
+                escape(block.plainText) + "</div></div>"
             BlockKind.HTML -> {
                 val parts = HtmlFragment.parse(block.rawText, options.allowRemoteImages, openDetails = status != DiffStatus.EQUAL)
                 "<div class=\"$cls mdr-html${noteClass(note)}\"${noteAttributes(note)}>" + markedHtml(parts, marks) + "</div>"
@@ -413,7 +420,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
      * across nodes with one separator character, matching how the extractor joins them.
      */
     private fun renderNodes(nodes: List<Node>, marks: InlineMarks, side: String, links: Map<Node, String>): String {
-        val writer = MarkedTextWriter(marks, ::escape)
+        val writer = MarkedTextWriter(marks, ::escape) { InlineMathRenderer.fromText(it, ::escape) }
         val tooltip = if (side == "left") options.labels.newUrl else options.labels.previousUrl
         val linkNotes = links.mapValuesTo(java.util.IdentityHashMap()) { tooltip(it.value) }
         val baseUri = if (side == "left") options.leftBaseUri else options.rightBaseUri
@@ -427,6 +434,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                 .nodeRendererFactory { ctx -> MarkedTextNodeRenderer(ctx, writer, offsets) }
                 .nodeRendererFactory { ctx -> FootnoteReferenceRenderer(ctx, writer, offsets) { footnoteId(side, it) } }
                 .nodeRendererFactory { ctx -> HardBreakRenderer(ctx, writer, offsets) }
+                .nodeRendererFactory { ctx -> InlineMathRenderer(ctx, writer, offsets, ::escape) }
                 .nodeRendererFactory { ctx -> SanitizedHtmlRenderer(ctx, options.allowRemoteImages) }
                 .attributeProviderFactory { LinkAttributeProvider(baseUri, linkNotes) }
                 .sanitizeUrls(true)
@@ -440,7 +448,10 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
 
     companion object {
         /** Kinds rendered from their source, where comments are text. */
-        private val RAW_KINDS = setOf(BlockKind.CODE_LINE, BlockKind.CODE_FENCE, BlockKind.FRONT_MATTER, BlockKind.MERMAID)
+        private val RAW_KINDS = setOf(BlockKind.CODE_LINE, BlockKind.CODE_FENCE, BlockKind.FRONT_MATTER, BlockKind.MERMAID, BlockKind.MATH)
+
+        /** Kinds drawn by the page script, whose changes show both drawings and a toggle to the source diff. */
+        private val DRAWN_KINDS = setOf(BlockKind.MERMAID, BlockKind.MATH)
 
         /**
          * The parser's extensions minus footnotes: their renderer collects definitions at the end of the

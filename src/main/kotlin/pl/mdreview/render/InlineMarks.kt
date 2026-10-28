@@ -9,7 +9,10 @@ import org.commonmark.node.Node
 import org.commonmark.node.Text
 import org.commonmark.renderer.NodeRenderer
 import org.commonmark.renderer.html.HtmlNodeRendererContext
+import pl.mdreview.engine.BlockExtractor
 import pl.mdreview.engine.DiffStatus
+import pl.mdreview.engine.InlineMath
+import pl.mdreview.engine.MathBlock
 import pl.mdreview.engine.InlineSegment
 
 /**
@@ -22,7 +25,8 @@ class InlineMarks(
     val insertions: List<Insertion> = emptyList(),
 ) {
     data class Mark(val start: Int, val end: Int, val tag: String)
-    data class Insertion(val offset: Int, val text: String, val tag: String)
+    /** [atoms] are ranges of [text] that are whole formulas, written as such rather than as their source. */
+    data class Insertion(val offset: Int, val text: String, val tag: String, val atoms: List<IntRange> = emptyList())
 
     companion object {
         // Written as <del class="mdr-del"> / <ins class="mdr-ins">; the class tells them apart from
@@ -45,15 +49,24 @@ class InlineMarks(
             return InlineMarks(marks)
         }
 
-        fun right(segments: List<InlineSegment>, withRemoved: Boolean = false): InlineMarks {
+        /** @param leftAtoms the left block's [pl.mdreview.engine.Block.atoms], kept whole in removed text. */
+        fun right(segments: List<InlineSegment>, withRemoved: Boolean = false, leftAtoms: List<IntRange> = emptyList()): InlineMarks {
             val marks = mutableListOf<Mark>()
             val insertions = mutableListOf<Insertion>()
             var pos = 0
+            var leftPos = 0
             for (s in segments) {
                 when (s.status) {
-                    DiffStatus.EQUAL -> pos += s.text.length
+                    DiffStatus.EQUAL -> { pos += s.text.length; leftPos += s.text.length }
                     DiffStatus.ADDED -> { marks += Mark(pos, pos + s.text.length, INS); pos += s.text.length }
-                    DiffStatus.REMOVED -> if (withRemoved) insertions += Insertion(pos, s.text, DEL)
+                    DiffStatus.REMOVED -> {
+                        if (withRemoved) {
+                            val end = leftPos + s.text.length
+                            val atoms = leftAtoms.filter { it.first >= leftPos && it.last < end }.map { (it.first - leftPos)..(it.last - leftPos) }
+                            insertions += Insertion(pos, s.text, DEL, atoms)
+                        }
+                        leftPos += s.text.length
+                    }
                     DiffStatus.MODIFIED -> Unit
                 }
             }
@@ -66,7 +79,12 @@ class InlineMarks(
  * Writes plain text with word marks applied. One instance renders one block; [offsets] maps each
  * [Text]/[Code] node to its position in the block's plain text.
  */
-class MarkedTextWriter(private val marks: InlineMarks, private val escape: (String) -> String) {
+class MarkedTextWriter(
+    private val marks: InlineMarks,
+    private val escape: (String) -> String,
+    /** HTML for a whole formula inserted from the other side, given its plain text (`$...$`). */
+    private val atomHtml: (String) -> String = escape,
+) {
     private val pending = ArrayDeque(marks.insertions.sortedBy { it.offset })
 
     /** Text of [literal] starting at plain-text [offset], as HTML. */
@@ -96,6 +114,18 @@ class MarkedTextWriter(private val marks: InlineMarks, private val escape: (Stri
     }
 
     /**
+     * [html] for an atom, a span of [length] characters at plain-text [offset] that the word diff keeps whole (an
+     * inline formula), wrapped in the mark that covers it.
+     */
+    fun atom(offset: Int, length: Int, html: String): String {
+        val sb = StringBuilder()
+        flushInsertions(sb, offset)
+        val tag = marks.marks.firstOrNull { it.start < offset + length && it.end > offset }?.tag
+        if (tag != null) sb.append(open(tag)).append(html).append("</").append(tag).append('>') else sb.append(html)
+        return sb.toString()
+    }
+
+    /**
      * A marker for the hard line break at plain-text [offset] when the word diff marks it (an added or removed
      * break), otherwise nothing. The caller writes the `<br>` itself.
      */
@@ -114,6 +144,17 @@ class MarkedTextWriter(private val marks: InlineMarks, private val escape: (Stri
         return sb.toString()
     }
 
+    private fun insertionHtml(ins: InlineMarks.Insertion): String {
+        if (ins.atoms.isEmpty()) return escape(ins.text)
+        val sb = StringBuilder()
+        var pos = 0
+        for (atom in ins.atoms) {
+            sb.append(escape(ins.text.substring(pos, atom.first))).append(atomHtml(ins.text.substring(atom.first, atom.last + 1)))
+            pos = atom.last + 1
+        }
+        return sb.append(escape(ins.text.substring(pos))).toString()
+    }
+
     private fun open(tag: String) = "<$tag class=\"mdr-$tag\">"
 
     private fun breakMarker(tag: String) = "<$tag class=\"mdr-$tag mdr-ws mdr-ws-break\"></$tag>"
@@ -123,7 +164,7 @@ class MarkedTextWriter(private val marks: InlineMarks, private val escape: (Stri
             val ins = pending.removeFirst()
             // A removed hard line break shows as a marker, not as invisible whitespace.
             if (ins.text.isBlank() && '\n' in ins.text) sb.append(breakMarker(ins.tag))
-            else sb.append(open(ins.tag)).append(escape(ins.text)).append("</").append(ins.tag).append('>')
+            else sb.append(open(ins.tag)).append(insertionHtml(ins)).append("</").append(ins.tag).append('>')
         }
     }
 }
@@ -191,6 +232,46 @@ internal class HardBreakRenderer(
         offsets[node]?.let { html.raw(writer.lineBreak(it)) }
         html.tag("br", emptyMap(), true)
         html.line()
+    }
+}
+
+/**
+ * commonmark renderer for [InlineMath], and for a [MathBlock] inside a list item or footnote: the formula's source in
+ * an inert `.mdr-math` element, which the page script draws with KaTeX, marked as a whole when the word diff changed it.
+ */
+internal class InlineMathRenderer(
+    private val context: HtmlNodeRendererContext,
+    private val writer: MarkedTextWriter,
+    private val offsets: Map<Node, Int>,
+    private val escape: (String) -> String,
+) : NodeRenderer {
+
+    override fun getNodeTypes(): Set<Class<out Node>> = setOf(InlineMath::class.java, MathBlock::class.java)
+
+    override fun render(node: Node) {
+        val (html, length) = when (node) {
+            is InlineMath -> html(node.literal, node.display, escape) to BlockExtractor.mathText(node).length
+            is MathBlock -> "<div class=\"mdr-math mdr-math-display\">" + escape(node.literal) + "</div>" to BlockExtractor.mathText(node).length
+            else -> return
+        }
+        val offset = offsets[node]
+        if (node is MathBlock) context.writer.line()
+        context.writer.raw(if (offset == null) html else writer.atom(offset, length, html))
+        if (node is MathBlock) context.writer.line()
+    }
+
+    companion object {
+        fun html(literal: String, display: Boolean, escape: (String) -> String): String {
+            val mode = if (display) "mdr-math-display" else "mdr-math-inline"
+            return "<span class=\"mdr-math $mode\">" + escape(literal) + "</span>"
+        }
+
+        /** [html] for a formula's plain text, `$...$` or `$$...$$`. */
+        fun fromText(text: String, escape: (String) -> String): String {
+            val display = text.startsWith("$$")
+            val delimiter = if (display) "$$" else "$"
+            return html(text.removePrefix(delimiter).removeSuffix(delimiter), display, escape)
+        }
     }
 }
 

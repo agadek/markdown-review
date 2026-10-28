@@ -55,6 +55,10 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
                     .comment(MarkdownReviewBundle.message("settings.render.mermaid.comment"))
             }
             row {
+                checkBox(MarkdownReviewBundle.message("settings.render.math")).bindSelected(settings::renderMath)
+                    .comment(MarkdownReviewBundle.message("settings.render.math.comment"))
+            }
+            row {
                 checkBox(MarkdownReviewBundle.message("settings.show.block.actions")).bindSelected(settings::showBlockActions)
                     .comment(MarkdownReviewBundle.message("settings.show.block.actions.comment"))
             }

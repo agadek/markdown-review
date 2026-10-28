@@ -48,6 +48,11 @@ with an **Open Text Viewer** button instead.
   page script draws. A modified diagram's row (or merged item) also carries `mdr-mermaid-row` and starts with
   `details.mdr-mermaid-source`, holding the source line diff as nested rows or items with `data-side` / `data-line`
   but no `data-idx`. See `CLASSES.md`.
+- Math (P2.4, P2.8): an inline formula is `span.mdr-math.mdr-math-inline` holding its TeX source, marked as a whole by
+  the word diff (`<del class="mdr-del">` / `<ins class="mdr-ins">` around the span). A block formula is one `MATH`
+  block whose line range covers the whole `$$ ... $$`; its side holds `div.mdr-block.mdr-math-block` with the source
+  in `div.mdr-math.mdr-math-display`. A modified block formula's row (or merged item) carries `mdr-math-row` and starts
+  with `details.mdr-math-source`, like a changed diagram. The IDE's page script draws the formulas.
 - Raw HTML (NFR-8): blocks and inline HTML go through an allowlist sanitizer (`HtmlFragment`): GitHub's set of
   tags and attributes, `http`, `https`, `mailto`, `file` and relative URLs (`data:image/*` for images); the content of
   `<script>`, `<style>`, `<iframe>` and similar elements is dropped. Changes only in HTML markup or in an HTML comment
@@ -84,10 +89,18 @@ unknown ones stay as text). Front matter is recognized before parsing. Block kin
 | `FRONT_MATTER` | a line of YAML front matter |
 | `FOOTNOTE` | a footnote definition |
 | `ALERT` | the title line of a GitHub alert |
+| `MATH` | a block formula (`$$ ... $$`), compared exactly except for trailing whitespace; `Block.lines` holds its source lines for the source diff |
 
 Hard line breaks (two trailing spaces or `\`) are part of a block's key and appear as `\n` in its word diff, so
 adding or removing one is a change; switching between the two syntaxes is not. With `ignoreWhitespace` they are
-ignored. Math (`$...$`) is not recognized yet (P2.8).
+ignored.
+
+Math (`MathExtension`, P2.4): `$...$` is an inline formula (`InlineMath`) when the opening `$` is not followed by
+whitespace and the closing `$` is not preceded by whitespace or followed by a digit, as on GitHub, so prices such as
+"$5 or $10" stay text; code spans and `\$` come first. `$$` on a line of its own opens a block formula (`MathBlock`)
+closed by a line ending in `$$`; it does not interrupt a paragraph, and `$$...$$` within a line is an inline formula
+in display mode. In a block's plain text an inline formula is its source with its dollars, and `Block.atoms` lists
+those ranges so the word diff keeps each formula whole.
 
 ## What the IDE does
 - Registers two viewers in IntelliJ's diff window (`diff.DiffTool`): "Rendered Markdown (side by side)" and "(merged)"; the text diff is the built-in viewer.
@@ -102,11 +115,16 @@ ignored. Math (`$...$`) is not recognized yet (P2.8).
   and a script that draws each block with Mermaid's `default` or `dark` theme, matching the editor scheme. Both scripts
   carry the page's nonce, so the CSP is unchanged and nothing is loaded from the network. A diagram Mermaid cannot
   parse shows its error and source; for a changed diagram the source line diff opens.
+- Draws formulas when the "Render math" setting is on and `bodyHtml` has a `.mdr-math` element: the page inlines the
+  bundled `katex.min.js` and `katex.min.css` (`src/main/resources/pl/mdreview/katex`), with the WOFF2 fonts as
+  `data:` URIs and `font-src data:` added to the CSP, and a script that renders each formula in place in batches.
+  A formula KaTeX cannot parse keeps its source with `mdr-math-failed` and KaTeX's message; for a changed block
+  formula the source line diff opens. With the setting off the formulas stay monospace source.
 - Shows the large-file notice above `LargeFiles.limit()`; its button marks the diff context so the rendered viewers
   report `canShow = false` for files above the limit, then reopens the request, which falls back to the text viewer.
 - Settings | Tools | Markdown Review (`MarkdownReviewSettings`, stored in `markdownReview.xml`): the default viewer,
   `ignoreWhitespace`, `collapseUnchanged`, the large-file limits (lines, KB), loading remote images, rendering
-  Mermaid diagrams, `showBlockActions` and the pairing threshold.
+  Mermaid diagrams, rendering math, `showBlockActions` and the pairing threshold.
 - Per-block buttons (FR-12): the page's script adds `.mdr-actions` with `mdr-revert` (writes the left version into
   the right document) and, in the side-by-side view, `mdr-apply` (writes the right version into the left document)
   to every block with an `edit` region, only for sides whose `DocumentContent` can be made writable and that the

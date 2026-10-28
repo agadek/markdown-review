@@ -53,10 +53,12 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
             a = pa
             val l = removed[r++]
             val rt = added[a++]
-            out += DiffBlock(DiffStatus.MODIFIED, l, rt, WordDiff.diff(l.plainText, rt.plainText))
+            out += DiffBlock(DiffStatus.MODIFIED, l, rt, wordDiff(l, rt))
         }
         emitGap(removed.subList(r, removed.size), added.subList(a, added.size), out)
     }
+
+    private fun wordDiff(l: Block, r: Block) = WordDiff.diff(l.plainText, r.plainText, l.atoms, r.atoms)
 
     /**
      * Unpaired blocks between two pairs: removed first, then added, except that blocks continuing
@@ -68,7 +70,7 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
         if (removed.size == 1 && added.size == 1 &&
             pairScore(removed[0], added[0], lone = true, bothLone = true) > 0
         ) {
-            out += DiffBlock(DiffStatus.MODIFIED, removed[0], added[0], WordDiff.diff(removed[0].plainText, added[0].plainText))
+            out += DiffBlock(DiffStatus.MODIFIED, removed[0], added[0], wordDiff(removed[0], added[0]))
             return
         }
         val previous = out.lastOrNull()?.let { it.right ?: it.left }
@@ -166,6 +168,8 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
             BlockKind.FOOTNOTE -> return if (footnoteLabel(l) == footnoteLabel(r)) s + 1.0 else 0.0
             // A diagram is compared as a whole: the only diagram of the same type on each side is the same diagram.
             BlockKind.MERMAID -> if (bothLone && diagramType(l) == diagramType(r)) return maxOf(s, MIN_SCORE)
+            // The only formula on each side was most likely edited, however much of it changed.
+            BlockKind.MATH -> if (bothLone) return maxOf(s, MIN_SCORE)
             // A renamed heading at the same level, with no other heading around, is the same heading.
             BlockKind.HEADING -> if (bothLone && l.level == r.level) return maxOf(s, MIN_SCORE)
             // A changed summary is the same collapsible section.

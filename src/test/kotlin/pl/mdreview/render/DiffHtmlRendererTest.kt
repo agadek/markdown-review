@@ -295,4 +295,54 @@ class DiffHtmlRendererTest {
         val html = render("one\ntwo\n", "one\\\ntwo\n")
         assertContains(html, "one<ins class=\"mdr-ins mdr-ws mdr-ws-break\"></ins><br />")
     }
+
+    @Test
+    fun `a changed inline formula is replaced as a whole, never word by word (P2_4)`() {
+        val html = render("Speed: \$v = d / t\$ here.", "Speed: \$v = s / t\$ here.")
+        assertContains(html, "<del class=\"mdr-del\"><span class=\"mdr-math mdr-math-inline\">v = d / t</span></del>")
+        assertContains(html, "<ins class=\"mdr-ins\"><span class=\"mdr-math mdr-math-inline\">v = s / t</span></ins>")
+    }
+
+    @Test
+    fun `formula source is escaped (P2_4)`() {
+        val html = render("\$a < b\$ and\n\n\$\$\nx <script> y\n\$\$\n", "\$a < c\$ and\n\n\$\$\nx <script> z\n\$\$\n")
+        assertContains(html, "a &lt; c")
+        assertContains(html, "x &lt;script&gt; z")
+        assertFalse(html.contains("<script>"))
+    }
+
+    @Test
+    fun `dollar signs that do not form a formula stay text (P2_4)`() {
+        for (text in listOf("Costs \$5 or \$10.", "A lone \$ sign.", "Spaced \$ x \$ is not a formula.", "Escaped \\\$x\\\$ too.")) {
+            val html = render(text, "$text More.")
+            assertFalse(html.contains("mdr-math"), text)
+        }
+    }
+
+    @Test
+    fun `merged view shows a removed formula as a formula, not as its source`() {
+        val html = render("Speed: \$v = d / t\$ here.", "Speed: \$v = s / t\$ here.", RenderOptions(mode = ViewMode.MERGED))
+        assertContains(
+            html,
+            "<del class=\"mdr-del\"><span class=\"mdr-math mdr-math-inline\">v = d / t</span></del>" +
+                "<ins class=\"mdr-ins\"><span class=\"mdr-math mdr-math-inline\">v = s / t</span></ins>",
+        )
+    }
+
+    @Test
+    fun `a block formula shows its source until the page draws it`() {
+        val html = render("\$\$\na^2 + b^2\n\$\$\n", "\$\$\na^2 + b^2 = c^2\n\$\$\n")
+        assertContains(html, "<div class=\"mdr-row blk-modified mdr-math-row\" data-idx=\"0\" data-block-id=\"b0\">")
+        assertContains(html, "<div class=\"mdr-block mdr-modified mdr-math-block\"><div class=\"mdr-math mdr-math-display\">a^2 + b^2 = c^2</div></div>")
+        // The source diff behind the toggle is a word diff of the changed line.
+        assertContains(html, "<ins class=\"mdr-ins\"> = c^2</ins>")
+    }
+
+    @Test
+    fun `a block formula inside a list item is rendered and marked as a whole`() {
+        val html = render("- item\n\n  \$\$\n  x^2\n  \$\$\n", "- item\n\n  \$\$\n  x^3\n  \$\$\n")
+        assertContains(html, "<del class=\"mdr-del\"><div class=\"mdr-math mdr-math-display\">x^2</div></del>")
+        assertContains(html, "<ins class=\"mdr-ins\"><div class=\"mdr-math mdr-math-display\">x^3</div></ins>")
+    }
 }
+

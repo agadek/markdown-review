@@ -19,6 +19,7 @@ import org.commonmark.ext.task.list.items.TaskListItemsExtension
 import org.commonmark.node.AbstractVisitor
 import org.commonmark.node.BlockQuote
 import org.commonmark.node.Code
+import org.commonmark.node.CustomBlock
 import org.commonmark.node.CustomNode
 import org.commonmark.node.Document
 import org.commonmark.node.FencedCodeBlock
@@ -57,6 +58,7 @@ object BlockExtractor {
         FootnotesExtension.create(),
         AlertsExtension.create(),
         EmojiExtension.create(),
+        MathExtension.create(),
     )
 
     private val parser: Parser = Parser.builder()
@@ -205,6 +207,7 @@ object BlockExtractor {
                 is TableBlock -> visitTable(node, ctx)
                 is FootnoteDefinition -> out += footnote(node, ctx)
                 is Alert -> visitAlert(node, ctx)
+                is MathBlock -> out += math(node, ctx)
                 else -> Unit // link reference definitions and other non-visual blocks
             }
         }
@@ -386,6 +389,39 @@ object BlockExtractor {
             }
         }
 
+        /**
+         * A block formula is one block, compared exactly except for trailing whitespace like code. [Block.lines] holds
+         * its source lines as [BlockKind.CODE_LINE] blocks, for the source diff of a changed formula.
+         */
+        private fun math(node: MathBlock, ctx: BlockContext): Block {
+            val spans = node.sourceSpans
+            val source = node.literal
+            val opening = spans.firstOrNull()?.let(::slice)?.trim()?.removePrefix("$$").orEmpty()
+            // The source lines follow the opening line, or start on it after `$$`.
+            val first = if (opening.isBlank()) 1 else 0
+            val lines = source.split('\n').mapIndexed { i, line ->
+                val span = spans.getOrNull(first + i)
+                Block(
+                    kind = BlockKind.CODE_LINE,
+                    key = keyPrefix(BlockKind.CODE_LINE, ctx) + line.trimEnd(),
+                    plainText = line,
+                    rawText = line,
+                    source = range(listOfNotNull(span).ifEmpty { spans }),
+                    context = ctx,
+                )
+            }
+            return Block(
+                kind = BlockKind.MATH,
+                key = keyPrefix(BlockKind.MATH, ctx) + source.lines().joinToString("\n") { it.trimEnd() },
+                plainText = source,
+                rawText = raw(spans),
+                source = range(spans),
+                context = ctx,
+                node = node,
+                lines = lines,
+            )
+        }
+
         private fun visitCodeLines(node: Node, literal: String, spans: List<SourceSpan>, language: String?, ctx: BlockContext) {
             val lines = literal.removeSuffix("\n").let { if (it.isEmpty() && literal.isEmpty()) emptyList() else it.split('\n') }
             lines.forEachIndexed { i, line ->
@@ -543,7 +579,23 @@ object BlockExtractor {
             }
             override fun visit(image: Image) = Unit
 
+            override fun visit(customBlock: CustomBlock) {
+                if (customBlock is MathBlock) {
+                    // A block formula inside a list item or footnote, kept whole like an inline one.
+                    offsets[customBlock] = sb.length
+                    sb.append(mathText(customBlock))
+                    return
+                }
+                visitChildren(customBlock)
+            }
+
             override fun visit(customNode: CustomNode) {
+                if (customNode is InlineMath) {
+                    // The formula with its dollars, so the word diff can keep it whole (see atoms).
+                    offsets[customNode] = sb.length
+                    sb.append(mathText(customNode))
+                    return
+                }
                 if (customNode is FootnoteReference) {
                     offsets[customNode] = sb.length
                     sb.append("[^").append(customNode.label).append(']')
@@ -557,6 +609,34 @@ object BlockExtractor {
     }
 
     fun plainText(node: Node): String = plainTextWithOffsets(node).text
+
+    /** How a formula appears in the plain text: its source between its dollars. */
+    fun mathText(math: InlineMath): String = if (math.display) "$$" + math.literal + "$$" else "$" + math.literal + "$"
+
+    fun mathText(math: MathBlock): String = "$$" + math.literal + "$$"
+
+    /** Kinds whose [Block.plainText] is the plain text of their [Block.renderNodes] joined with one character. */
+    private val INLINE_KINDS = setOf(BlockKind.PARAGRAPH, BlockKind.HEADING, BlockKind.LIST_ITEM, BlockKind.TABLE_ROW, BlockKind.FOOTNOTE)
+
+    /** Ranges of [block]'s plain text that the word diff keeps whole: its inline formulas. */
+    fun atoms(block: Block): List<IntRange> {
+        if (block.kind !in INLINE_KINDS) return emptyList()
+        val atoms = mutableListOf<IntRange>()
+        var base = 0
+        for (node in block.renderNodes) {
+            val plain = plainTextWithOffsets(node)
+            for ((n, offset) in plain.offsets) {
+                val length = when (n) {
+                    is InlineMath -> mathText(n).length
+                    is MathBlock -> mathText(n).length
+                    else -> continue
+                }
+                atoms += (base + offset) until (base + offset + length)
+            }
+            base += plain.text.length + 1
+        }
+        return atoms.sortedBy { it.first }
+    }
 
     private val whitespace = Regex("\\s+")
 

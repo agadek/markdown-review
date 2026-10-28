@@ -15,6 +15,8 @@
           <li><b>Merged view:</b> one column, removals struck through, additions in green.</li>
           <li><b>Mermaid diagrams</b> drawn offline, in the editor's light or dark theme; a changed diagram shows the
               old and the new drawing, with a toggle for the line diff of its source.</li>
+          <li><b>Math</b> (<code>$...$</code>, <code>$$...$$</code>) drawn offline with KaTeX; a changed formula is
+              highlighted as a whole.</li>
           <li><b>Per-block revert and apply:</b> buttons on a changed block copy it to the other side, through the
               IDE document, so Undo works.</li>
           <li><b>Text diff</b> one click away in the diff window's viewer switcher.</li>
@@ -26,7 +28,7 @@
               matter.</li>
           <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with and how readily a
               rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
-              large-file, remote-image and Mermaid options. The diff colors are set per color scheme in
+              large-file, remote-image, Mermaid and math options. The diff colors are set per color scheme in
               Settings | Editor | Color Scheme | Markdown Review.</li>
         </ul>
         <b>Free for noncommercial use and maintained in spare time.</b> If it saves you time in reviews, help cover the

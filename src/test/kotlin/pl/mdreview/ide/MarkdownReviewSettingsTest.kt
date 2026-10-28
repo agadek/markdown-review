@@ -17,6 +17,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertEquals(2_048, settings.largeFileKilobytes)
         assertFalse(settings.loadRemoteImages)
         assertTrue(settings.renderMermaid)
+        assertTrue(settings.renderMath)
         assertEquals(DiffOptions.DEFAULT_PAIRING_THRESHOLD, settings.pairingThreshold)
     }
 
@@ -48,6 +49,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
             largeFileKilobytes = 64
             loadRemoteImages = true
             renderMermaid = false
+            renderMath = false
             pairingThreshold = 0.7
             appliedDefaultViewer = DefaultViewer.TEXT
         }
@@ -62,6 +64,7 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertEquals(64, restored.largeFileKilobytes)
         assertTrue(restored.loadRemoteImages)
         assertFalse(restored.renderMermaid)
+        assertFalse(restored.renderMath)
         assertEquals(0.7, restored.pairingThreshold)
         assertEquals(DefaultViewer.TEXT, restored.appliedDefaultViewer)
     }

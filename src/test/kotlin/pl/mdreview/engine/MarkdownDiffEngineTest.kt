@@ -274,4 +274,31 @@ class MarkdownDiffEngineTest {
         val blocks = BlockExtractor.extract("A [x][r] and ![i](img.png)\n\n[r]: https://e.example\n")
         assertTrue(blocks.single().key.endsWith(" -> https://e.example img.png"), blocks.single().key)
     }
+
+    @Test
+    fun `block formulas are recognized in quotes and inside list items`() {
+        val blocks = BlockExtractor.extract("> \$\$\n> a + b\n> \$\$\n\n- item\n\n  \$\$\n  x^2\n  \$\$\n")
+        val math = blocks.single { it.kind == BlockKind.MATH }
+        assertEquals("a + b", math.plainText)
+        assertEquals(1, math.context.quoteDepth)
+        assertEquals(SourceRange(0, 3, 2, 17), math.source)
+        assertEquals(listOf(1), math.lines.map { it.source.startLine })
+        // Inside a list item the formula is part of the item, kept whole by the word diff.
+        val item = blocks.single { it.kind == BlockKind.LIST_ITEM }
+        assertEquals("item \$\$x^2\$\$", item.plainText)
+        assertEquals(listOf(5..11), item.atoms)
+    }
+
+    @Test
+    fun `dollar signs that do not delimit a formula stay text`() {
+        for (text in listOf("\$\$\$ x \$\$\$", "a \$ b", "\$x \$", "costs \$5 and \$6")) {
+            val block = BlockExtractor.extract(text).single()
+            assertEquals(BlockKind.PARAGRAPH, block.kind, text)
+            assertTrue(block.atoms.isEmpty(), text)
+        }
+        val inline = BlockExtractor.extract("Mass \$\$E = mc^2\$\$ and \$x\$.").single()
+        assertEquals("Mass \$\$E = mc^2\$\$ and \$x\$.", inline.plainText)
+        assertEquals(listOf(5..16, 22..24), inline.atoms)
+    }
 }
+

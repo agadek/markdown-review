@@ -1,6 +1,11 @@
 package pl.mdreview.ide
 
 import com.intellij.diff.DiffContentFactory
+import com.intellij.diff.DiffContextEx
+import com.intellij.diff.util.DiffUserDataKeys
+import com.intellij.diff.util.Side
+import com.intellij.openapi.project.Project
+import pl.mdreview.api.LineRange
 import com.intellij.diff.contents.DocumentContent
 import com.intellij.diff.contents.EmptyContent
 import com.intellij.diff.requests.SimpleDiffRequest
@@ -135,5 +140,49 @@ class RenderedDiffViewerTest : BasePlatformTestCase() {
         val request = SimpleDiffRequest("test", content("r.md", "a\n"), content("s.md", "b\n"), "r", "s")
         val (viewer, _) = open(request, ViewMode.SIDE_BY_SIDE)
         assertSameElements(ActionUtil.getActions(viewer.component), viewer.navigationActions)
+    }
+
+    /** A diff window's context that records each reopen and what the request carried at that moment. */
+    private class ReopeningContext(private val project: Project) : DiffContextEx() {
+        lateinit var request: SimpleDiffRequest
+        val reopens = mutableListOf<Pair<Boolean?, com.intellij.openapi.util.Pair<Side, Int>?>>()
+        override fun getProject() = project
+        override fun isWindowFocused() = false
+        override fun isFocusedInWindow() = false
+        override fun requestFocusInWindow() = Unit
+        override fun reopenDiffRequest() {
+            reopens += getUserData(RenderedMarkdownDiffTool.TEXT_VIEWER_ONCE) to request.getUserData(DiffUserDataKeys.SCROLL_TO_LINE)
+        }
+        override fun reloadDiffRequest() = Unit
+        override fun showProgressBar(enabled: Boolean) = Unit
+        override fun setWindowTitle(title: String) = Unit
+    }
+
+    private fun names(actions: List<AnAction>) = actions.map { it.templatePresentation.text }
+
+    fun `test a block's menu outside a diff window has go to source only (P3_4)`() {
+        val request = SimpleDiffRequest("test", content("m1.md", "a\n"), content("m2.md", "b\n"), "m1", "m2")
+        val (viewer, _) = open(request, ViewMode.SIDE_BY_SIDE)
+        // Light test files are not under version control, so there is no history either.
+        assertEquals(listOf("Go to Source"), names(viewer.blockMenuActions(1, LineRange(0, 1))))
+    }
+
+    fun `test open in text diff reopens the window once in the text viewer at the block's line (P3_4)`() {
+        val context = ReopeningContext(project)
+        val request = SimpleDiffRequest("test", content("t1.md", "# A\n\nold\n"), content("t2.md", "# A\n\nnew\n"), "t1", "t2")
+        context.request = request
+        val view = RecordingView()
+        val viewer = RenderedDiffViewer(context, request, ViewMode.SIDE_BY_SIDE) { _, _ -> view }
+        Disposer.register(testRootDisposable, Disposable { viewer.dispose() })
+        viewer.init()
+        assertEquals(listOf("Go to Source", "Open in Text Diff Here"), names(viewer.blockMenuActions(1, LineRange(2, 3))))
+
+        viewer.openTextDiffAt(1, 2)
+        assertEquals(listOf(true to com.intellij.openapi.util.Pair.create(Side.RIGHT, 2)), context.reopens)
+        assertFalse(RenderedSideBySideTool().canShow(context, request))
+        PlatformTestUtil.dispatchAllEventsInIdeEventQueue()
+        // Right after, the rendered viewers are back in the switcher and the scroll target is gone.
+        assertNull(context.getUserData(RenderedMarkdownDiffTool.TEXT_VIEWER_ONCE))
+        assertNull(request.getUserData(DiffUserDataKeys.SCROLL_TO_LINE))
     }
 }

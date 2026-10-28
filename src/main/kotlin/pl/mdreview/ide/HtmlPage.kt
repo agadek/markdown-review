@@ -50,6 +50,7 @@ object HtmlPage {
             window.mdrSend = function(msg) { $queryJs };
             $BRIDGE_JS
             mdr.restore($restoreIdx);
+            mdr.setStamp(${jsString(actions.stamp)});
             ${actionsJs(diff, actions)}
             </script>
             </body></html>
@@ -328,7 +329,8 @@ object HtmlPage {
      * `scroll|<idx>` topmost visible block, `source|<side>|<line>` Ctrl/Cmd+click on a block,
      * `link|<href>` external link click, `edit|<revert|apply>|<idx>|<stamp>` a block button click,
      * `open|<side>|<idx>|<stamp>` a double-click that asks for a block's source (answered with `mdr.openEditor`),
-     * `edit|edit-<side>|<idx>|<stamp>|<markdown>` saving the editor, `closed` the editor closed without saving.
+     * `edit|edit-<side>|<idx>|<stamp>|<markdown>` saving the editor, `closed` the editor closed without saving,
+     * `menu|<side>|<idx>|<stamp>|<x>|<y>` a right-click on a block, at the given point of the page.
      */
     private const val BRIDGE_JS = """
         var mdr = (function() {
@@ -398,7 +400,17 @@ object HtmlPage {
               if (cell) { e.preventDefault(); mdrSend('source|' + cell.getAttribute('data-side') + '|' + cell.getAttribute('data-line')); }
             }
           });
+          document.addEventListener('contextmenu', function(e) {
+            if (e.target.closest('textarea, a[href]')) return;
+            var cell = e.target.closest('[data-side][data-line]');
+            var row = cell && cell.closest('[data-idx]');
+            if (!row) return;
+            e.preventDefault();
+            mdrSend('menu|' + cell.getAttribute('data-side') + '|' + row.getAttribute('data-idx') + '|' + stamp + '|' +
+              Math.round(e.clientX) + '|' + Math.round(e.clientY));
+          });
           return {
+            setStamp: function(pageStamp) { stamp = pageStamp; },
             editing: function(sides, pageStamp, hint, refused) {
               editSides = sides; stamp = pageStamp; editHint = hint; editRefused = refused;
             },

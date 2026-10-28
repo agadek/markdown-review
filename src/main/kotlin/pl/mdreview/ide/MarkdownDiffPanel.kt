@@ -11,6 +11,7 @@ import com.intellij.ui.jcef.JBCefJSQuery
 import pl.mdreview.api.RenderedDiff
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.UIUtil
+import java.awt.Point
 import javax.swing.JComponent
 import javax.swing.SwingConstants
 
@@ -32,6 +33,9 @@ interface RenderedDiffView {
      * (on the CEF thread); `null` keeps the page as it is (FR-13).
      */
     fun onSourceRequest(provider: (side: String, idx: Int, stamp: String) -> String?) = Unit
+
+    /** Sets what a right-click on block `idx` on `side` calls, on the EDT, with the click's point in [component] (P3.4). */
+    fun onBlockMenu(handler: (side: String, idx: Int, stamp: String, at: Point) -> Unit) = Unit
 
     /** An edited block was not saved, for example because the file changed meanwhile; the editor stays open. */
     fun editRefused() = Unit
@@ -56,6 +60,7 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
     private var currentActions = BlockActions.NONE
     private var blockActionHandler: (BlockActionRequest) -> Unit = {}
     private var sourceProvider: (String, Int, String) -> String? = { _, _, _ -> null }
+    private var blockMenuHandler: (String, Int, String, Point) -> Unit = { _, _, _, _ -> }
 
     /** Whether the page has a block editor open; read and written on the EDT. */
     private var editing = false
@@ -83,6 +88,16 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
                     val stamp = parts.getOrNull(3)
                     val text = if (idx != null && stamp != null) sourceProvider(parts[1], idx, stamp) else null
                     if (idx != null && text != null) onEdt { openEditor(parts[1], idx, text) }
+                }
+                "menu" -> {
+                    // menu|<side>|<idx>|<stamp>|<x>|<y>, the point in CSS pixels of the page.
+                    val args = msg.split('|')
+                    val idx = args.getOrNull(2)?.toIntOrNull()
+                    val x = args.getOrNull(4)?.toDoubleOrNull()
+                    val y = args.getOrNull(5)?.toDoubleOrNull()
+                    if (args.size == 6 && idx != null && x != null && y != null) {
+                        onEdt { blockMenuHandler(args[1], idx, args[3], Point(x.toInt(), y.toInt())) }
+                    }
                 }
                 "closed" -> onEdt {
                     editing = false
@@ -121,6 +136,10 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
 
     override fun onSourceRequest(provider: (side: String, idx: Int, stamp: String) -> String?) {
         sourceProvider = provider
+    }
+
+    override fun onBlockMenu(handler: (side: String, idx: Int, stamp: String, at: Point) -> Unit) {
+        blockMenuHandler = handler
     }
 
     override fun editRefused() {

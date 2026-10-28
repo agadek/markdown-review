@@ -1,8 +1,12 @@
 package pl.mdreview.ide
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.RightGap
+import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindItem
 import com.intellij.ui.dsl.builder.bindSelected
@@ -58,6 +62,16 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
                 checkBox(MarkdownReviewBundle.message("settings.render.math")).bindSelected(settings::renderMath)
                     .comment(MarkdownReviewBundle.message("settings.render.math.comment"))
             }
+            row(MarkdownReviewBundle.message("settings.custom.css")) {
+                textFieldWithBrowseButton(
+                    FileChooserDescriptorFactory.singleFile()
+                        .withExtensionFilter("css")
+                        .withTitle(MarkdownReviewBundle.message("settings.custom.css.choose")),
+                )
+                    .bindText(settings::customCssPath)
+                    .align(AlignX.FILL)
+                    .comment(MarkdownReviewBundle.message("settings.custom.css.comment"))
+            }
             row {
                 checkBox(MarkdownReviewBundle.message("settings.show.block.actions")).bindSelected(settings::showBlockActions)
                     .comment(MarkdownReviewBundle.message("settings.show.block.actions.comment"))
@@ -87,5 +101,6 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
     override fun apply() {
         super.apply()
         DefaultViewerOrder.syncWithSettings(settings)
+        ApplicationManager.getApplication().messageBus.syncPublisher(MarkdownReviewSettings.TOPIC).settingsChanged()
     }
 }

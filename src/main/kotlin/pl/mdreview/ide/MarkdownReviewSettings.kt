@@ -6,6 +6,7 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.util.messages.Topic
 import pl.mdreview.api.DiffOptions
 
 /** Viewer that the diff window shows first for a Markdown file (FR-11). */
@@ -34,6 +35,7 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         var renderMath: Boolean = true
         var showBlockActions: Boolean = true
         var pairingThreshold: Double = DiffOptions.DEFAULT_PAIRING_THRESHOLD
+        var customCssPath: String = ""
 
         /** The [defaultViewer] last written into IntelliJ's diff tool order, see [DefaultViewerOrder]. */
         var appliedDefaultViewer: DefaultViewer? = null
@@ -98,6 +100,11 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         get() = state.pairingThreshold.coerceIn(DiffOptions.MIN_PAIRING_THRESHOLD, DiffOptions.MAX_PAIRING_THRESHOLD)
         set(value) { state.pairingThreshold = value.coerceIn(DiffOptions.MIN_PAIRING_THRESHOLD, DiffOptions.MAX_PAIRING_THRESHOLD) }
 
+    /** A CSS file applied on top of the rendered view's styles (P3.6, see [UserStylesheet]); empty for none. */
+    var customCssPath: String
+        get() = state.customCssPath
+        set(value) { state.customCssPath = value.trim() }
+
     var appliedDefaultViewer: DefaultViewer?
         get() = state.appliedDefaultViewer
         set(value) { state.appliedDefaultViewer = value }
@@ -131,7 +138,18 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         internal const val LEGACY_IGNORE_WHITESPACE = "markdown.review.ignoreWhitespace"
         internal const val LEGACY_COLLAPSE_UNCHANGED = "markdown.review.collapseUnchanged"
 
+        /** Published after the settings page applies, so open viewers render again with the new values. */
+        @JvmField
+        @Topic.AppLevel
+        val TOPIC: Topic<MarkdownReviewSettingsListener> =
+            Topic(MarkdownReviewSettingsListener::class.java, Topic.BroadcastDirection.NONE)
+
         fun getInstance(): MarkdownReviewSettings =
             ApplicationManager.getApplication().getService(MarkdownReviewSettings::class.java)
     }
+}
+
+/** Listens to [MarkdownReviewSettings.TOPIC]. */
+fun interface MarkdownReviewSettingsListener {
+    fun settingsChanged()
 }

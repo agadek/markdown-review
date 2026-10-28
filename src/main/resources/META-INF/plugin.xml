@@ -24,6 +24,10 @@
               request windows take review comments) or show the history of just that block.</li>
           <li><b>Block source editing:</b> double-click a block to edit its raw Markdown in place; saved as one Undo
               step.</li>
+          <li><b>Export</b> the rendered diff as a standalone HTML file (no scripts, images inlined) or a PDF, to attach
+              to a review or a ticket.</li>
+          <li><b>Custom stylesheet:</b> a CSS file of your own on top of the rendered view, for example to match your
+              documentation site.</li>
           <li><b>Text diff</b> one click away in the diff window's viewer switcher.</li>
           <li>Works for local changes (Commit window), file history, branch comparison and pull requests, plus
               <i>Compare Markdown Files...</i> for any two files.</li>
@@ -124,6 +128,7 @@
         <colorSettingsPage implementation="pl.mdreview.ide.MarkdownReviewColorSettingsPage"/>
         <postStartupActivity implementation="pl.mdreview.ide.DefaultViewerStartupActivity"/>
         <errorHandler implementation="pl.mdreview.ide.GitHubErrorReporter"/>
+        <notificationGroup id="Markdown Review" displayType="BALLOON" key="notification.group"/>
     </extensions>
 
     <actions>

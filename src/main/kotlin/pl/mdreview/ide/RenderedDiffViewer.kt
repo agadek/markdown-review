@@ -17,6 +17,7 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vfs.VirtualFile
@@ -373,8 +374,10 @@ class RenderedDiffViewer(
      */
     private fun showHistory(file: VirtualFile, range: LineRange) {
         val project = context.project ?: return
-        val editor = FileEditorManager.getInstance(project)
-            .openTextEditor(OpenFileDescriptor(project, file, range.start, 0), true) ?: return
+        // navigateInEditor rather than FileEditorManager.openTextEditor, which 2026.3 deprecates with the other
+        // synchronous openFile calls.
+        if (!OpenFileDescriptor(project, file, range.start, 0).navigateInEditor(project, true)) return
+        val editor = (FileEditorManager.getInstance(project).getSelectedEditor(file) as? TextEditor)?.editor ?: return
         val document = editor.document
         val last = (range.end - 1).coerceIn(range.start, document.lineCount - 1)
         editor.selectionModel.setSelection(document.getLineStartOffset(range.start), document.getLineEndOffset(last))

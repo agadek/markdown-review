@@ -77,6 +77,8 @@ intellijPlatform {
             // The oldest supported IDE, and a recent one: the platform marks more API as internal over time.
             create("IC", "2025.1.3")
             create("IU", "2026.1")
+            // 2026.3 EAP: deprecates the synchronous FileEditorManager open calls.
+            create("IU", "263.7307.44")
         }
     }
 }

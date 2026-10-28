@@ -1,12 +1,10 @@
 package pl.mdreview.ide
 
 import com.intellij.ide.BrowserUtil
-import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.diagnostic.ErrorReportSubmitter
 import com.intellij.openapi.diagnostic.IdeaLoggingEvent
 import com.intellij.openapi.diagnostic.SubmittedReportInfo
-import com.intellij.openapi.extensions.PluginId
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.util.Consumer
 import java.awt.Component
@@ -36,17 +34,14 @@ class GitHubErrorReporter : ErrorReportSubmitter() {
 
     private fun environment(): String {
         val app = ApplicationInfo.getInstance()
-        val plugin = PluginManagerCore.getPlugin(PluginId.getId(PLUGIN_ID))?.version ?: "unknown"
+        // The descriptor the IDE sets on the submitter, not PluginManagerCore.getPlugin, which is internal API.
+        val plugin = runCatching { pluginDescriptor.version }.getOrNull() ?: "unknown"
         return listOf(
             "IDE: ${app.fullApplicationName} (build ${app.build.asString()})",
             "Plugin: $plugin",
             "OS: ${System.getProperty("os.name")} ${System.getProperty("os.version")} (${System.getProperty("os.arch")})",
             "JCEF: ${if (JBCefApp.isSupported()) "supported" else "not supported"}",
         ).joinToString("\n")
-    }
-
-    private companion object {
-        const val PLUGIN_ID = "pl.mdreview.markdown-review"
     }
 }
 

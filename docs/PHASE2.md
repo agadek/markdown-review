@@ -12,17 +12,20 @@ Requirement IDs (FR-*, NFR-*) refer to the [specification](SPECIFICATION.md).
 
 ## Overview
 
-| Milestone | Theme | Depends on | Release |
-|-----------|-------|------------|---------|
-| P2.1 | Repository, CI and build upkeep | none | |
-| P2.2 | IDE integration: settings, default viewer, integration tests | P2.1 | 0.2 (beta) |
-| P2.3 | Engine refinements: links, heading levels, images, large files | P2.1 | 0.2 (beta) |
-| P2.4 | Markdown element coverage: GFM first, then HTML, math, emoji | P2.1 | GFM in 0.2 (beta), the rest in 1.0 |
-| P2.5 | Per-block revert and apply | P2.2, P2.3 | |
-| P2.6 | Block source editing | P2.5 | |
-| P2.7 | Moved-block detection | P2.3 | after 1.0 by default |
-| P2.8 | Mermaid diagrams and math rendering | P2.2, P2.4 | 1.0 |
-| P2.9 | Release 1.0 | P2.4, P2.5, P2.8 (P2.6 if kept in 1.0) | 1.0 |
+| Milestone | Theme | Depends on | Release | Status |
+|-----------|-------|------------|---------|--------|
+| P2.1 | Repository, CI and build upkeep | none | | Done |
+| P2.2 | IDE integration: settings, default viewer, integration tests | P2.1 | 0.2 (beta) | Shipped in 1.0.0 |
+| P2.3 | Engine refinements: links, heading levels, images, large files | P2.1 | 0.2 (beta) | Shipped in 1.0.0 |
+| P2.4 | Markdown element coverage: GFM first, then HTML, math, emoji | P2.1 | GFM in 0.2 (beta), the rest in 1.0 | Shipped in 1.0.0; math in 1.2.0 |
+| P2.5 | Per-block revert and apply | P2.2, P2.3 | | Shipped in 1.0.0 |
+| P2.6 | Block source editing | P2.5 | | Done, in 1.2.0 |
+| P2.7 | Moved-block detection | P2.3 | after 1.0 by default | Done, in 1.2.0 |
+| P2.8 | Mermaid diagrams and math rendering | P2.2, P2.4 | 1.0 | Mermaid shipped in 1.0.0; math in 1.2.0 |
+| P2.9 | Release 1.0 | P2.4, P2.5, P2.8 (P2.6 if kept in 1.0) | 1.0 | Shipped: 1.0.0 on JetBrains Marketplace |
+
+**Phase 2 is complete.** Everything above is either released (1.0.0 to 1.1.1) or merged into the `RC-1.2.0` release
+candidate (math, moved blocks, block source editing). Work after 1.0 continues in [PHASE3.md](PHASE3.md).
 
 P2.2, P2.3 and P2.4 are independent and can run in parallel; P2.4 should follow P2.3 into `BlockExtractor` to
 avoid conflicts if one person does both. P2.5 waits for P2.2 and P2.3: it needs the settings page for its toggle

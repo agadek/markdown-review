@@ -26,10 +26,15 @@ Goal: review changes to `.md` files in rendered form. Requirements:
 ## Milestones
 - M1: diff engine + unit tests (headings, lists, tables, code, moved blocks). Done.
 - M2: HTML generator + CSS for views 1 and 2. Done.
-- M3: JCEF panel, toolbar, change navigation, ignore whitespace.
-- M4: `DiffTool` registration, substitutor, two-file action, integration tests (SimpleDiffRequest, Git).
-- M5: polish (themes, large files, YAML front matter, images, raw HTML).
-- M6: revert/apply changes per block (commonmark source positions via `IncludeSourceSpans`, `WriteCommandAction`, `JBCefJSQuery`) + editing a block's source (double-click -> field with raw Markdown). Full WYSIWYG (HTML -> MD) rejected: it normalizes the file and clutters the diff.
+- M3: JCEF panel, toolbar, change navigation, ignore whitespace. Done.
+- M4: `DiffTool` registration, two-file action, integration tests (SimpleDiffRequest, Git). Done; the default viewer uses the diff tool order instead of a substitutor ([ADR 0001](docs/adr/0001-default-diff-viewer.md)).
+- M5: polish (themes, large files, YAML front matter, images, raw HTML). Done.
+- M6: revert/apply changes per block (commonmark source positions via `IncludeSourceSpans`, `WriteCommandAction`, `JBCefJSQuery`) + editing a block's source (double-click -> field with raw Markdown). Done: revert/apply in 1.0.0, source editing in 1.2.0. Full WYSIWYG (HTML -> MD) rejected: it normalizes the file and clutters the diff.
+
+## Roadmap
+- Phase 1: M1–M4 in their core form.
+- Phase 2 ([docs/PHASE2.md](docs/PHASE2.md)): complete. 1.0.0 on JetBrains Marketplace, then 1.1.x; math, moved blocks and block source editing are in the `RC-1.2.0` release candidate.
+- Phase 3 ([docs/PHASE3.md](docs/PHASE3.md)): in progress. The feedback loop (P3.1) and the block menu from P3.4 are in `RC-1.2.0`.
 
 ## Risks
 - Block matching heuristics (rewritten paragraph vs removal + addition).

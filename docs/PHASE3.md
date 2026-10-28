@@ -153,7 +153,8 @@ Status:
   snapshot of the page as drawn (Mermaid diagrams and formulas included), with no scripts, a policy that allows none,
   and local images inlined. The PDF comes from JCEF's `printToPDF`, with the diff colors kept for print.
 - **More syntax**: wiki links (`[[page]]`, `[[page|label]]`), fixture `41-wiki-links`.
-- **Multi-file export**: *Export Rendered Diff...* next to *Show Rendered Diff* exports every selected Markdown change
+- **Multi-file export**: *Export Rendered Diff | HTML...* and *PDF...* next to *Show Rendered Diff* (Git log, file
+  history and the Commit window's Changes list) export every selected Markdown change
   as one document (table of contents, a section per file), drawn in a hidden off-screen browser and saved as a
   no-script HTML file or printed to PDF.
 - **P3.5**: none of this needed it. The custom stylesheet is a `<style>` in the page head and the export reads the

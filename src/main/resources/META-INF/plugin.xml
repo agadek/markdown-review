@@ -94,10 +94,12 @@
             <add-to-group group-id="Vcs.FileHistory.ContextMenu" anchor="after" relative-to-action="Diff.ShowStandaloneDiff"/>
             <add-to-group group-id="ChangesViewPopupMenu" anchor="after" relative-to-action="Diff.ShowStandaloneDiff"/>
         </action>
-        <action id="MarkdownReview.ExportRenderedDiff" class="pl.mdreview.ide.ExportRenderedDiffAction">
+        <group id="MarkdownReview.ExportRenderedDiff" class="pl.mdreview.ide.ExportRenderedDiffAction$Group" popup="true">
+            <action id="MarkdownReview.ExportRenderedDiff.Html" class="pl.mdreview.ide.ExportRenderedDiffAction$Html"/>
+            <action id="MarkdownReview.ExportRenderedDiff.Pdf" class="pl.mdreview.ide.ExportRenderedDiffAction$Pdf"/>
             <add-to-group group-id="Vcs.Log.ChangesBrowser.Popup" anchor="after" relative-to-action="MarkdownReview.ShowRenderedDiff"/>
             <add-to-group group-id="Vcs.FileHistory.ContextMenu" anchor="after" relative-to-action="MarkdownReview.ShowRenderedDiff"/>
             <add-to-group group-id="ChangesViewPopupMenu" anchor="after" relative-to-action="MarkdownReview.ShowRenderedDiff"/>
-        </action>
+        </group>
     </actions>
 </idea-plugin>

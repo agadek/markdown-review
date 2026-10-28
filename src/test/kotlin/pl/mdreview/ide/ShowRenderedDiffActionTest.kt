@@ -107,6 +107,16 @@ class ShowRenderedDiffActionTest : BasePlatformTestCase() {
         assertEquals(JBCefApp.isSupported(), e.presentation.isEnabledAndVisible)
     }
 
+    fun `test the Commit window's selection counts, which comes only as CHANGES`() {
+        val readme = change("README.md", "README.md")
+        val code = change("Main.kt", "Main.kt")
+        val e = TestActionEvent.createTestEvent(
+            ShowRenderedDiffAction(),
+            SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).add(VcsDataKeys.CHANGES, arrayOf(readme, code)).build(),
+        )
+        assertEquals(listOf(readme), ShowRenderedDiffAction.markdownChanges(e))
+    }
+
     fun `test the window opens rendered even when diffs default to the text viewer`() {
         val settings = MarkdownReviewSettings.getInstance()
         settings.defaultViewer = DefaultViewer.TEXT

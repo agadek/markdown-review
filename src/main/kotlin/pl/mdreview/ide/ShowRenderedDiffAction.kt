@@ -99,9 +99,13 @@ open class ShowRenderedDiffAction : DumbAwareAction() {
     }
 
     companion object {
-        /** The selected changes of Markdown files, in selection order; F7 and the file list of the window walk them. */
+        /**
+         * The selected changes of Markdown files, in selection order; F7 and the file list of the window walk them.
+         * The Git log and file history give their selection as [VcsDataKeys.SELECTED_CHANGES]; the Commit window's
+         * Changes list gives only [VcsDataKeys.CHANGES], which there holds the selected changes.
+         */
         fun markdownChanges(e: AnActionEvent): List<Change> =
-            markdownChanges(e.getData(VcsDataKeys.SELECTED_CHANGES).orEmpty().asList())
+            markdownChanges((e.getData(VcsDataKeys.SELECTED_CHANGES) ?: e.getData(VcsDataKeys.CHANGES)).orEmpty().asList())
 
         /** Like the rendered viewers, a change counts when either side is Markdown, so a rename to `.txt` does too. */
         fun markdownChanges(changes: List<Change>): List<Change> =

@@ -10,6 +10,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DefaultActionGroup
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.progress.ProgressIndicator
@@ -186,18 +187,25 @@ open class ExportRenderedDiffAction(private val pdf: Boolean = false) : DumbAwar
         private var timeout: ScheduledFuture<*>? = null
 
         fun start() {
-            val browser = JBCefBrowser.createBuilder().setOffScreenRendering(true).setCreateImmediately(true).build()
+            val browser = JBCefBrowser.createBuilder().setOffScreenRendering(true).build()
             Disposer.register(disposable, browser)
             // Room to lay the page out as in a diff window; the component is never shown.
             browser.component.setSize(PAGE_WIDTH, PAGE_HEIGHT)
+            // Before the native browser exists: a query made after it is a dead function in the page, so the page
+            // could never report that it is drawn.
             val query = JBCefJSQuery.create(browser as JBCefBrowserBase)
             Disposer.register(disposable, query)
+            // The component is never shown, so nothing else would create the native browser.
+            browser.createImmediately()
             query.addHandler { msg ->
                 when {
                     msg == "drawn" && drawn.compareAndSet(false, true) -> {
                         poll?.cancel(false)
                         if (pdf) {
-                            browser.cefBrowser.printToPDF(target.toString(), CefPdfPrintSettings(), CefPdfPrintCallback { _, ok -> finish(ok) })
+                            browser.cefBrowser.printToPDF(target.toString(), CefPdfPrintSettings(), CefPdfPrintCallback { path, ok ->
+                                if (!ok) LOG.warn("Printing the rendered diff to $path failed")
+                                finish(ok)
+                            })
                         } else {
                             browser.cefBrowser.executeJavaScript("mdr.snapshot()", browser.cefBrowser.url, 0)
                         }
@@ -205,7 +213,9 @@ open class ExportRenderedDiffAction(private val pdf: Boolean = false) : DumbAwar
                     msg.startsWith("export|") -> {
                         val snapshot = msg.substring("export|".length)
                         AppExecutorUtil.getAppExecutorService().execute {
-                            finish(runCatching { Files.writeString(target, HtmlExport.finish(snapshot, title, settings.loadRemoteImages)) }.isSuccess)
+                            val written = runCatching { Files.writeString(target, HtmlExport.finish(snapshot, title, settings.loadRemoteImages)) }
+                            written.exceptionOrNull()?.let { LOG.warn("Writing the rendered diff to $target failed", it) }
+                            finish(written.isSuccess)
                         }
                     }
                 }
@@ -221,7 +231,10 @@ open class ExportRenderedDiffAction(private val pdf: Boolean = false) : DumbAwar
             poll = scheduler.scheduleWithFixedDelay({
                 if (!drawn.get()) browser.cefBrowser.executeJavaScript(WAIT_JS, browser.cefBrowser.url, 0)
             }, POLL_MS, POLL_MS, TimeUnit.MILLISECONDS)
-            timeout = scheduler.schedule({ finish(false) }, TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            timeout = scheduler.schedule({
+                LOG.warn("Export of the rendered diff timed out after $TIMEOUT_SECONDS s (page drawn: ${drawn.get()})")
+                finish(false)
+            }, TIMEOUT_SECONDS, TimeUnit.SECONDS)
         }
 
         private fun finish(ok: Boolean) {
@@ -242,6 +255,7 @@ open class ExportRenderedDiffAction(private val pdf: Boolean = false) : DumbAwar
 
         /** Registered in plugin.xml; the viewer's export notifies through it too. */
         const val NOTIFICATION_GROUP = "Markdown Review"
+        private val LOG = logger<ExportRenderedDiffAction>()
         private const val PAGE_WIDTH = 1200
         private const val PAGE_HEIGHT = 900
         private const val POLL_MS = 300L

@@ -14,7 +14,6 @@ import com.intellij.ide.DataManager
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.DefaultActionGroup
-import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -380,7 +379,7 @@ class RenderedDiffViewer(
         val last = (range.end - 1).coerceIn(range.start, document.lineCount - 1)
         editor.selectionModel.setSelection(document.getLineStartOffset(range.start), document.getLineEndOffset(last))
         val action = ActionManager.getInstance().getAction(SHOW_HISTORY_FOR_SELECTION) ?: return
-        ActionUtil.invokeAction(action, editor.contentComponent, ActionPlaces.EDITOR_POPUP, null, null)
+        ActionManager.getInstance().tryToExecute(action, null, editor.contentComponent, ActionPlaces.EDITOR_POPUP, true)
     }
 
     private fun navigateToSource(side: String, line: Int) {

@@ -56,6 +56,8 @@ CommonMark through commonmark-java, with:
   section that opens when it contains a change; HTML comments, hidden unless changed.
 - Hard line breaks (two trailing spaces or `\`) as part of the compared text; thematic breaks compared by kind.
 - Emoji shortcodes (`:smile:`) converted to Unicode emoji; unknown shortcodes stay as text.
+- Wiki links (`[[page]]`, `[[page|label]]`, `[[page#section]]`, target first as in Obsidian, Foam and MediaWiki) as
+  links: a changed label is a word change, a changed target is marked like any changed link.
 - YAML front matter, compared line by line.
 - Relative images resolved against each side's file.
 - Mermaid diagrams (` ```mermaid `): compared as one block and drawn with a bundled, pinned Mermaid library, offline,

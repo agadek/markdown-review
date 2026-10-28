@@ -10,8 +10,8 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 - **Show Rendered Diff** in the context menu of the Git log's changed files, of file history and of the Commit window
   opens a Markdown change rendered, whichever viewer diffs open with by default.
-- **Export** the rendered diff as a standalone HTML file (no scripts, images inlined) or a PDF, from the viewer's
-  options menu.
+- **Export** the rendered diff as a standalone HTML file (no scripts, images inlined) or a PDF, from the Export
+  button on the viewer's toolbar or a block's right-click menu.
 - **Custom stylesheet:** a CSS file of your own on top of the rendered view, set in Settings | Tools | Markdown Review.
 - **Wiki links:** `[[page]]`, `[[page|label]]` and `[[page#section]]` are rendered as links, and a changed target is
   marked like any changed link.

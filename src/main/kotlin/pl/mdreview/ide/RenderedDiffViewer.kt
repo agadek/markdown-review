@@ -10,6 +10,7 @@ import com.intellij.diff.util.DiffUtil
 import com.intellij.diff.requests.ContentDiffRequest
 import com.intellij.diff.util.LineCol
 import com.intellij.diff.util.Side
+import com.intellij.icons.AllIcons
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.DataManager
 import com.intellij.notification.NotificationAction
@@ -137,10 +138,9 @@ class RenderedDiffViewer(
                 OptionToggle("toggle.collapse.unchanged", { settings.collapseUnchanged }) {
                     settings.collapseUnchanged = it
                 },
-                Separator.getInstance(),
-                ExportAction(pdf = false),
-                ExportAction(pdf = true),
             )
+            // On the toolbar itself: since 2026.2 the diff window shows no gear menu for popupActions.
+            toolbarActions = listOf<AnAction>(exportGroup)
             statusPanel = statusLabel.apply { border = JBUI.Borders.empty(0, 8) }
         }
     }
@@ -336,7 +336,7 @@ class RenderedDiffViewer(
         val component = browserPanel.component
         JBPopupFactory.getInstance().createActionGroupPopup(
             null,
-            DefaultActionGroup(blockMenuActions(target, range)),
+            DefaultActionGroup(blockMenuActions(target, range) + Separator.getInstance() + exportActions),
             DataManager.getInstance().getDataContext(component),
             JBPopupFactory.ActionSelectionAid.SPEEDSEARCH,
             false,
@@ -499,6 +499,17 @@ class RenderedDiffViewer(
         }
         notification.notify(context.project)
     }
+
+    /** Export as HTML and as PDF, in the block menu and behind [exportGroup]. */
+    internal val exportActions: List<AnAction> = listOf(ExportAction(pdf = false), ExportAction(pdf = true))
+
+    /** The toolbar's Export button, which opens [exportActions]. */
+    internal val exportGroup: DefaultActionGroup =
+        DefaultActionGroup(MarkdownReviewBundle.message("action.export.group"), exportActions).apply {
+            isPopup = true
+            templatePresentation.icon = AllIcons.ToolbarDecorator.Export
+            templatePresentation.description = MarkdownReviewBundle.message("action.export.group.description")
+        }
 
     private inner class ExportAction(private val pdf: Boolean) :
         DumbAwareAction(MarkdownReviewBundle.message(if (pdf) "action.export.pdf" else "action.export.html")) {

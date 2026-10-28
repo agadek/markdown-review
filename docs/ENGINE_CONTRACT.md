@@ -112,6 +112,11 @@ those ranges so the word diff keeps each formula whole.
 ## What the IDE does
 - Registers two viewers in IntelliJ's diff window (`diff.DiffTool`): "Rendered Markdown (side by side)" and "(merged)"; the text diff is the built-in viewer.
 - JCEF panel, change navigation, Ctrl/Cmd+click on a block opens its source in the editor (FR-14), toggles for ignoring whitespace and collapsing unchanged blocks in the diff window's settings menu.
+- Block menu (P3.4): a right-click on an element with `data-side` and `data-line` sends
+  `menu|<side>|<idx>|<stamp>|<x>|<y>`; the viewer shows a popup there with Go to Source, Open in Text Diff Here (in a
+  diff window: reopens it once with the rendered viewers stepping aside and `DiffUserDataKeys.SCROLL_TO_LINE` at the
+  block's first line) and Show History for This Block (for a local file under VCS: selects the block's lines in the
+  editor and runs `Vcs.ShowHistoryForBlock`).
 - The "Compare Markdown Files..." action (project view context menu and Tools menu).
 - Re-runs the diff after a document change (300 ms debounce) and after a theme change, keeping the scroll position.
 - Fills `leftBaseUri` / `rightBaseUri` from the directory of each `DocumentContent`'s local file, so images next to the

@@ -9,10 +9,8 @@ import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
-import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.DumbAwareAction
@@ -24,7 +22,6 @@ import com.intellij.openapi.vcs.VcsException
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.ChangesUtil
 import com.intellij.openapi.vcs.changes.ContentRevision
-import com.intellij.openapi.vcs.changes.CurrentContentRevision
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.ui.jcef.JBCefBrowser
@@ -133,12 +130,7 @@ open class ExportRenderedDiffAction : DumbAwareAction() {
     /** A side's text with `\n` line separators; `null` when that side does not exist. */
     private fun text(revision: ContentRevision?): String? {
         if (revision == null) return null
-        if (revision is CurrentContentRevision) {
-            val file = revision.virtualFile
-            if (file != null) {
-                ReadAction.compute<String?, RuntimeException> { FileDocumentManager.getInstance().getDocument(file)?.text }?.let { return StringUtil.convertLineSeparators(it) }
-            }
-        }
+        // A local file's revision reads its document, unsaved edits included, under its own read action.
         val text = revision.content ?: throw VcsException(MarkdownReviewBundle.message("rendered.diff.no.content", revision.file.name))
         return StringUtil.convertLineSeparators(text)
     }

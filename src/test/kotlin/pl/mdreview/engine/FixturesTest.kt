@@ -589,4 +589,62 @@ class FixturesTest {
         assertEquals("Status \ud83d\ude80", d.blocks[0].right!!.plainText)
         assertContains(html("36-emoji"), "<code>:smile:</code>")
     }
+
+    @Test
+    fun `40 math formulas are compared as units (P2_4)`() {
+        val d = diff("40-math")
+        assertEquals(
+            listOf(
+                "MODIFIED PARAGRAPH",
+                "MODIFIED MATH",
+                "ADDED PARAGRAPH",
+                "ADDED MATH",
+                "ADDED PARAGRAPH",
+                "MODIFIED PARAGRAPH",
+            ),
+            d.changes.map { "${it.status} ${(it.right ?: it.left)!!.kind.name}" },
+        )
+        // A block formula is one block holding the whole formula.
+        val formulas = d.blocks.filter { (it.right ?: it.left)!!.kind.name == "MATH" }
+        assertEquals(
+            listOf(
+                DiffStatus.EQUAL to "E = mc^2",
+                DiffStatus.MODIFIED to "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2 a}",
+                DiffStatus.ADDED to "e^{i\\pi} + 1 = 0",
+            ),
+            formulas.map { it.status to (it.right ?: it.left)!!.plainText.trim() },
+        )
+        assertEquals("x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}", formulas[1].left!!.plainText.trim())
+        // An inline formula is one segment of the word diff, never split into words.
+        fun formula(text: String) = text.trim().removeSurrounding("\$")
+        val circle = d.changes[0]
+        assertEquals(listOf("C = 2 \\pi r"), circle.inline.filter { it.status == DiffStatus.REMOVED }.map { formula(it.text) })
+        assertEquals(listOf("C = \\tau r"), circle.inline.filter { it.status == DiffStatus.ADDED }.map { formula(it.text) })
+        // Prices are not formulas: a plain word diff.
+        assertEquals("10", removed(d.changes[5]))
+        assertEquals("12", added(d.changes[5]))
+    }
+
+    @Test
+    fun `40 math formulas render as inert monospace source (P2_4, P2_8)`() {
+        for (mode in ViewMode.entries) {
+            val html = html("40-math", mode)
+            assertFalse(html.contains("<script"), mode.name)
+            assertContains(html, "<span class=\"mdr-math mdr-math-inline\">", message = mode.name)
+            assertContains(html, "<div class=\"mdr-math mdr-math-display\">", message = mode.name)
+            assertContains(html, "e^{i\\pi} + 1 = 0", message = mode.name)
+            // The unparsable formula is still a formula node; drawing it fails in the page, not here.
+            assertContains(html, "\\frac{1}{", message = mode.name)
+            // A changed block formula has the same toggle to its source diff as a changed diagram.
+            assertContains(html, "<details class=\"mdr-math-source\"><summary>Show source changes</summary>", message = mode.name)
+            // Code spans keep their dollar signs as code.
+            assertContains(html, "<code>\$x\$</code>", message = mode.name)
+        }
+        val sideBySide = html("40-math")
+        // Two inline formulas on each side of the circle paragraph, one in the added paragraph.
+        assertEquals(5, Regex("class=\"mdr-math mdr-math-inline\"").findAll(sideBySide).count())
+        // Two block formulas on the left, three on the right.
+        assertEquals(5, Regex("class=\"mdr-math mdr-math-display\"").findAll(sideBySide).count())
+        assertFalse(Regex("mdr-math[^>]*>[^<]*\\\$5").containsMatchIn(sideBySide))
+    }
 }

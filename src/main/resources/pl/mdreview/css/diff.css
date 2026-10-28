@@ -336,6 +336,41 @@ details.mdr-mermaid-source > summary {
 .mdr-merged .mdr-mermaid-old .mdr-mermaid.mdr-removed { text-decoration: none; }
 .mdr-merged .mdr-mermaid-old .mdr-mermaid-svg { opacity: 0.6; }
 
+/* ---------- Math ---------- */
+/*
+ * span.mdr-math.mdr-math-inline and div.mdr-math.mdr-math-display (inside div.mdr-math-block) hold
+ * a formula's TeX source. The page script draws it in place with KaTeX and adds .mdr-math-drawn, or
+ * adds .mdr-math-failed (source stays, KaTeX's message as the tooltip and, for a block formula, in a
+ * .mdr-math-error below it). Without the script the source shows as monospace text.
+ * A changed block formula's row (.mdr-math-row) starts with details.mdr-math-source, whose
+ * .mdr-math-lines hold the source line diff; while it is open the drawings are hidden.
+ */
+.mdr-math:not(.mdr-math-drawn) { font-family: var(--mdr-mono); font-size: 0.9em; white-space: pre-wrap; }
+.mdr-math-block { overflow-x: auto; }
+div.mdr-math-display { margin: 0.4em 0; text-align: center; }
+.mdr-math-failed { text-decoration: underline wavy var(--mdr-removed-marker); text-underline-offset: 3px; }
+div.mdr-math-display.mdr-math-failed { text-align: left; }
+.mdr-math-error {
+  margin-top: 0.3em;
+  padding: 0.2em 0.6em;
+  color: var(--mdr-removed-marker);
+  font-family: var(--mdr-mono);
+  font-size: 0.85em;
+  white-space: pre-wrap;
+}
+.mdr-sbs .mdr-math-row > details.mdr-math-source { grid-column: 1 / -1; }
+details.mdr-math-source > summary {
+  margin: 2px 0;
+  cursor: pointer;
+  color: var(--mdr-link);
+  font-size: 0.85em;
+  user-select: none;
+}
+.mdr-math-row:has(> details.mdr-math-source[open]) > .mdr-side,
+.mdr-math-row:has(> details.mdr-math-source[open]) > .mdr-math-pair { display: none; }
+/* In the merged view the old formula is dimmed instead of struck through. */
+.mdr-merged .mdr-math-old .mdr-math-block.mdr-removed { text-decoration: none; opacity: 0.6; }
+
 /* ---------- Per-block action buttons ---------- */
 /*
  * <div class="mdr-actions"><button class="mdr-revert" data-block-id="…">…</button></div>

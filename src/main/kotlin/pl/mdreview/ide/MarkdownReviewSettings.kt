@@ -31,6 +31,7 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
         var largeFileKilobytes: Int = DEFAULT_LARGE_FILE_KILOBYTES
         var loadRemoteImages: Boolean = false
         var renderMermaid: Boolean = true
+        var renderMath: Boolean = true
         var showBlockActions: Boolean = true
         var pairingThreshold: Double = DiffOptions.DEFAULT_PAIRING_THRESHOLD
 
@@ -81,6 +82,11 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
     var renderMermaid: Boolean
         get() = state.renderMermaid
         set(value) { state.renderMermaid = value }
+
+    /** Draw `$...$` and `$$...$$` formulas with KaTeX (P2.8); off keeps their monospace source. */
+    var renderMath: Boolean
+        get() = state.renderMath
+        set(value) { state.renderMath = value }
 
     /** Revert and apply buttons on changed blocks of writable sides (FR-12). */
     var showBlockActions: Boolean

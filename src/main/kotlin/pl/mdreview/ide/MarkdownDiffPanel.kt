@@ -67,8 +67,8 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
     override fun show(diff: RenderedDiff, actions: BlockActions) {
         current = diff
         currentActions = actions
-        val remoteImages = MarkdownReviewSettings.getInstance().loadRemoteImages
-        browser.loadHTML(HtmlPage.build(diff, query.inject("msg"), topIdx, remoteImages, actions))
+        val settings = MarkdownReviewSettings.getInstance()
+        browser.loadHTML(HtmlPage.build(diff, query.inject("msg"), topIdx, settings.loadRemoteImages, actions, settings.renderMath))
     }
 
     /** Rebuilds the page with fresh theme colors without recomputing the diff. */

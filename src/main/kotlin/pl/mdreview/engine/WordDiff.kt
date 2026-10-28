@@ -9,9 +9,24 @@ object WordDiff {
 
     fun tokenize(text: String): List<String> = token.findAll(text).map { it.value }.toList()
 
-    fun diff(left: String, right: String): List<InlineSegment> {
-        val a = tokenize(left)
-        val b = tokenize(right)
+    /** [tokenize], except that each of [atoms] (sorted ranges of [text], such as inline formulas) is one token. */
+    fun tokenize(text: String, atoms: List<IntRange>): List<String> {
+        if (atoms.isEmpty()) return tokenize(text)
+        val tokens = mutableListOf<String>()
+        var pos = 0
+        for (atom in atoms) {
+            if (atom.first < pos || atom.last >= text.length) continue
+            tokens += tokenize(text.substring(pos, atom.first))
+            tokens += text.substring(atom.first, atom.last + 1)
+            pos = atom.last + 1
+        }
+        tokens += tokenize(text.substring(pos))
+        return tokens
+    }
+
+    fun diff(left: String, right: String, leftAtoms: List<IntRange> = emptyList(), rightAtoms: List<IntRange> = emptyList()): List<InlineSegment> {
+        val a = tokenize(left, leftAtoms)
+        val b = tokenize(right, rightAtoms)
         val segments = mutableListOf<InlineSegment>()
         var i = 0
         var j = 0

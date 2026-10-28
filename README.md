@@ -29,6 +29,9 @@ diff window, so it works wherever the IDE shows a diff of an `.md` file.
 - **Mermaid diagrams.** ` ```mermaid ` blocks are drawn as diagrams, offline, in the editor's light or dark theme.
   A changed diagram shows the old and the new drawing side by side, with a "Show source changes" toggle for the line
   diff of its source. A diagram that does not parse shows Mermaid's error and its source.
+- **Math.** `$...$` and `$$...$$` formulas are drawn with KaTeX, offline. A changed formula is highlighted as a whole,
+  and a changed block formula has the same "Show source changes" toggle. A formula that does not parse keeps its
+  source, marked with KaTeX's error.
 - **Text diff.** IntelliJ's built-in diff is always one click away in the diff window's viewer switcher.
 - **Per-block revert and apply.** Buttons on a changed block copy it to the other side, like the arrows in the text
   diff. They appear only on a side that can be edited (a local file, not a VCS revision), and each click goes through
@@ -41,13 +44,13 @@ Tools menu. F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block open
 ![Rendered merged diff in a dark theme](docs/screenshots/merged-dark.png)
 
 Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with (rendered side by side, rendered
-merged, or text) and holds the whitespace, collapse, pairing threshold, large-file, remote-image and Mermaid
+merged, or text) and holds the whitespace, collapse, pairing threshold, large-file, remote-image, Mermaid and math
 options. The colors of added, removed and modified blocks and of changed words are set per color scheme in
 Settings | Editor | Color Scheme | Markdown Review; a color left unset follows the scheme's Diff colors.
 
 Supported Markdown: CommonMark with GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks,
 footnotes, alerts), HTML blocks and inline HTML (sanitized), `<details>`, HTML comments, hard line breaks, emoji
-shortcodes, YAML front matter and Mermaid. The user interface is in English.
+shortcodes, YAML front matter, Mermaid and math. The user interface is in English.
 
 Status: 1.0. What the plugin does and does not do is described in [docs/SPECIFICATION.md](docs/SPECIFICATION.md),
 what comes next in [docs/PHASE3.md](docs/PHASE3.md), and releases in [docs/RELEASING.md](docs/RELEASING.md). The
@@ -83,7 +86,8 @@ time in reviews, you can chip in through [GitHub Sponsors](https://github.com/sp
 
 ## License
 
-The plugin bundles [Mermaid](https://github.com/mermaid-js/mermaid) 11.17.2 (MIT License); see
+The plugin bundles [Mermaid](https://github.com/mermaid-js/mermaid) 11.17.2 and [KaTeX](https://github.com/KaTeX/KaTeX)
+0.18.11 (both MIT License); see
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 [PolyForm Noncommercial License 1.0.0](LICENSE). Noncommercial use (personal, educational, research, nonprofit

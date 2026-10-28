@@ -93,6 +93,16 @@ A `<details>` element spanning several Markdown blocks is rendered as `<details 
 | `mdr-mermaid-row` | `.mdr-row` (side by side) or `.mdr-item` (merged) of a changed diagram | Starts with `details.mdr-mermaid-source`. In the merged view the drawings sit in `.mdr-mermaid-pair`: `.mdr-mermaid-old` (the old one, dimmed), then the new one. |
 | `mdr-mermaid-source` | `details` with a `summary` ("Show source changes") | Its `.mdr-mermaid-lines` hold the source line diff as nested rows or items without `data-idx`. While open, the drawings are hidden. The page script opens it when a drawing fails. |
 
+## Math
+
+| Class | Where | Meaning |
+|---|---|---|
+| `mdr-math` + `mdr-math-inline` | `span` in text | An inline formula (`$...$`). It holds the TeX source; the page script draws it in place with KaTeX. Marked as a whole by `ins.mdr-ins` / `del.mdr-del` when it changed. |
+| `mdr-math` + `mdr-math-display` | `div` in `div.mdr-block.mdr-math-block` | A block formula (`$$...$$`), drawn in display mode. A `$$...$$` inside a paragraph is a `span` with the same classes. |
+| `mdr-math-drawn` / `mdr-math-failed` | on `.mdr-math`, added by the page script | Drawn: KaTeX's output replaced the source. Failed: the source stays, underlined, with KaTeX's message as its tooltip and, for a block formula, in a `.mdr-math-error` below it. Without the script the source shows as monospace text. |
+| `mdr-math-row` | `.mdr-row` (side by side) or `.mdr-item` (merged) of a changed block formula | Starts with `details.mdr-math-source`. In the merged view the formulas sit in `.mdr-math-pair`: `.mdr-math-old` (the old one, dimmed), then the new one. |
+| `mdr-math-source` | `details` with a `summary` ("Show source changes") | Its `.mdr-math-lines` hold the source line diff as nested rows or items without `data-idx`. While open, the formulas are hidden. The page script opens it when a formula fails to draw. |
+
 ## Per-block actions
 
 ```html

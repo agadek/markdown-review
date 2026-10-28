@@ -42,6 +42,7 @@ The text diff is IntelliJ's built-in viewer, one click away in the diff window's
 - Large-file limits (NFR-4).
 - Load remote images (NFR-8), off by default.
 - Render Mermaid diagrams, on by default.
+- Render math, on by default.
 - Show revert and apply buttons on changed blocks (FR-12).
 - Support links to GitHub Sponsors and Ko-fi, at the bottom of the page.
 
@@ -60,12 +61,13 @@ CommonMark through commonmark-java, with:
 - Mermaid diagrams (` ```mermaid `): compared as one block and drawn with a bundled, pinned Mermaid library, offline,
   in the editor's light or dark theme. A changed diagram shows both drawings, with a "Show source changes" toggle for
   the line diff of its source; a diagram that does not parse shows Mermaid's error and its source.
+- Math (`$...$`, `$$...$$`): formulas are compared as units and drawn with a bundled, pinned KaTeX,
+  offline. A changed inline formula is highlighted as a whole; a changed block formula shows both drawings with a
+  "Show source changes" toggle. A formula that does not parse keeps its source with KaTeX's error. Prices such as
+  "$5 or $10" are not formulas, as on GitHub.
 
 A changed link target, image source, heading level or alert type is marked as a change even when the visible text is
 equal.
-
-Math (`$...$`, `$$...$$`) is not recognized in 1.0 and shows as plain text. Recognizing formulas and drawing them
-with KaTeX is the math part of P2.8, which did not ship with 1.0.
 
 ## Non-functional requirements
 
@@ -88,13 +90,13 @@ Distributed through JetBrains Marketplace; see [RELEASING.md](RELEASING.md).
 
 [PolyForm Noncommercial License 1.0.0](../LICENSE): free for noncommercial use; commercial use needs a separate
 license from the author, offered through a GitHub Sponsors commercial tier (P3.7). Bundled third-party components keep
-their own licenses ([THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md); Mermaid is MIT).
+their own licenses ([THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md); Mermaid and KaTeX are MIT).
 
 ## Out of scope
 
 WYSIWYG editing (HTML back to Markdown normalizes the file and clutters the diff), three-way merge, other markup
-formats (AsciiDoc, reStructuredText) and a paid tier inside the plugin. Mermaid, which was on this list, ships in
-1.0; math rendering is planned (P2.8) but not in 1.0.
+formats (AsciiDoc, reStructuredText) and a paid tier inside the plugin. Mermaid diagrams and math, which were on this
+list, are now supported.
 
 ## Answered open questions
 
@@ -103,7 +105,7 @@ formats (AsciiDoc, reStructuredText) and a paid tier inside the plugin. Mermaid,
 - **Default viewer for `.md`**: the plugin's viewers come first in the diff window's tool order, and the setting
   rewrites the remembered order per kind of diff window; `DiffToolSubstitutor` was rejected
   ([ADR 0001](adr/0001-default-diff-viewer.md)).
-- **Mermaid and math**: Mermaid moved from out of scope into 1.0; math rendering stays planned after 1.0.
+- **Mermaid and math**: Mermaid moved from out of scope into 1.0; math rendering followed after 1.0.
 - **Block source editing and moved blocks** (FR-13, FR-15): deferred past 1.0 to P3.2.
 - **Pairing of rewritten blocks**: a user setting, default 0.5, range 0.2 to 0.8.
 - **Renderer**: commonmark-java for parsing, JCEF for display, diff on the AST rather than on the finished HTML.

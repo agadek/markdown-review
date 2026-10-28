@@ -27,6 +27,11 @@ enum class BlockKind {
      * follows as blocks with a deeper [BlockContext.details]; the closing `</details>` is not a block.
      */
     DETAILS,
+    /**
+     * A block formula (`$$ ... $$`), compared as one unit; [Block.plainText] is its TeX source. [Block.lines] holds
+     * its source lines as [CODE_LINE] blocks, for the source diff.
+     */
+    MATH,
     /** An HTML block that is exactly one comment (`<!-- ... -->`); [Block.plainText] is the comment's text. */
     HTML_COMMENT,
 }
@@ -68,9 +73,15 @@ class Block(
     val language: String? = null,
     /** Heading level (1–6), 0 for other blocks. */
     val level: Int = 0,
-    /** For a [BlockKind.MERMAID] block: the blocks the fence would be split into without diagram rendering. */
+    /**
+     * For a [BlockKind.MERMAID] block: the blocks the fence would be split into without diagram rendering. For a
+     * [BlockKind.MATH] block: its source lines.
+     */
     val lines: List<Block> = emptyList(),
 ) {
+    /** Ranges of [plainText] that the word diff keeps whole: inline formulas. */
+    val atoms: List<IntRange> by lazy { BlockExtractor.atoms(this) }
+
     override fun toString(): String = "$kind(${key.take(40)})"
 }
 

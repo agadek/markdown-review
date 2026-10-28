@@ -9,6 +9,7 @@ import com.intellij.util.ui.UIUtil
 import pl.mdreview.api.RenderedDiff
 import pl.mdreview.render.Theme
 import java.awt.Color
+import java.util.Base64
 import java.util.UUID
 
 /**
@@ -21,6 +22,7 @@ object HtmlPage {
      * @param queryJs JS expression from `JBCefJSQuery.inject("msg")`, with `msg` as the payload variable.
      * @param remoteImages also allow `http:` / `https:` images (NFR-8, off by default).
      * @param actions block buttons to add to every block with an edit region (FR-12).
+     * @param renderMath draw formulas with the bundled KaTeX (P2.8); off, they stay monospace source.
      */
     fun build(
         diff: RenderedDiff,
@@ -28,12 +30,16 @@ object HtmlPage {
         restoreIdx: Int,
         remoteImages: Boolean = false,
         actions: BlockActions = BlockActions.NONE,
+        renderMath: Boolean = true,
     ): String {
         val nonce = UUID.randomUUID().toString().replace("-", "")
+        val math = renderMath && diff.bodyHtml.contains(MATH_CLASS)
+        // KaTeX's fonts are inlined as data: URIs, the only fonts the page may load.
+        val fonts = if (math) " font-src data:;" else ""
         return """
             <!DOCTYPE html>
             <html><head><meta charset="utf-8">
-            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${imgSources(remoteImages)}; style-src 'unsafe-inline'; script-src 'nonce-$nonce'">
+            <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${imgSources(remoteImages)}; style-src 'unsafe-inline';$fonts script-src 'nonce-$nonce'">
             <style>${themeCss()}</style>
             <style>${diff.css}</style>
             <style>$PANEL_CSS</style>
@@ -48,8 +54,35 @@ object HtmlPage {
             </body></html>
         """.trimIndent().let { page ->
             // Appended after trimIndent: the library is large and has no indentation to trim.
-            val diagrams = mermaidScripts(diff, nonce, restoreIdx)
-            if (diagrams.isEmpty()) page else page.removeSuffix("</body></html>") + diagrams + "\n</body></html>"
+            val scripts = mermaidScripts(diff, nonce, restoreIdx) + if (math) mathScripts(nonce, restoreIdx) else ""
+            if (scripts.isEmpty()) page else page.removeSuffix("</body></html>") + scripts + "\n</body></html>"
+        }
+    }
+
+    /**
+     * KaTeX's stylesheet with its fonts inlined, the bundled `katex.min.js` and the script that draws every
+     * `.mdr-math` element, for pages that have one. The scripts run under the page's nonce.
+     */
+    private fun mathScripts(nonce: String, restoreIdx: Int): String =
+        "<style>" + katexCss + "</style>\n" +
+            "<script nonce=\"$nonce\">" + katexJs + "</script>\n" +
+            "<script nonce=\"$nonce\">" + MATH_RUN_JS + "mdrDrawMath($restoreIdx);</script>"
+
+    private fun resource(path: String): ByteArray =
+        HtmlPage::class.java.getResourceAsStream(path)?.use { it.readBytes() } ?: error("Missing resource $path")
+
+    /** `katex.min.js`, pinned in `src/main/resources/pl/mdreview/katex` (see THIRD_PARTY_NOTICES.md). */
+    private val katexJs: String by lazy { resource("$KATEX_DIR/katex.min.js").toString(Charsets.UTF_8).replace("</script", "<\\/script") }
+
+    /**
+     * `katex.min.css` with each font's `src` replaced by its bundled WOFF2 file as a data: URI. A page loaded with
+     * `loadHTML` has no base URL for the stylesheet's relative font paths, and the CSP allows no other source.
+     */
+    private val katexCss: String by lazy {
+        val css = resource("$KATEX_DIR/katex.min.css").toString(Charsets.UTF_8)
+        KATEX_FONT_SRC.replace(css) { match ->
+            val font = Base64.getEncoder().encodeToString(resource("$KATEX_DIR/fonts/${match.groupValues[1]}.woff2"))
+            "src:url(data:font/woff2;base64,$font) format(\"woff2\")"
         }
     }
 
@@ -157,6 +190,61 @@ object HtmlPage {
 
     private const val MERMAID_JS = "/pl/mdreview/mermaid/mermaid.min.js"
     private const val MERMAID_CLASS = "mdr-mermaid"
+
+    /** The start of a formula element's class attribute; escaped document text cannot contain the quote. */
+    private const val MATH_CLASS = "\"mdr-math mdr-math-"
+    private const val KATEX_DIR = "/pl/mdreview/katex"
+
+    /** A KaTeX `@font-face` source list: WOFF2, WOFF and TrueType files under `fonts/`. */
+    private val KATEX_FONT_SRC = Regex("""src:url\(fonts/([\w-]+)\.woff2\) format\("woff2"\)[^;}]*""")
+
+    /**
+     * Draws every formula with KaTeX, in batches so a long document does not block scrolling for long. A formula
+     * KaTeX cannot parse keeps its source, marked `.mdr-math-failed` with KaTeX's message as its tooltip (and below a
+     * block formula); for a changed block formula the row's source diff opens instead, with the message on top.
+     * Drawing changes row heights, so the restored position is applied again at the end unless the user scrolled.
+     */
+    private const val MATH_RUN_JS = """
+        function mdrDrawMath(restoreIdx) {
+          var moved = false;
+          ['wheel', 'keydown', 'mousedown', 'touchstart'].forEach(function(t) {
+            window.addEventListener(t, function() { moved = true; }, {once: true, passive: true});
+          });
+          var all = Array.prototype.slice.call(document.querySelectorAll('.mdr-math'));
+          var n = 0;
+          function draw(el) {
+            var tex = el.textContent;
+            var display = el.classList.contains('mdr-math-display');
+            try {
+              katex.render(tex, el, {displayMode: display, throwOnError: true, trust: false, strict: 'ignore'});
+              el.classList.add('mdr-math-drawn');
+            } catch (err) {
+              el.textContent = tex;
+              var text = String((err && err.message) || err);
+              el.classList.add('mdr-math-failed');
+              el.title = text;
+              if (!display) return;
+              var msg = document.createElement('div');
+              msg.className = 'mdr-math-error';
+              msg.textContent = text;
+              el.after(msg);
+              var row = el.closest('.mdr-math-row');
+              var source = row && row.querySelector(':scope > details.mdr-math-source');
+              if (source) {
+                source.querySelector('summary').after(msg.cloneNode(true));
+                source.open = true;
+              }
+            }
+          }
+          function next() {
+            var end = Math.min(n + 50, all.length);
+            for (; n < end; n++) draw(all[n]);
+            if (n < all.length) setTimeout(next, 0);
+            else if (!moved) mdr.restore(restoreIdx);
+          }
+          next();
+        }
+    """
 
     /**
      * Draws the diagrams one at a time, so a large one does not block scrolling for long. A diagram that

@@ -128,7 +128,11 @@ class ShowRenderedDiffActionTest : BasePlatformTestCase() {
     fun `test a local change diffs the revision against the file's own document`() {
         val file = myFixture.addFileToProject("README.md", "# new\n").virtualFile
         val local = VcsUtil.getFilePath(file)
-        val change = Change(Revision(local, "# old\n"), CurrentContentRevision(local))
+        // The fixture's files live in a temp:// file system, which CurrentContentRevision does not look up by path.
+        val current = object : CurrentContentRevision(local) {
+            override fun getVirtualFile() = file
+        }
+        val change = Change(Revision(local, "# old\n"), current)
         val request = ShowRenderedDiffAction.ChangeRequestProducer(project, change)
             .process(UserDataHolderBase(), EmptyProgressIndicator()) as SimpleDiffRequest
         val (left, right) = request.contents

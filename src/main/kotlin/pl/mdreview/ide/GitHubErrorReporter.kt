@@ -7,7 +7,6 @@ import com.intellij.openapi.diagnostic.ErrorReportSubmitter
 import com.intellij.openapi.diagnostic.IdeaLoggingEvent
 import com.intellij.openapi.diagnostic.SubmittedReportInfo
 import com.intellij.openapi.extensions.PluginId
-import com.intellij.openapi.util.SystemInfo
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.util.Consumer
 import java.awt.Component
@@ -41,7 +40,7 @@ class GitHubErrorReporter : ErrorReportSubmitter() {
         return listOf(
             "IDE: ${app.fullApplicationName} (build ${app.build.asString()})",
             "Plugin: $plugin",
-            "OS: ${SystemInfo.getOsNameAndVersion()}",
+            "OS: ${System.getProperty("os.name")} ${System.getProperty("os.version")} (${System.getProperty("os.arch")})",
             "JCEF: ${if (JBCefApp.isSupported()) "supported" else "not supported"}",
         ).joinToString("\n")
     }

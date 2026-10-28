@@ -50,6 +50,11 @@
     ]]></description>
 
     <change-notes><![CDATA[
+        <h3>1.2.1</h3>
+        <ul>
+          <li>Compatibility with IntelliJ IDEA 2026.3: block history and crash reports no longer use API that 2026.3
+              deprecates or marks as internal.</li>
+        </ul>
         <h3>1.2.0</h3>
         <ul>
           <li><b>Math:</b> <code>$...$</code> and <code>$$...$$</code> formulas are drawn offline with KaTeX; a changed

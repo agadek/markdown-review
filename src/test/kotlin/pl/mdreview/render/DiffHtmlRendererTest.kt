@@ -295,4 +295,28 @@ class DiffHtmlRendererTest {
         val html = render("one\ntwo\n", "one\\\ntwo\n")
         assertContains(html, "one<ins class=\"mdr-ins mdr-ws mdr-ws-break\"></ins><br />")
     }
+
+    @Test
+    fun `a changed inline formula is replaced as a whole, never word by word (P2_4)`() {
+        val html = render("Speed: \$v = d / t\$ here.", "Speed: \$v = s / t\$ here.")
+        assertContains(html, "<del class=\"mdr-del\"><span class=\"mdr-math mdr-math-inline\">v = d / t</span></del>")
+        assertContains(html, "<ins class=\"mdr-ins\"><span class=\"mdr-math mdr-math-inline\">v = s / t</span></ins>")
+    }
+
+    @Test
+    fun `formula source is escaped (P2_4)`() {
+        val html = render("\$a < b\$ and\n\n\$\$\nx <script> y\n\$\$\n", "\$a < c\$ and\n\n\$\$\nx <script> z\n\$\$\n")
+        assertContains(html, "a &lt; c")
+        assertContains(html, "x &lt;script&gt; z")
+        assertFalse(html.contains("<script>"))
+    }
+
+    @Test
+    fun `dollar signs that do not form a formula stay text (P2_4)`() {
+        for (text in listOf("Costs \$5 or \$10.", "A lone \$ sign.", "Spaced \$ x \$ is not a formula.", "Escaped \\\$x\\\$ too.")) {
+            val html = render(text, "$text More.")
+            assertFalse(html.contains("mdr-math"), text)
+        }
+    }
 }
+

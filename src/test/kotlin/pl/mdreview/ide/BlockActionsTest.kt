@@ -241,5 +241,94 @@ class BlockActionsTest : BasePlatformTestCase() {
         assertEquals("\"a\\u0022\\u003c\\u002fscript\\u003e\"", HtmlPage.jsString("a\"</script>"))
     }
 
+    fun `test reverting a moved block moves it back (P2_7)`() {
+        val leftText = fixture("04-block-moved", "old.md")
+        val right = content(fixture("04-block-moved", "new.md"))
+        open(content(leftText), right)
+        val original = right.document.text
+        // The heading and the paragraph each move back with one click: a delete and an insert in one command.
+        assertTrue(click(BlockAction.REVERT, view.diff.changes.first()))
+        assertEquals(2, view.diff.changes.size)
+        UndoManager.getInstance(project).undo(null)
+        assertEquals(original, right.document.text)
+        waitFor { view.diff.changes.size == 4 && view.actions.stamp.endsWith(right.document.modificationStamp.toString()) }
+
+        var clicks = 0
+        while (view.diff.changes.isNotEmpty()) {
+            assertTrue(click(BlockAction.REVERT, view.diff.changes.first()))
+            assertTrue("too many clicks", ++clicks < 10)
+        }
+        assertEquals(2, clicks)
+        assertEquals(leftText, right.document.text)
+    }
+
+    /** Saves [markdown] as the new source of [block] on [side], as Ctrl/Cmd+Enter in the block's textarea does (P2.6). */
+    private fun saveSource(block: BlockInfo, side: String, markdown: String, stamp: String = view.actions.stamp): Boolean {
+        val request = BlockActionRequest.parse("edit|edit-$side|${block.idx}|$stamp|$markdown")
+        assertNotNull("the page's edit message must parse", request)
+        val before = view.shown.size
+        val done = viewer.performBlockAction(request!!)
+        if (done) waitFor { view.shown.size > before && view.actions.stamp != stamp }
+        return done
+    }
+
+    fun `test editing a paragraph saves its source as one undo step (P2_6)`() {
+        val right = content("# Title\n\nnew text here\n\nlast\n")
+        open(content("# Title\n\nold text here\n\nlast\n"), right)
+        val original = right.document.text
+        assertTrue(saveSource(view.diff.changes.single(), "right", "edited *text* here"))
+        assertEquals("# Title\n\nedited *text* here\n\nlast\n", right.document.text)
+
+        val undo = UndoManager.getInstance(project)
+        undo.undo(null)
+        assertEquals(original, right.document.text)
+        undo.redo(null)
+        assertEquals("# Title\n\nedited *text* here\n\nlast\n", right.document.text)
+    }
+
+    fun `test editing keeps pipes and line breaks of the source (P2_6)`() {
+        val right = content("intro\n\nnew text\n")
+        open(content("intro\n\nold text\n"), right)
+        assertTrue(saveSource(view.diff.changes.single(), "right", "first | line\nsecond line"))
+        assertEquals("intro\n\nfirst | line\nsecond line\n", right.document.text)
+    }
+
+    fun `test editing a table row saves the row only (P2_6)`() {
+        val table = "| Name | Value |\n| --- | --- |\n| a | 1 |\n| b | 2 |\n"
+        val right = content(table.replace("| b | 2 |", "| b | 3 |"))
+        open(content(table), right)
+        assertTrue(saveSource(view.diff.changes.single(), "right", "| b | 4 |"))
+        assertEquals(table.replace("| b | 2 |", "| b | 4 |"), right.document.text)
+    }
+
+    fun `test editing a list item keeps its nested items (P2_6)`() {
+        val right = content("- one\n- two changed\n  - nested\n- three\n")
+        open(content("- one\n- two\n  - nested\n- three\n"), right)
+        val item = view.diff.changes.single()
+        assertTrue(saveSource(item, "right", "- two edited"))
+        assertEquals("- one\n- two edited\n  - nested\n- three\n", right.document.text)
+    }
+
+    fun `test an unchanged block and the left side can be edited too (P2_6)`() {
+        val left = content("# Title\n\nsame\n")
+        open(left, content("# Title\n\nsame\n"))
+        assertTrue(saveSource(view.diff.blocks[1], "left", "changed"))
+        assertEquals("# Title\n\nchanged\n", left.document.text)
+        assertEquals(1, view.diff.changes.size)
+    }
+
+    fun `test editing is refused on read-only sides and stale pages (P2_6)`() {
+        val factory = DiffContentFactory.getInstance()
+        open(content("old text\n"), factory.create(project, "new text\n"))
+        assertFalse(saveSource(view.diff.changes.single(), "right", "edited"))
+
+        val right = content("same\n\nadded\n")
+        open(content("same\n"), right)
+        val stamp = view.actions.stamp
+        runWriteCommand { right.document.insertString(0, "typed ") }
+        assertFalse(saveSource(view.diff.blocks[0], "right", "edited", stamp))
+        assertEquals("typed same\n\nadded\n", right.document.text)
+    }
+
     private fun runWriteCommand(action: () -> Unit) = WriteCommandAction.runWriteCommandAction(project, action)
 }

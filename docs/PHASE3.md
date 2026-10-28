@@ -148,7 +148,8 @@ Status:
 - **Custom stylesheet**: Settings | Tools | Markdown Review | Custom stylesheet. The file is applied after the page's
   own styles, re-read when it changes, and the page's root element carries `mdr-theme-light` or `mdr-theme-dark`, so
   one file can style both themes. Saving the settings page re-renders open viewers.
-- **Export**: *Export as HTML...* and *Export as PDF...* in the rendered viewer's options menu. The HTML file is a
+- **Export**: *Export as HTML...* and *Export as PDF...* behind the Export button on the rendered viewer's toolbar and in
+  every block's right-click menu. The HTML file is a
   snapshot of the page as drawn (Mermaid diagrams and formulas included), with no scripts, a policy that allows none,
   and local images inlined. The PDF comes from JCEF's `printToPDF`, with the diff colors kept for print.
 - **More syntax**: wiki links (`[[page]]`, `[[page|label]]`), fixture `41-wiki-links`.

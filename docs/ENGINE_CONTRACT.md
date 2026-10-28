@@ -139,6 +139,14 @@ those ranges so the word diff keeps each formula whole.
   with the documents' modification stamps at render time; a different stamp refuses the edit and re-renders. The edit
   is one global `WriteCommandAction` ("Revert Markdown Block" / "Apply Markdown Block"), so one Undo restores it
   from the diff window or the editor.
+- Block source editing (FR-13): a double-click on an element with `data-side` and `data-line` of an editable side
+  (both sides side by side, the right side merged; independent of `showBlockActions`) sends
+  `open|<side>|<idx>|<stamp>`. The viewer answers with the block's lines on that side (`BlockInfo.left` / `right`)
+  from the text the page was rendered from, and the page shows them in a `.mdr-editor` textarea in place of the block.
+  Ctrl/Cmd+Enter sends `edit|edit-<side>|<idx>|<stamp>|<markdown>`, which replaces those lines in one global
+  `WriteCommandAction` ("Edit Markdown Block"), with the same stamp check as the buttons; an emptied editor removes
+  the lines. Esc closes the editor (`closed`). While the editor is open, new pages are held back and the latest is
+  shown when it closes; a refused save keeps the editor open with a note, so the text can be copied.
 - Makes the chosen default viewer the first one IntelliJ tries for Markdown diffs through the diff tool order; see
   [ADR 0001](adr/0001-default-diff-viewer.md).
 - Recognizes Markdown by extension (`md`, `markdown`, `mdown`, `mkd`) or, when the bundled Markdown plugin is enabled,

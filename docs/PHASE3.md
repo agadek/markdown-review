@@ -44,9 +44,8 @@ Done when:
 What phase 2 kept out of 1.0. If a part of it ships in 1.0 after all, drop it here.
 
 Scope:
-- **Block source editing** (FR-13, P2.6): double-click a block to edit its raw Markdown, saved as one Undo step.
-- **Moved-block detection** (FR-15, P2.7): a moved section shows as moved at both ends instead of removed and added,
-  and reverting it moves it back.
+- **Block source editing** (FR-13, P2.6): shipped in 1.2.0.
+- **Moved-block detection** (FR-15, P2.7): shipped in 1.2.0.
 
 Done when:
 - The done criteria of P2.6 and P2.7 in PHASE2.md are met.

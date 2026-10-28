@@ -1,0 +1,21 @@
+name: Feature request
+description: Something the rendered diff should do, or a Markdown element it should support.
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The review or editing task, and where the plugin gets in the way.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+      description: How it could work. For new syntax, an example of the Markdown and where it is used (GitHub, GitLab, a docs tool).
+  - type: input
+    id: ide
+    attributes:
+      label: IDE
+      description: Which IDE you use it in, if it matters.

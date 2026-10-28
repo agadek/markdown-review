@@ -1,0 +1,64 @@
+name: Bug report
+description: The rendered diff shows something wrong, or the plugin does not work as described.
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. A small pair of Markdown files that shows the problem is the most useful part:
+        every confirmed bug gets such a pair as a test fixture before it is fixed.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead. A screenshot of the rendered diff helps.
+    validations:
+      required: true
+  - type: textarea
+    id: old
+    attributes:
+      label: Old version (left side)
+      description: The smallest Markdown that still shows the problem.
+      render: markdown
+  - type: textarea
+    id: new
+    attributes:
+      label: New version (right side)
+      render: markdown
+  - type: dropdown
+    id: viewer
+    attributes:
+      label: Viewer
+      options:
+        - Rendered side by side
+        - Rendered merged
+        - Both
+  - type: input
+    id: ide
+    attributes:
+      label: IDE and version
+      description: From Help | About, for example "IntelliJ IDEA 2025.2.1 (Ultimate Edition)".
+    validations:
+      required: true
+  - type: input
+    id: plugin
+    attributes:
+      label: Plugin version
+      description: From Settings | Plugins | Markdown Review.
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+    validations:
+      required: true
+  - type: dropdown
+    id: jcef
+    attributes:
+      label: Does the IDE's Markdown preview work?
+      description: The rendered diff needs JCEF, the same browser the Markdown preview uses.
+      options:
+        - "Yes"
+        - "No"
+        - Not sure

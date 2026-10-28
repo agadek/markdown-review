@@ -103,6 +103,7 @@
                                  key="settings.display.name"/>
         <colorSettingsPage implementation="pl.mdreview.ide.MarkdownReviewColorSettingsPage"/>
         <postStartupActivity implementation="pl.mdreview.ide.DefaultViewerStartupActivity"/>
+        <errorHandler implementation="pl.mdreview.ide.GitHubErrorReporter"/>
     </extensions>
 
     <actions>

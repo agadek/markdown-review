@@ -35,6 +35,9 @@ Scope:
   documents.
 - Re-rank P3.2–P3.6 from the issues and Marketplace reviews.
 
+Status: issue templates (bug, crash, feature), the `crash`, `triage` and `needs fixture` labels and the error
+reporter (`GitHubErrorReporter`) are in place for 1.2.0; the fixture rule is in `src/test/resources/fixtures/README.md`.
+
 Done when:
 - Issue templates and the error reporter are live, and a test exception from `runIde` opens a prefilled issue.
 - At least one 1.0.x release is out with fixes from user reports, each covered by a fixture.

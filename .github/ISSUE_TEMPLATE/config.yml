@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Sponsor the project
+    url: https://github.com/sponsors/agadek
+    about: Support development of Markdown Review on GitHub Sponsors.

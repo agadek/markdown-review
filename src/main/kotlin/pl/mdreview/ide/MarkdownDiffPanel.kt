@@ -11,7 +11,10 @@ import com.intellij.ui.jcef.JBCefJSQuery
 import pl.mdreview.api.RenderedDiff
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.UIUtil
+import org.cef.callback.CefPdfPrintCallback
+import org.cef.misc.CefPdfPrintSettings
 import java.awt.Point
+import java.nio.file.Path
 import javax.swing.JComponent
 import javax.swing.SwingConstants
 
@@ -39,6 +42,18 @@ interface RenderedDiffView {
 
     /** An edited block was not saved, for example because the file changed meanwhile; the editor stays open. */
     fun editRefused() = Unit
+
+    /** Whether [snapshot] and [printToPdf] work in this view (P3.6). */
+    val canExport: Boolean get() = false
+
+    /**
+     * Serializes the page as drawn, without scripts and block controls, and passes it to [done] on a background
+     * thread; `null` when the view has no page.
+     */
+    fun snapshot(done: (String?) -> Unit) = done(null)
+
+    /** Prints the page to a PDF file at [path]; [done] gets whether that worked, on a background thread. */
+    fun printToPdf(path: Path, done: (Boolean) -> Unit) = done(false)
 }
 
 /**
@@ -62,6 +77,10 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
     private var sourceProvider: (String, Int, String) -> String? = { _, _, _ -> null }
     private var blockMenuHandler: (String, Int, String, Point) -> Unit = { _, _, _, _ -> }
 
+    /** Waiting for the page's `export|` answer to [snapshot]. */
+    @Volatile
+    private var snapshotHandler: ((String?) -> Unit)? = null
+
     /** Whether the page has a block editor open; read and written on the EDT. */
     private var editing = false
 
@@ -74,6 +93,10 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
         Disposer.register(parent, browser)
         Disposer.register(parent, query)
         query.addHandler { msg ->
+            if (msg.startsWith("export|")) {
+                snapshotHandler?.let { handler -> snapshotHandler = null; handler(msg.substring("export|".length)) }
+                return@addHandler null
+            }
             val parts = msg.split('|', limit = 4)
             when (parts[0]) {
                 "scroll" -> parts.getOrNull(1)?.toIntOrNull()?.let { topIdx = it }
@@ -122,7 +145,12 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
         current = diff
         currentActions = actions
         val settings = MarkdownReviewSettings.getInstance()
-        browser.loadHTML(HtmlPage.build(diff, query.inject("msg"), topIdx, settings.loadRemoteImages, actions, settings.renderMath))
+        browser.loadHTML(
+            HtmlPage.build(
+                diff, query.inject("msg"), topIdx, settings.loadRemoteImages, actions, settings.renderMath,
+                UserStylesheet.load(settings.customCssPath),
+            ),
+        )
     }
 
     /** Rebuilds the page with fresh theme colors without recomputing the diff. */
@@ -151,6 +179,19 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
     private fun openEditor(side: String, idx: Int, text: String) {
         editing = true
         execute("if (!mdr.openEditor(${HtmlPage.jsString(side)}, $idx, ${HtmlPage.jsString(text)})) mdrSend('closed')")
+    }
+
+    override val canExport: Boolean get() = current != null
+
+    override fun snapshot(done: (String?) -> Unit) {
+        if (current == null) return done(null)
+        snapshotHandler = done
+        execute("mdr.snapshot()")
+    }
+
+    override fun printToPdf(path: Path, done: (Boolean) -> Unit) {
+        // The defaults print without backgrounds; the page's print-color-adjust keeps the diff colors anyway.
+        browser.cefBrowser.printToPDF(path.toString(), CefPdfPrintSettings(), CefPdfPrintCallback { _, ok -> done(ok) })
     }
 
     private fun execute(js: String) = browser.cefBrowser.executeJavaScript(js, browser.cefBrowser.url, 0)

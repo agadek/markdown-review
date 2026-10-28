@@ -24,13 +24,19 @@
               request windows take review comments) or show the history of just that block.</li>
           <li><b>Block source editing:</b> double-click a block to edit its raw Markdown in place; saved as one Undo
               step.</li>
+          <li><b>Show Rendered Diff</b> in the context menu of the Git log's changed files, of file history and of the
+              Commit window opens a Markdown change rendered, whichever viewer diffs open with by default.</li>
+          <li><b>Export</b> the rendered diff as a standalone HTML file (no scripts, images inlined) or a PDF, to attach
+              to a review or a ticket.</li>
+          <li><b>Custom stylesheet:</b> a CSS file of your own on top of the rendered view, for example to match your
+              documentation site.</li>
           <li><b>Text diff</b> one click away in the diff window's viewer switcher.</li>
           <li>Works for local changes (Commit window), file history, branch comparison and pull requests, plus
               <i>Compare Markdown Files...</i> for any two files.</li>
           <li>F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.</li>
           <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts, plus HTML
-              blocks, <code>&lt;details&gt;</code>, HTML comments, hard line breaks, emoji shortcodes and YAML front
-              matter.</li>
+              blocks, <code>&lt;details&gt;</code>, HTML comments, hard line breaks, emoji shortcodes, wiki links and YAML
+              front matter.</li>
           <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with and how readily a
               rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
               large-file, remote-image, Mermaid and math options. The diff colors are set per color scheme in
@@ -73,12 +79,20 @@
         <colorSettingsPage implementation="pl.mdreview.ide.MarkdownReviewColorSettingsPage"/>
         <postStartupActivity implementation="pl.mdreview.ide.DefaultViewerStartupActivity"/>
         <errorHandler implementation="pl.mdreview.ide.GitHubErrorReporter"/>
+        <notificationGroup id="Markdown Review" displayType="BALLOON" key="notification.group"/>
     </extensions>
 
     <actions>
         <action id="MarkdownReview.CompareFiles" class="pl.mdreview.ide.CompareMarkdownFilesAction">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
             <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+        <!-- P3.4: changed files of a Git log commit, file history revisions and the Commit window's changes. -->
+        <action id="MarkdownReview.ShowRenderedDiff" class="pl.mdreview.ide.ShowRenderedDiffAction"
+                icon="pl.mdreview.ide.MarkdownReviewIcons.RENDERED_SIDE_BY_SIDE">
+            <add-to-group group-id="Vcs.Log.ChangesBrowser.Popup" anchor="first"/>
+            <add-to-group group-id="Vcs.FileHistory.ContextMenu" anchor="after" relative-to-action="Diff.ShowStandaloneDiff"/>
+            <add-to-group group-id="ChangesViewPopupMenu" anchor="after" relative-to-action="Diff.ShowStandaloneDiff"/>
         </action>
     </actions>
 </idea-plugin>

@@ -57,6 +57,8 @@ object BlockExtractor {
         AutolinkExtension.create(),
         FootnotesExtension.create(),
         AlertsExtension.create(),
+        // Before the emoji, which change the text the wiki links map back to their source.
+        WikiLinkExtension.create(),
         EmojiExtension.create(),
         MathExtension.create(),
     )

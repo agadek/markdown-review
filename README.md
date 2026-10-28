@@ -46,6 +46,10 @@ The viewers work in the Commit window (Show Diff, Ctrl+D), in file history, when
 request windows. Compare any two files with **Compare Markdown Files...** from the project view context menu or the
 Tools menu. F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.
 
+**Show Rendered Diff** in the context menu of a Git log commit's changed files, of file history and of the Commit
+window opens the selected Markdown changes in the rendered viewer, even when diffs open with the text viewer by
+default.
+
 Right-click a block for **Go to Source**, **Open in Text Diff Here** and **Show History for This Block**. Open in Text
 Diff Here switches the window to the text viewer at the block's line; in a pull request window, that is where the
 comment gutter starts a review comment on the block. Show History for This Block lists only the commits that changed
@@ -56,11 +60,13 @@ the block's lines, for a file under version control.
 Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with (rendered side by side, rendered
 merged, or text) and holds the whitespace, collapse, pairing threshold, large-file, remote-image, Mermaid and math
 options. The colors of added, removed and modified blocks and of changed words are set per color scheme in
-Settings | Editor | Color Scheme | Markdown Review; a color left unset follows the scheme's Diff colors.
+Settings | Editor | Color Scheme | Markdown Review; a color left unset follows the scheme's Diff colors. A custom
+stylesheet (a CSS file on the same settings page) can restyle the rendered view, for example to match a documentation
+site, and the viewer's options menu exports the rendered diff as a standalone HTML file or a PDF.
 
 Supported Markdown: CommonMark with GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks,
 footnotes, alerts), HTML blocks and inline HTML (sanitized), `<details>`, HTML comments, hard line breaks, emoji
-shortcodes, YAML front matter, Mermaid and math. The user interface is in English.
+shortcodes, wiki links (`[[page]]`, `[[page|label]]`), YAML front matter, Mermaid and math. The user interface is in English.
 
 Status: 1.0. What the plugin does and does not do is described in [docs/SPECIFICATION.md](docs/SPECIFICATION.md),
 what comes next in [docs/PHASE3.md](docs/PHASE3.md), and releases in [docs/RELEASING.md](docs/RELEASING.md). The

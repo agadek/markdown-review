@@ -686,4 +686,33 @@ class FixturesTest {
         assertEquals(5, Regex("class=\"mdr-math mdr-math-display\"").findAll(sideBySide).count())
         assertFalse(Regex("mdr-math[^>]*>[^<]*\\\$5").containsMatchIn(sideBySide))
     }
+
+    @Test
+    fun `41 wiki links are links (P3_6)`() {
+        val d = diff("41-wiki-links")
+        assertEquals(
+            listOf("MODIFIED PARAGRAPH The setup lives on the s", "MODIFIED PARAGRAPH Details are in Configura"),
+            changes("41-wiki-links"),
+        )
+        assertEquals("install", removed(d.changes[0]))
+        assertEquals("setup", added(d.changes[0]))
+        // Same visible text, new target: only the link marks the change.
+        assertTrue(d.changes[1].inline.none { it.status != DiffStatus.EQUAL })
+        assertEquals("See Getting Started before you begin.", d.blocks[1].right!!.plainText)
+        assertEquals(
+            "Not links: [[code]], [[escaped]], ![[diagram.png]] and [[TOC]].",
+            d.blocks.last().right!!.plainText,
+        )
+        for (mode in ViewMode.entries) {
+            val html = html("41-wiki-links", mode)
+            assertContains(html, "<a rel=\"nofollow\" href=\"Getting%20Started\">Getting Started</a>", message = mode.name)
+            assertContains(html, "<code>[[code]]</code>", message = mode.name)
+            assertFalse(html.contains("href=\"code\"") || html.contains("href=\"escaped\"") || html.contains("href=\"diagram.png\""), mode.name)
+            assertFalse(html.contains("href=\"TOC\""), mode.name)
+        }
+        val sideBySide = html("41-wiki-links")
+        assertContains(sideBySide, "<a rel=\"nofollow\" href=\"Install%20Guide\">")
+        assertContains(sideBySide, "<a rel=\"nofollow\" href=\"Configuration#Network%20proxy\" class=\"mdr-link-changed\" ")
+        assertContains(sideBySide, "<a rel=\"nofollow\" href=\"Configuration#Proxy\" class=\"mdr-link-changed\" ")
+    }
 }

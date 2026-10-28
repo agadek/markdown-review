@@ -53,3 +53,4 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 38-pairing-threshold-lone | one rewritten paragraph alone on each side, which pairs at half the threshold |
 | 39-short-list-items | a short list item replaced by another that shares only common words, which must not pair |
 | 40-math | inline and block formulas: equal, changed, added, unparsable, and dollar signs that are not formulas |
+| 41-wiki-links | `[[target]]` and `[[target\|label]]` wiki links: changed label, changed target, and text that is not a link |

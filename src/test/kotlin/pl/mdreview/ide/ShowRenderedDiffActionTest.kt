@@ -1,6 +1,13 @@
 package pl.mdreview.ide
 
 import com.intellij.diff.DiffManagerEx
+import com.intellij.diff.contents.DocumentContent
+import com.intellij.diff.contents.EmptyContent
+import com.intellij.diff.requests.SimpleDiffRequest
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.progress.EmptyProgressIndicator
+import com.intellij.openapi.util.UserDataHolderBase
+import com.intellij.openapi.vcs.changes.CurrentContentRevision
 import com.intellij.diff.impl.DiffRequestProcessor
 import com.intellij.diff.impl.DiffSettingsHolder.DiffSettings
 import com.intellij.diff.tools.simple.SimpleDiffTool
@@ -116,5 +123,29 @@ class ShowRenderedDiffActionTest : BasePlatformTestCase() {
                 .any { it.isInstance(tool) }
         }
         assertInstanceOf(first, RenderedSideBySideTool::class.java)
+    }
+
+    fun `test a local change diffs the revision against the file's own document`() {
+        val file = myFixture.addFileToProject("README.md", "# new\n").virtualFile
+        val local = VcsUtil.getFilePath(file)
+        val change = Change(Revision(local, "# old\n"), CurrentContentRevision(local))
+        val request = ShowRenderedDiffAction.ChangeRequestProducer(project, change)
+            .process(UserDataHolderBase(), EmptyProgressIndicator()) as SimpleDiffRequest
+        val (left, right) = request.contents
+        assertEquals("# old\n", (left as DocumentContent).document.text)
+        assertSame(FileDocumentManager.getInstance().getDocument(file), (right as DocumentContent).document)
+        assertTrue(RenderedMarkdownDiffTool.accepts(request))
+    }
+
+    fun `test an added file diffs against nothing`() {
+        val request = ShowRenderedDiffAction.ChangeRequestProducer(project, change(null, "docs/new.md"))
+            .process(UserDataHolderBase(), EmptyProgressIndicator()) as SimpleDiffRequest
+        assertInstanceOf(request.contents[0], EmptyContent::class.java)
+        assertEquals("# new\n", (request.contents[1] as DocumentContent).document.text)
+    }
+
+    fun `test Git hashes are shortened in titles`() {
+        assertEquals("0123abcd", ShowRenderedDiffAction.shortRevision("0123abcd" + "e".repeat(32)))
+        assertEquals("1234", ShowRenderedDiffAction.shortRevision("1234"))
     }
 }

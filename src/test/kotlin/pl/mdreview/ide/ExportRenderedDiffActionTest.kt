@@ -14,6 +14,7 @@ import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.vcsUtil.VcsUtil
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.ViewMode
 
 /** "Export Rendered Diff | HTML... / PDF..." for the selected changes (P3.6); the hidden browser is left to manual checks. */
@@ -25,6 +26,19 @@ class ExportRenderedDiffActionTest : BasePlatformTestCase() {
         override fun getRevisionNumber(): VcsRevisionNumber = VcsRevisionNumber.NULL
     }
 
+    private class FakeRuntime : AsciiDocSupport.Runtime {
+        override fun isReady() = true
+        override fun prepare(onReady: () -> Unit) = onReady()
+    }
+
+    override fun tearDown() {
+        try {
+            AsciiDocSupport.uninstall()
+        } finally {
+            super.tearDown()
+        }
+    }
+
     private fun path(name: String) = VcsUtil.getFilePath("/repo/$name", false)
 
     private fun change(before: String?, after: String?, old: String? = "# Title\n\nold text\n", new: String? = "# Title\n\nnew text\n") =
@@ -32,6 +46,15 @@ class ExportRenderedDiffActionTest : BasePlatformTestCase() {
 
     private fun render(change: Change) =
         ExportRenderedDiffAction().render(project, change, ViewMode.SIDE_BY_SIDE, MarkdownReviewSettings.getInstance())
+
+    private fun <T> withAsciiDoc(block: () -> T): T {
+        AsciiDocSupport.install(FakeRuntime())
+        try {
+            return block()
+        } finally {
+            AsciiDocSupport.uninstall()
+        }
+    }
 
     fun `test each kind of change is rendered with its label`() {
         val modified = render(change("README.md", "README.md"))
@@ -44,6 +67,28 @@ class ExportRenderedDiffActionTest : BasePlatformTestCase() {
         assertEquals("Renamed from a.md", render(change("a.md", "b.md")).change)
     }
 
+    fun `test each file is rendered with its own format`() = withAsciiDoc {
+        val action = ExportRenderedDiffAction()
+        val settings = MarkdownReviewSettings.getInstance()
+        val markdown = action.renderRequest(change("README.md", "README.md"), ViewMode.SIDE_BY_SIDE, settings)
+        val asciidoc = action.renderRequest(change("docs/guide.adoc", "docs/guide.adoc"), ViewMode.SIDE_BY_SIDE, settings)
+        assertEquals(DocumentFormat.MARKDOWN, markdown.format)
+        assertEquals(DocumentFormat.ASCIIDOC, asciidoc.format)
+        assertTrue(render(change("docs/guide.adoc", "docs/guide.adoc")).diff != null)
+    }
+
+    fun `test a mixed multi-file export has a section for each file`() = withAsciiDoc {
+        val files = listOf(
+            render(change("a.md", "a.md")),
+            render(change("b.adoc", "b.adoc", new = "= Title\n\nnew text\n")),
+        )
+        val page = HtmlExport.combine("Rendered changes (2 files)", files, "No differences")
+        assertEquals(2, Regex("<section class=\"mdr-export-file\"").findAll(page.bodyHtml).count())
+        assertTrue(page.bodyHtml.contains("<p class=\"mdr-export-note\">No differences</p>") || page.bodyHtml.contains("new text"))
+        assertTrue(page.css.contains(".mdr-export-toc"))
+        assertTrue(HtmlPage.build(page, "void 0", 0).contains("<h1 class=\"mdr-export-title\">Rendered changes (2 files)</h1>"))
+    }
+
     fun `test a revision without content becomes a note instead of failing the export`() {
         val file = render(change("README.md", "README.md", old = null))
         assertNull(file.diff)
@@ -52,16 +97,22 @@ class ExportRenderedDiffActionTest : BasePlatformTestCase() {
 
     fun `test the files combine into one page with a section each`() {
         val files = listOf(render(change("a.md", "a.md")), render(change("b.md", "b.md", new = "# Title\n\nold text\n")))
-        val page = HtmlExport.combine("Markdown changes (2 files)", files, "No differences")
+        val page = HtmlExport.combine("Rendered changes (2 files)", files, "No differences")
         assertEquals(2, Regex("<section class=\"mdr-export-file\"").findAll(page.bodyHtml).count())
         assertTrue(page.bodyHtml.contains("<p class=\"mdr-export-note\">No differences</p>"))
         assertTrue(page.css.contains(".mdr-export-toc"))
-        assertTrue(HtmlPage.build(page, "void 0", 0).contains("<h1 class=\"mdr-export-title\">Markdown changes (2 files)</h1>"))
+        assertTrue(HtmlPage.build(page, "void 0", 0).contains("<h1 class=\"mdr-export-title\">Rendered changes (2 files)</h1>"))
     }
 
-    fun `test the submenu and both formats show only for Markdown changes`() {
+    fun `test the submenu and both formats show for supported changes`() = withAsciiDoc {
         for (action in listOf(ExportRenderedDiffAction.Group(), ExportRenderedDiffAction.Html(), ExportRenderedDiffAction.Pdf())) {
-            assertActionShowsOnlyForMarkdown(action)
+            assertActionShowsOnlyForSupportedChanges(action)
+        }
+    }
+
+    fun `test the submenu stays hidden for AsciiDoc without support`() {
+        for (action in listOf(ExportRenderedDiffAction.Group(), ExportRenderedDiffAction.Html(), ExportRenderedDiffAction.Pdf())) {
+            assertFalse(visible(action, change("docs/guide.adoc", "docs/guide.adoc")))
         }
     }
 
@@ -76,16 +127,22 @@ class ExportRenderedDiffActionTest : BasePlatformTestCase() {
         assertEquals(listOf("MarkdownReview.ExportRenderedDiff.Html", "MarkdownReview.ExportRenderedDiff.Pdf"), children)
     }
 
-    private fun assertActionShowsOnlyForMarkdown(action: AnAction) {
-        fun visible(vararg selected: Change): Boolean {
-            val e = TestActionEvent.createTestEvent(
-                action,
-                SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).add(VcsDataKeys.SELECTED_CHANGES, arrayOf(*selected)).build(),
-            )
-            action.update(e)
-            return e.presentation.isEnabledAndVisible
-        }
-        assertFalse(visible(change("Main.kt", "Main.kt")))
-        assertEquals(JBCefApp.isSupported(), visible(change("Main.kt", "Main.kt"), change("README.md", "README.md")))
+    private fun visible(action: AnAction, vararg selected: Change): Boolean {
+        val e = TestActionEvent.createTestEvent(
+            action,
+            SimpleDataContext.builder()
+                .add(CommonDataKeys.PROJECT, project)
+                .add(VcsDataKeys.SELECTED_CHANGES, arrayOf(*selected))
+                .build(),
+        )
+        action.update(e)
+        return e.presentation.isEnabledAndVisible
+    }
+
+    private fun assertActionShowsOnlyForSupportedChanges(action: AnAction) {
+        assertFalse(visible(action, change("Main.kt", "Main.kt")))
+        assertFalse(visible(action, change("README.md", "README.adoc")))
+        assertEquals(JBCefApp.isSupported(), visible(action, change("Main.kt", "Main.kt"), change("README.md", "README.md")))
+        assertEquals(JBCefApp.isSupported(), visible(action, change("docs/guide.adoc", "docs/guide.adoc")))
     }
 }

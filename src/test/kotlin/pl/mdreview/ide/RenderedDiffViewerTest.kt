@@ -19,12 +19,31 @@ import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.ui.jcef.JBCefApp
 import pl.mdreview.api.BlockStatus
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.RenderedDiff
 import pl.mdreview.api.ViewMode
 import javax.swing.JComponent
 import javax.swing.JPanel
 
 class RenderedDiffViewerTest : BasePlatformTestCase() {
+
+    private class FakeAsciiDocRuntime : AsciiDocSupport.Runtime {
+        var ready = false
+        val prepared = mutableListOf<() -> Unit>()
+
+        override fun isReady() = ready
+        override fun prepare(onReady: () -> Unit) {
+            prepared += onReady
+        }
+    }
+
+    override fun tearDown() {
+        try {
+            AsciiDocSupport.uninstall()
+        } finally {
+            super.tearDown()
+        }
+    }
 
     fun `test external link schemes are case insensitive`() {
         assertTrue(isExternalLink("HTTPS://example.com/path"))
@@ -74,6 +93,53 @@ class RenderedDiffViewerTest : BasePlatformTestCase() {
         val diff = view.shown.last()
         assertEquals(listOf(BlockStatus.MODIFIED), diff.changes.map { it.status })
         assertTrue(diff.bodyHtml.contains("data-side=\"left\""))
+    }
+
+    fun `test AsciiDoc waits for the renderer before the first render`() {
+        val runtime = FakeAsciiDocRuntime()
+        AsciiDocSupport.install(runtime)
+        val request = SimpleDiffRequest(
+            "test",
+            content("old.adoc", "= Title\n\nold text\n"),
+            content("new.adoc", "= Title\n\nnew text\n"),
+            "old",
+            "new",
+        )
+        val (viewer, view) = open(request, ViewMode.SIDE_BY_SIDE)
+        waitFor { viewer.isPreparingAsciiDoc }
+        assertEmpty(view.shown)
+        assertEquals(DocumentFormat.ASCIIDOC, viewer.format)
+        assertEquals(1, runtime.prepared.size)
+
+        runtime.ready = true
+        runtime.prepared.single().invoke()
+        waitFor { view.shown.isNotEmpty() }
+        assertFalse(viewer.isPreparingAsciiDoc)
+    }
+
+    fun `test AsciiDoc falls back to the raw text renderer while support is unavailable`() {
+        AsciiDocSupport.uninstall()
+        val request = SimpleDiffRequest(
+            "test",
+            content("old.adoc", "= Title\n\nold text\n"),
+            content("new.adoc", "= Title\n\nnew text\n"),
+            "old",
+            "new",
+        )
+        val (viewer, view) = open(request, ViewMode.SIDE_BY_SIDE)
+        waitFor { view.shown.isNotEmpty() }
+        assertEquals(DocumentFormat.ASCIIDOC, viewer.format)
+        assertEquals(listOf(BlockStatus.MODIFIED), view.shown.last().changes.map { it.status })
+    }
+
+    fun `test Markdown does not wait for the AsciiDoc renderer`() {
+        val runtime = FakeAsciiDocRuntime()
+        AsciiDocSupport.install(runtime)
+        val request = SimpleDiffRequest("test", content("old.md", "# Title\n\nold\n"), content("new.md", "# Title\n\nnew\n"), "old", "new")
+        val (viewer, view) = open(request, ViewMode.SIDE_BY_SIDE)
+        waitFor { view.shown.isNotEmpty() }
+        assertEquals(DocumentFormat.MARKDOWN, viewer.format)
+        assertEmpty(runtime.prepared)
     }
 
     fun `test merged viewer renders an added file`() {

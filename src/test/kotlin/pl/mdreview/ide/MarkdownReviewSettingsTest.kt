@@ -5,6 +5,9 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.xmlb.XmlSerializer
 import pl.mdreview.api.DiffOptions
 import pl.mdreview.api.SizeLimit
+import java.awt.Component
+import java.awt.Container
+import javax.swing.JLabel
 
 class MarkdownReviewSettingsTest : BasePlatformTestCase() {
 
@@ -121,6 +124,37 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         settings.noStateLoaded()
         assertFalse(settings.ignoreWhitespace)
         assertTrue(settings.collapseUnchanged)
+    }
+
+    fun `test settings page reports whether AsciiDoc diffs are available`() {
+        AsciiDocSupport.uninstall()
+        val missing = MarkdownReviewConfigurable()
+        try {
+            assertTrue(labelTexts(missing.createComponent()).contains("AsciiDoc diffs need the AsciiDoc plugin."))
+        } finally {
+            missing.disposeUIResources()
+        }
+
+        AsciiDocSupport.install(object : AsciiDocSupport.Runtime {
+            override fun isReady() = true
+            override fun prepare(onReady: () -> Unit) = onReady()
+        })
+        val available = MarkdownReviewConfigurable()
+        try {
+            assertTrue(labelTexts(available.createComponent()).contains("AsciiDoc diffs are available."))
+        } finally {
+            available.disposeUIResources()
+            AsciiDocSupport.uninstall()
+        }
+    }
+
+    /** All label texts in [component]'s tree, for the non-option status line. */
+    private fun labelTexts(component: Component?): List<String> {
+        if (component == null) return emptyList()
+        val texts = mutableListOf<String>()
+        if (component is JLabel) texts += component.text
+        if (component is Container) component.components.forEach { texts += labelTexts(it) }
+        return texts
     }
 
     fun `test settings page applies values to the service`() {

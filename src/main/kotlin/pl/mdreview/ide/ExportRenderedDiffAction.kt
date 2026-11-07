@@ -33,6 +33,7 @@ import com.intellij.ui.jcef.JBCefJSQuery
 import com.intellij.util.concurrency.AppExecutorUtil
 import org.cef.callback.CefPdfPrintCallback
 import org.cef.misc.CefPdfPrintSettings
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.RenderedDiff
 import pl.mdreview.api.ViewMode
@@ -44,13 +45,14 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * "Export Rendered Diff | HTML... / PDF..." (P3.6) next to Show Rendered Diff, in the Git log's changed files, in file
- * history and in the Commit window: renders every selected Markdown change into one document, with a table of contents
- * and one section per file, and saves it as a standalone HTML file ([Html]) or a PDF ([Pdf]).
+ * history and in the Commit window: renders every selected Markdown or AsciiDoc change into one document, with a table
+ * of contents and one section per file, and saves it as a standalone HTML file ([Html]) or a PDF ([Pdf]). The
+ * selection may mix formats; each file is rendered with its own.
  *
  * The page is drawn in a hidden browser first, so Mermaid diagrams and formulas come out drawn, as in the single-file
  * export from the viewer: the HTML is a snapshot of that page without scripts ([HtmlExport]), the PDF is that page
- * printed. The view is the one the diff window opens Markdown with (merged when that is the merged viewer, side by
- * side otherwise) and follows the viewer's settings.
+ * printed. The view is the one the diff window opens rendered files with (merged when that is the merged viewer, side
+ * by side otherwise) and follows the viewer's settings.
  */
 open class ExportRenderedDiffAction(private val pdf: Boolean = false) : DumbAwareAction() {
 
@@ -58,7 +60,7 @@ open class ExportRenderedDiffAction(private val pdf: Boolean = false) : DumbAwar
 
     class Pdf : ExportRenderedDiffAction(pdf = true)
 
-    /** The "Export Rendered Diff" submenu, shown when the selection has a Markdown change. */
+    /** The "Export Rendered Diff" submenu, shown when the selection has a Markdown or AsciiDoc change. */
     class Group : DefaultActionGroup(), DumbAware {
         override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
@@ -75,7 +77,7 @@ open class ExportRenderedDiffAction(private val pdf: Boolean = false) : DumbAwar
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val changes = ShowRenderedDiffAction.markdownChanges(e)
+        val changes = ShowRenderedDiffAction.renderedChanges(e)
         if (changes.isEmpty()) return
         val ext = extension
         val descriptor = FileSaverDescriptor(
@@ -125,14 +127,24 @@ open class ExportRenderedDiffAction(private val pdf: Boolean = false) : DumbAwar
         val shown = project.basePath?.let { FileUtil.getRelativePath(it, path.path, '/') }?.takeIf { !it.startsWith("..") } ?: path.path
         val label = changeLabel(change)
         return try {
-            val left = text(change.beforeRevision)
-            val right = text(change.afterRevision)
-            val base = path.ioFile.parentFile?.takeIf { it.isDirectory }?.toURI()?.toString()
-            val diff = RendererProvider.renderer.render(RenderRequest(left, right, mode, settings.options(), base, base))
+            val diff = RendererProvider.renderer.render(renderRequest(change, mode, settings))
             HtmlExport.ExportedFile(shown, label, diff)
         } catch (e: VcsException) {
             HtmlExport.ExportedFile(shown, label, null, MarkdownReviewBundle.message("rendered.diff.no.content", path.name))
         }
+    }
+
+    /**
+     * The request for one change, with the change's own format so a multi-file export may mix Markdown and
+     * AsciiDoc. A pair the viewers reject falls back to Markdown; it is not selected for export in the first place.
+     */
+    internal fun renderRequest(change: Change, mode: ViewMode, settings: MarkdownReviewSettings): RenderRequest {
+        val path = ChangesUtil.getFilePath(change)
+        val left = text(change.beforeRevision)
+        val right = text(change.afterRevision)
+        val base = path.ioFile.parentFile?.takeIf { it.isDirectory }?.toURI()?.toString()
+        val format = ShowRenderedDiffAction.formatOf(change) ?: DocumentFormat.MARKDOWN
+        return RenderRequest(left, right, mode, settings.options(), base, base, format)
     }
 
     private fun changeLabel(change: Change): String = when (change.type) {
@@ -251,7 +263,7 @@ open class ExportRenderedDiffAction(private val pdf: Boolean = false) : DumbAwar
         fun defaultFileName(pdf: Boolean) = "markdown-changes.diff." + if (pdf) "pdf" else "html"
 
         fun available(e: AnActionEvent) =
-            e.project != null && JBCefApp.isSupported() && ShowRenderedDiffAction.markdownChanges(e).isNotEmpty()
+            e.project != null && JBCefApp.isSupported() && ShowRenderedDiffAction.renderedChanges(e).isNotEmpty()
 
         /** Registered in plugin.xml; the viewer's export notifies through it too. */
         const val NOTIFICATION_GROUP = "Markdown Review"

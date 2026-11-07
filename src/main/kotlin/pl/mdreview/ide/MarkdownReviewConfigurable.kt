@@ -76,6 +76,12 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
                 checkBox(MarkdownReviewBundle.message("settings.show.block.actions")).bindSelected(settings::showBlockActions)
                     .comment(MarkdownReviewBundle.message("settings.show.block.actions.comment"))
             }
+            row {
+                label(MarkdownReviewBundle.message(if (AsciiDocSupport.isAvailable()) "settings.asciidoc.available" else "settings.asciidoc.missing"))
+                if (!AsciiDocSupport.isAvailable()) {
+                    browserLink(MarkdownReviewBundle.message("settings.asciidoc.install"), ASCIIDOC_MARKETPLACE_URL)
+                }
+            }.rowComment(MarkdownReviewBundle.message("settings.asciidoc.comment"))
         }
         group(MarkdownReviewBundle.message("settings.group.large.files")) {
             row(MarkdownReviewBundle.message("settings.large.file.lines")) {
@@ -105,5 +111,10 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
         super.apply()
         DefaultViewerOrder.syncWithSettings(settings)
         ApplicationManager.getApplication().messageBus.syncPublisher(MarkdownReviewSettings.TOPIC).settingsChanged()
+    }
+
+    private companion object {
+        /** The AsciiDoc plugin's Marketplace page, opened from the missing-plugin line (NFR-11). */
+        const val ASCIIDOC_MARKETPLACE_URL = "https://plugins.jetbrains.com/plugin/7391-asciidoc"
     }
 }

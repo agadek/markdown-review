@@ -371,6 +371,153 @@ details.mdr-math-source > summary {
 /* In the merged view the old formula is dimmed instead of struck through. */
 .mdr-merged .mdr-math-old .mdr-math-block.mdr-removed { text-decoration: none; opacity: 0.6; }
 
+/* ---------- AsciiDoc structures (ADR 0006) ---------- */
+/*
+ * AsciiDoc keeps the Markdown block markup and status classes; only the
+ * structures below are new. A delimited AsciiDoc block is a frame repeated on
+ * each side of every row (side by side) or item (merged), nested outermost
+ * first. The block itself stays the innermost child:
+ *
+ *   .mdr-side (or .mdr-item)
+ *     .mdr-container.mdr-container-example.mdr-container-first
+ *       .mdr-container.mdr-container-admonition.mdr-alert.mdr-alert-note
+ *         .mdr-block.mdr-equal
+ *
+ * .mdr-container-first / -last mark the first and last row of one container
+ * on one side. They close a box and draw the admonition icon; without them the
+ * rails and background still compose into one continuous frame.
+ */
+.mdr-container {
+  min-width: 0;
+  padding: 0.1em 0.8em;
+}
+
+/* Example and sidebar: a box with a solid background. */
+.mdr-container-example,
+.mdr-container-sidebar {
+  background: var(--mdr-code-bg);
+  border-left: 1px solid var(--mdr-border);
+  border-right: 1px solid var(--mdr-border);
+}
+.mdr-container-sidebar { border-left: 3px solid var(--mdr-quote-border); }
+.mdr-container-example.mdr-container-first,
+.mdr-container-sidebar.mdr-container-first {
+  border-top: 1px solid var(--mdr-border);
+  border-radius: 4px 4px 0 0;
+}
+.mdr-container-example.mdr-container-last,
+.mdr-container-sidebar.mdr-container-last {
+  border-bottom: 1px solid var(--mdr-border);
+  border-radius: 0 0 4px 4px;
+}
+.mdr-container-example.mdr-container-first.mdr-container-last,
+.mdr-container-sidebar.mdr-container-first.mdr-container-last { border-radius: 4px; }
+
+/* Quote and verse: the Markdown blockquote bar. */
+.mdr-container-quote,
+.mdr-container-verse {
+  padding-left: 0.9em;
+  border-left: 3px solid var(--mdr-quote-border);
+  color: var(--mdr-muted);
+}
+.mdr-container-verse { font-style: italic; }
+
+/* Open blocks have no frame in AsciiDoc; a faint rail keeps the grouping visible. */
+.mdr-container-open {
+  padding-left: 0.8em;
+  border-left: 1px dashed var(--mdr-quote-border);
+}
+
+/* Admonitions reuse GitHub alert colors; the type icon sits in a fixed gutter. */
+.mdr-container-admonition {
+  position: relative;
+  padding-left: 1.9em;
+  border-left: 3px solid var(--mdr-alert, var(--mdr-border));
+}
+.mdr-container-admonition.mdr-container-first::before {
+  content: "\24D8"; /* ⓘ */
+  position: absolute;
+  left: 0.45em;
+  top: 0.1em;
+  color: var(--mdr-alert, var(--mdr-border));
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.mdr-container-admonition.mdr-alert-note.mdr-container-first::before { content: "\24D8"; }
+.mdr-container-admonition.mdr-alert-tip.mdr-container-first::before { content: "\2713"; }
+.mdr-container-admonition.mdr-alert-important.mdr-container-first::before { content: "\2757\FE0E"; }
+.mdr-container-admonition.mdr-alert-warning.mdr-container-first::before { content: "\26A0\FE0E"; }
+.mdr-container-admonition.mdr-alert-caution.mdr-container-first::before { content: "\2715"; }
+
+/* A block title, including the title row that opens a container. */
+.mdr-root .mdr-block-title { font-weight: 600; }
+
+/* Description lists: fixed columns keep every term above its description. */
+.mdr-root dl.mdr-dlist {
+  display: grid;
+  grid-template-columns: minmax(4.5em, 28%) minmax(0, 1fr);
+  column-gap: 1em;
+  margin: 0.2em 0;
+}
+.mdr-root dl.mdr-dlist > dt { grid-column: 1; font-weight: 600; }
+.mdr-root dl.mdr-dlist > dd { grid-column: 2; min-width: 0; margin: 0; }
+
+/* Callout list: <1>, <2> markers; each row keeps its own start number. */
+.mdr-root ol.mdr-callout {
+  list-style-type: decimal;
+  padding-left: calc(2.8em + var(--depth, 0) * 1.8em);
+}
+.mdr-root ol.mdr-callout > li::marker {
+  content: "<" counter(list-item) ">\00a0\00a0";
+  color: var(--mdr-muted);
+  font-family: var(--mdr-mono);
+  font-size: 0.9em;
+}
+.mdr-root ol.mdr-callout > li.mdr-block::before { left: -2.7em; }
+
+/* Include directive and attribute entry: monospace, like a front matter line. */
+.mdr-root .mdr-include,
+.mdr-root .mdr-attribute {
+  font-family: var(--mdr-mono);
+  font-size: 0.85em;
+  line-height: 1.45;
+  color: var(--mdr-muted);
+}
+.mdr-root .mdr-include a { color: var(--mdr-link); }
+.mdr-root .mdr-attribute { white-space: pre-wrap; }
+
+/* Page break (<<<): a dashed rule in the usual block. */
+.mdr-root hr.mdr-page-break {
+  border: 0;
+  border-top: 3px dashed var(--mdr-muted);
+  margin: 0.6em 0;
+}
+
+/* Asciidoctor inline markup: menu paths, highlighting and footnote references. */
+.mdr-root .menuseq { white-space: nowrap; }
+.mdr-root .menuseq b,
+.mdr-root b.menuref { font-weight: 600; }
+.mdr-root mark {
+  padding: 0 0.1em;
+  border-radius: 2px;
+  color: inherit;
+  background: var(--md-modified-bg, color-mix(in srgb, var(--mdr-modified-marker) 16%, transparent));
+}
+.mdr-root sup.footnote { font-size: 0.75em; line-height: 0; }
+.mdr-root sup.footnote > a { color: var(--mdr-link); text-decoration: none; }
+.mdr-root sup.footnote > a:hover { text-decoration: underline; }
+
+/* Keep container frames inside their cell and let the block fill the row height. */
+.mdr-sbs .mdr-side > .mdr-container { height: 100%; }
+.mdr-sbs .mdr-container { display: flex; flex-direction: column; }
+.mdr-sbs .mdr-container > .mdr-block,
+.mdr-sbs .mdr-container > .mdr-container { flex: 1 1 auto; }
+
+/* A frame on one side makes the row taller; the other side's placeholder fills it too. */
+.mdr-sbs .mdr-side:has(+ .mdr-side > .mdr-container) > .mdr-placeholder,
+.mdr-sbs .mdr-side:has(> .mdr-container) + .mdr-side > .mdr-placeholder { height: 100%; }
+
 /* ---------- Moved blocks ---------- */
 /*
  * Both ends of a moved block (FR-15) keep their removed / added status and get .mdr-moved, plus

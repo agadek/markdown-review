@@ -1,0 +1,18 @@
+= Notes
+
+// TODO: add screenshots of the merged view
+
+Text between comments.
+
+// Added: explain the generated section.
+
+////
+Generated section starts here.
+Review before editing.
+////
+
+// This comment stays unchanged.
+
+Paragraph with an inline note.
+
+Visibly unchanged paragraph.

@@ -1,0 +1,20 @@
+= Links and Images
+
+See the https://example.com/docs[documentation] for details.
+
+Download from the https://example.com/download[download page].
+
+Read the xref:installation.adoc[installation guide] first.
+
+The settings are described in <<settings>>.
+
+An inline icon: image:images/icon.png[Icon,24,24].
+
+image::images/screenshot.png[Screenshot of the diff window,640]
+
+[[settings]]
+== Settings
+
+Settings text.
+
+A plain paragraph without links.

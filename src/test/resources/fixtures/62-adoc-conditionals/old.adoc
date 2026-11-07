@@ -1,0 +1,13 @@
+= Conditionals
+:product-version: 1.4
+:product-release: 1.4
+
+ifdef::product-version[]
+This documentation covers {product-version}.
+endif::[]
+
+ifndef::internal-build[]
+Public builds include this paragraph.
+endif::[]
+
+The rest of the page is always shown.

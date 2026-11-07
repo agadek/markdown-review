@@ -1,0 +1,12 @@
+= Release Notes
+:product-name: Markdown Review
+:product-version: 1.4
+:min-ide: 2024.3
+
+This page describes {product-name} {product-version}. It requires IntelliJ IDEA {min-ide} or newer.
+
+:status: stable
+
+{product-name} is currently {status}. The rendered diff is available for all supported IDEs.
+
+All other details are unchanged.

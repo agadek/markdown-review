@@ -71,7 +71,7 @@ footnotes, alerts), HTML blocks and inline HTML (sanitized), `<details>`, HTML c
 shortcodes, wiki links (`[[page]]`, `[[page|label]]`), YAML front matter, Mermaid and math. The user interface is in English.
 
 Status: 1.0. What the plugin does and does not do is described in [docs/SPECIFICATION.md](docs/SPECIFICATION.md),
-what comes next in [docs/PHASE3.md](docs/PHASE3.md), and releases in [docs/RELEASING.md](docs/RELEASING.md). The
+what comes next in [docs/PHASE3.md](docs/PHASE3.md) and [docs/PHASE4.md](docs/PHASE4.md) (AsciiDoc), and releases in [docs/RELEASING.md](docs/RELEASING.md). The
 contract between the diff engine and the IDE layer is described in [docs/ENGINE_CONTRACT.md](docs/ENGINE_CONTRACT.md).
 The screenshots are rendered from [docs/screenshots/sample-old.md](docs/screenshots/sample-old.md) and
 [sample-new.md](docs/screenshots/sample-new.md).

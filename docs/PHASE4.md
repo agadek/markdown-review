@@ -1,0 +1,181 @@
+# Phase 4 plan: AsciiDoc
+
+Phases 1 to 3 built a rendered diff for Markdown. Phase 4 brings the same review experience to AsciiDoc files:
+`.adoc` changes open rendered in IntelliJ's diff window, block by block, with word diffs, navigation, per-block
+revert and apply, block editing, the block menu and export, exactly as Markdown does today.
+
+The specification lists AsciiDoc as out of scope for 1.0, and [PHASE3.md](PHASE3.md) kept it out of phase 3. This
+plan reopens it. The requirements below get the next free IDs (FR-16 onward, NFR-11 onward) and move into
+[SPECIFICATION.md](SPECIFICATION.md) when they ship, like the phase 2 and phase 3 ones did.
+
+Architecture decisions are recorded as ADRs in [docs/adr/](adr/), and every milestone has a spec in
+[docs/specs/phase4/](specs/phase4/) with its scope, design, tests and done criteria.
+
+## Goals
+
+- A reviewer who opens a changed `.adoc` file sees it rendered, aligned block by block, with the same colors,
+  controls and settings as a Markdown diff.
+- Markdown users are not affected: no larger download, no slower Markdown rendering, no behavior change.
+- One diff engine, one HTML generator, one page and one export for both formats. AsciiDoc adds a parser front end,
+  not a second plugin inside the plugin.
+
+## Non-goals
+
+- Rendering AsciiDoc the way a site generator would: no resolved includes, no Asciidoctor extensions
+  (asciidoctor-diagram, PlantUML, Kroki), no Antora cross-references between components, no Asciidoctor PDF themes.
+- AsciiMath. Formulas are drawn by the bundled KaTeX, so only `latexmath` (and `stem` set to `latexmath`) is drawn.
+- Comparing a Markdown file with an AsciiDoc file (for example a rename from `README.md` to `README.adoc`); such a
+  pair keeps the text diff.
+- reStructuredText and other formats. ADR 0004 keeps the door open, nothing more.
+
+## Requirements
+
+### Functional
+
+| ID | Requirement |
+|---|---|
+| FR-16 | AsciiDoc files (`.adoc`, `.asciidoc`, and any file of the AsciiDoc plugin's file type) open in the rendered viewers wherever Markdown files do: the Commit window, Git log, file history, branch comparison, pull request review, **Show Rendered Diff** and **Compare Rendered Files...**. |
+| FR-17 | The block diff of FR-1 to FR-4, FR-6 and FR-7 for AsciiDoc: section titles, paragraphs, list items (unordered, ordered, checklists, description lists, callout lists), table rows, lines of listing and literal blocks, admonitions, block titles, images, thematic and page breaks, and the document header are aligned in rows, with word diffs in modified blocks. |
+| FR-18 | Changes the visible text does not show are marked, as for Markdown: a changed section level, admonition type, block title, source language, link or image target, cross-reference target, checklist state, or an attribute entry. |
+| FR-19 | Delimited blocks keep their structure: example, sidebar, quote, verse, open and admonition blocks frame the blocks inside them like a Markdown blockquote or alert does, on both sides of the diff. |
+| FR-20 | Per-block revert and apply (FR-12), block source editing (FR-13), Ctrl/Cmd+click to source (FR-14), moved blocks (FR-15) and the block menu (P3.4) work on AsciiDoc blocks, through the IDE document, with one Undo step per edit. |
+| FR-21 | HTML and PDF export, multi-file export and the custom stylesheet (P3.6) work for AsciiDoc diffs; a multi-file export may mix Markdown and AsciiDoc files. |
+| FR-22 | `[mermaid]` listing blocks are drawn with the bundled Mermaid and `stem:[...]` / `latexmath:[...]` / `[stem]` blocks with the bundled KaTeX, with the same toggles and source diff as Markdown diagrams and formulas. |
+| FR-23 | Document attributes defined in the file's own header or body are applied, so `{product-version}` renders as its value and changing an attribute entry shows as a change on the entry and on every block whose text it changes. `include::` directives are not followed; each is shown as its own block with the target, and a changed target is a change. |
+| FR-24 | AsciiDoc comments (`//` and `////`) are hidden unless they changed, like HTML comments in Markdown. |
+
+### Non-functional
+
+| ID | Requirement |
+|---|---|
+| NFR-11 | AsciiDoc support is active only while the JetBrains AsciiDoc plugin (`org.asciidoctor.intellij.asciidoc`) is installed and enabled ([ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md)). Without it, `.adoc` diffs keep the text viewer and nothing fails or logs errors; the settings page says what to install. |
+| NFR-12 | Performance: after the first AsciiDoc render in an IDE session, the NFR-2 budget applies to AsciiDoc too (1,000 lines under 300 ms, 10,000 lines under 2 s). The first render, which starts Asciidoctor, runs off the EDT with a "Preparing AsciiDoc renderer..." notice and takes under 5 s on a typical laptop. |
+| NFR-13 | Security: Asciidoctor runs in `SECURE` safe mode, reads no files and no network, and its output goes through the same HTML allowlist as Markdown (NFR-8). The page's CSP does not change. |
+| NFR-14 | Markdown is unchanged: every existing fixture and test passes without edits to its expectations, and the Markdown benchmark stays within 5% of 1.3.0. The plugin zip grows by no more than 1 MB. |
+| NFR-15 | The core stays free of IntelliJ Platform APIs (ENGINE_CONTRACT): the AsciiDoc front end depends on AsciidoctorJ only, and is unit-tested with AsciidoctorJ on the test classpath. |
+
+## Architecture decisions
+
+| ADR | Decision |
+|---|---|
+| [0002](adr/0002-asciidoc-parser.md) | Parse AsciiDoc with AsciidoctorJ (`load` with `sourcemap`), not with Asciidoctor.js in JCEF, the AsciiDoc plugin's PSI or a parser of our own. |
+| [0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md) | Take AsciidoctorJ from the JetBrains AsciiDoc plugin through an optional dependency instead of bundling it. |
+| [0004](adr/0004-format-neutral-engine.md) | One format-neutral engine and HTML generator: a `DocumentFormat` in `RenderRequest`, a front end per format producing `Block`s, and block content that is either commonmark nodes or sanitized HTML. |
+| [0005](adr/0005-asciidoc-block-model.md) | How AsciiDoc maps onto blocks: which nodes become blocks, keys and plain text from Asciidoctor's converted inline HTML, line ranges from the source map plus a line scanner, word marks applied to HTML text runs. |
+| [0006](adr/0006-asciidoc-rendering-reuse.md) | Reuse the page, CSS variables, `mdr-*` classes, Mermaid, KaTeX and export; our own block markup around Asciidoctor's inline HTML, never Asciidoctor's stylesheet or block HTML. |
+| [0007](adr/0007-asciidoc-ide-integration.md) | The same two viewers, settings page and actions serve both formats, with format-neutral names; a pair of different formats keeps the text diff. |
+
+## Overview
+
+| Milestone | Theme | Depends on | Spec | Status |
+|-----------|-------|------------|------|--------|
+| P4.1 | Spike: AsciidoctorJ from the AsciiDoc plugin | – | [P4.1](specs/phase4/P4.1-asciidoctorj-spike.md) | Not started |
+| P4.2 | Format-neutral engine and API, Markdown unchanged | – | [P4.2](specs/phase4/P4.2-format-neutral-engine.md) | Not started |
+| P4.3 | AsciiDoc block extraction | P4.1, P4.2 | [P4.3](specs/phase4/P4.3-asciidoc-block-extraction.md) | Not started |
+| P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | Not started |
+| P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Not started |
+| P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | Not started |
+| P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Not started |
+| P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | Not started |
+
+P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1 can
+overturn [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it does, the fallback in that ADR (bundling
+AsciidoctorJ in a companion plugin) replaces it before P4.3 starts. P4.4 and P4.5 are independent once blocks exist.
+P4.6 can start on P4.4's output with edit actions disabled, and turns them on when P4.5 lands.
+
+Release: AsciiDoc ships behind no flag, in one minor release once P4.1 to P4.6 are done (tentatively 1.5). P4.7 may
+follow in a later minor release; until then Mermaid blocks and formulas show as source, compared line by line.
+
+## P4.1 Spike: AsciidoctorJ from the AsciiDoc plugin
+
+Scope:
+- An optional `<depends>` on `org.asciidoctor.intellij.asciidoc` with its own descriptor, and a throwaway action
+  that loads AsciidoctorJ through it, parses a sample file with `sourcemap` and prints the block tree with lines.
+- Measure the first `Asciidoctor.Factory.create()` and the steady-state `load` time on the fixture sizes of NFR-2.
+- Check that two threads can `load` on one instance at once, or settle on serializing calls.
+- Check how line numbers survive preprocessor directives (`ifdef`, `include::` in `SECURE` mode), list items,
+  table cells and description list entries.
+- Run `verifyPlugin` with the dependency on every IDE in the verification list.
+
+Done when:
+- The spike's findings are written into [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md) and
+  [ADR 0005](adr/0005-asciidoc-block-model.md), and both are accepted or revised.
+
+## P4.2 Format-neutral engine and API
+
+Scope:
+- `DocumentFormat` (`MARKDOWN`, `ASCIIDOC`) in `RenderRequest`, default `MARKDOWN`.
+- `Block` no longer holds a commonmark `Node` directly but a `BlockContent` (commonmark nodes, or sanitized HTML with
+  its text runs); the Markdown front end fills the first, the HTML generator renders both.
+- `BlockExtractor` becomes the Markdown front end behind a `BlockSource` interface; the diff engine takes blocks.
+- Link-change detection and word marks work on HTML text runs as well as on commonmark nodes.
+
+Done when:
+- All existing tests and fixtures pass unchanged, and the benchmark is within 5% of 1.3.0.
+
+## P4.3 AsciiDoc block extraction
+
+Scope:
+- `AsciiDocBlockSource`: Asciidoctor's document tree to `Block`s per [ADR 0005](adr/0005-asciidoc-block-model.md),
+  with kinds, keys, plain text, contexts and line ranges.
+- Document header, attribute entries, comments and `include::` lines from a line scanner.
+- AsciiDoc fixtures (`old.adoc` / `new.adoc` / `EXPECTED.md`) run by the fixture test.
+
+Done when:
+- The AsciiDoc fixtures listed in the spec give the expected block statuses and word diffs.
+
+## P4.4 AsciiDoc HTML rendering and change marks
+
+Scope:
+- Block markup for every AsciiDoc kind, with Asciidoctor's converted inline HTML inside, sanitized.
+- Word marks, link and image target changes, and change notes (section level, admonition type, block title,
+  language, checklist state).
+- Styles for the AsciiDoc-only elements in `diff.css` and `CLASSES.md`, from the existing CSS variables.
+
+Done when:
+- Every AsciiDoc fixture renders in both modes, light and dark, with no unstyled Asciidoctor markup and no change
+  that is visible only in the source.
+
+## P4.5 Edit regions, revert, apply, block editing and moves
+
+Scope:
+- `EditRegions` for delimited blocks, tables, lists with continuations and the header.
+- Moved blocks across AsciiDoc kinds.
+
+Done when:
+- Reverting or applying every changed block of every AsciiDoc fixture turns one side into the other, and each is one
+  Undo step.
+
+## P4.6 IDE integration
+
+Scope:
+- File recognition, the viewers' `canShow`, **Compare Rendered Files...**, **Show Rendered Diff**, export, settings and the
+  missing-plugin state, per [ADR 0007](adr/0007-asciidoc-ide-integration.md).
+- The first-render notice and Asciidoctor's lifetime (created once, released when the AsciiDoc plugin unloads).
+
+Done when:
+- In `runIde` with the AsciiDoc plugin, a changed `.adoc` file opens rendered from the Commit window, the Git log and
+  **Compare Rendered Files...**; without the plugin it opens in the text viewer with no errors.
+
+## P4.7 Diagrams and math in AsciiDoc
+
+Scope:
+- `[mermaid]` blocks as `MERMAID` blocks, `stem` / `latexmath` inline and block formulas as `MATH`.
+
+Done when:
+- An AsciiDoc fixture with changed diagrams and formulas renders like fixtures 28 and 40.
+
+## P4.8 Fixtures, documentation and release
+
+Scope:
+- Requirements into SPECIFICATION.md, AsciiDoc into ENGINE_CONTRACT.md, README, plugin description, docs site,
+  CHANGELOG and screenshots.
+- Issue templates accept `.adoc` pairs.
+
+Done when:
+- The release is on Marketplace, and the docs describe what is and is not supported.
+
+## Not in phase 4
+
+reStructuredText, resolved includes, Asciidoctor extensions, AsciiMath, mixed-format pairs and an editor outside
+the JetBrains platform. Each can be reopened from feedback on the AsciiDoc release.

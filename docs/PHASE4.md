@@ -76,10 +76,10 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 |-----------|-------|------------|------|--------|
 | P4.1 | Spike: AsciidoctorJ from the AsciiDoc plugin | – | [P4.1](specs/phase4/P4.1-asciidoctorj-spike.md) | Done |
 | P4.2 | Format-neutral engine and API, Markdown unchanged | – | [P4.2](specs/phase4/P4.2-format-neutral-engine.md) | Done |
-| P4.3 | AsciiDoc block extraction | P4.1, P4.2 | [P4.3](specs/phase4/P4.3-asciidoc-block-extraction.md) | Not started |
-| P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | In progress: renderer merged, fixture integration with P4.3 pending |
+| P4.3 | AsciiDoc block extraction | P4.1, P4.2 | [P4.3](specs/phase4/P4.3-asciidoc-block-extraction.md) | Done |
+| P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | Done in tests; manual light/dark and runIde review pending |
 | P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Not started |
-| P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | In progress: format-neutral groundwork merged, provider wiring pending |
+| P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | In progress: provider wired and tested headless; runIde/manual check pending |
 | P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Not started |
 | P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | Not started |
 
@@ -144,6 +144,11 @@ Scope:
 Done when:
 - The AsciiDoc fixtures listed in the spec give the expected block statuses and word diffs.
 
+P4.3 results: `AsciiDocBlockSource` and `AsciiDocLines` cover the tree and scanner rules in
+[ADR 0005](adr/0005-asciidoc-block-model.md); fixtures 50-64 pass with the expected block kinds, statuses, line
+ranges, containers and word diffs. The integration test renders every fixture through the shared HTML generator in
+both modes.
+
 ## P4.4 AsciiDoc HTML rendering and change marks
 
 Scope:
@@ -155,6 +160,11 @@ Scope:
 Done when:
 - Every AsciiDoc fixture renders in both modes, light and dark, with no unstyled Asciidoctor markup and no change
   that is visible only in the source.
+
+P4.4 results: the renderer handles the AsciiDoc kinds, nested containers, admonition blocks, table cells, image and
+include targets, word marks and the new change notes. Renderer snapshots for `56-adoc-containers` and
+`61-adoc-links-images` pass in both modes, and fixture `31-html-sanitizer` is unchanged. The light/dark and `runIde`
+visual review remains for the release pass (P4.8).
 
 ## P4.5 Edit regions, revert, apply, block editing and moves
 
@@ -176,6 +186,12 @@ Scope:
 Done when:
 - In `runIde` with the AsciiDoc plugin, a changed `.adoc` file opens rendered from the Commit window, the Git log and
   **Compare Rendered Files...**; without the plugin it opens in the text viewer with no errors.
+
+P4.6 results: `ReviewFiles` classifies both formats, the viewers accept only a pair of the same supported format,
+the actions say "Markdown or AsciiDoc", and the optional descriptor installs one `PluginAsciidoctorProvider` and
+registers the AsciiDoc file type. AsciidoctorJ is not bundled (the plugin zip stays at 2.2 MB) and is created lazily.
+A headless test renders a real AsciiDoc diff through the provider. The `runIde`/manual check remains for P4.8, as
+does the failure notice with **Open Text Viewer**.
 
 ## P4.7 Diagrams and math in AsciiDoc
 

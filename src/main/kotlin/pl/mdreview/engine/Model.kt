@@ -41,6 +41,9 @@ enum class DiffStatus { EQUAL, MODIFIED, REMOVED, ADDED }
 /** Zero-based, end-exclusive line and offset range of a block in its source text. */
 data class SourceRange(val startLine: Int, val endLine: Int, val startOffset: Int, val endOffset: Int)
 
+/** A delimited container a block sits in, independent of the document format. */
+data class Container(val kind: String, val type: String? = null, val title: String? = null)
+
 /** Where a block sits: inside how many quotes, and for list items the list it belongs to. */
 data class BlockContext(
     val quoteDepth: Int = 0,
@@ -51,14 +54,28 @@ data class BlockContext(
     val alert: String? = null,
     /** How many multi-block `<details>` elements the block sits in. */
     val details: Int = 0,
+    /** Delimited containers the block sits in, outermost first. Empty for Markdown. */
+    val containers: List<Container> = emptyList(),
 )
 
+/** How a block's visible content is rendered. */
+sealed interface BlockContent {
+    /** commonmark nodes, rendered as Markdown. */
+    data class Commonmark(val nodes: List<Node>) : BlockContent
+
+    /** Sanitized HTML parts, rendered with word marks on their text runs. */
+    data class Html(val parts: List<HtmlFragment.Part>) : BlockContent
+
+    /** No structured content; the block is rendered from its source. */
+    data object Raw : BlockContent
+}
+
 /**
- * One comparable unit of a Markdown document.
+ * One comparable unit of a document.
  *
  * [key] is what the matcher compares; [plainText] is the visible text the word diff runs on.
- * [node] is the commonmark node to render (null for code lines, front matter and code fences,
- * which are rendered from [rawText]).
+ * [content] says how the block is rendered: commonmark nodes for Markdown blocks, sanitized HTML for HTML blocks,
+ * [BlockContent.Raw] for code lines, front matter and other blocks rendered from [rawText].
  */
 class Block(
     val kind: BlockKind,
@@ -67,9 +84,7 @@ class Block(
     val rawText: String,
     val source: SourceRange,
     val context: BlockContext = BlockContext(),
-    val node: Node? = null,
-    /** For a list item: the children to render (everything except nested lists). */
-    val renderNodes: List<Node> = listOfNotNull(node),
+    val content: BlockContent = BlockContent.Raw,
     val language: String? = null,
     /** Heading level (1–6), 0 for other blocks. */
     val level: Int = 0,
@@ -78,9 +93,15 @@ class Block(
      * [BlockKind.MATH] block: its source lines.
      */
     val lines: List<Block> = emptyList(),
+    /** For a [BlockKind.FOOTNOTE]: its label, without the `[^` and `]`. */
+    val label: String? = null,
 ) {
+    /** The commonmark nodes to render, or an empty list when the content is not [BlockContent.Commonmark]. */
+    val nodes: List<Node>
+        get() = (content as? BlockContent.Commonmark)?.nodes.orEmpty()
+
     /** Ranges of [plainText] that the word diff keeps whole: inline formulas. */
-    val atoms: List<IntRange> by lazy { BlockExtractor.atoms(this) }
+    val atoms: List<IntRange> by lazy { MarkdownBlockSource.atoms(this) }
 
     override fun toString(): String = "$kind(${key.take(40)})"
 }

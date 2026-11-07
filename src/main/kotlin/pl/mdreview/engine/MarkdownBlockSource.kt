@@ -1,5 +1,6 @@
 package pl.mdreview.engine
 
+import org.commonmark.Extension
 import org.commonmark.ext.autolink.AutolinkExtension
 import org.commonmark.ext.footnotes.FootnoteDefinition
 import org.commonmark.ext.footnotes.FootnoteReference
@@ -42,13 +43,15 @@ import org.commonmark.parser.IncludeSourceSpans
 import org.commonmark.parser.Parser
 
 /** Parses Markdown and flattens it into the list of blocks the diff engine compares. */
-object BlockExtractor {
+object MarkdownBlockSource : BlockSource {
 
     /** Key of the [BlockKind.CODE_FENCE] block that opens YAML front matter. */
     const val FRONT_MATTER_FENCE_KEY = "CODE_FENCE:front-matter"
 
     /** Info string of a fence that is drawn as a Mermaid diagram. */
     const val MERMAID_LANGUAGE = "mermaid"
+
+    override fun extract(text: String, options: DiffOptions): List<Block> = extract(text, options.mermaidDiagrams)
 
     val extensions = listOf(
         TablesExtension.create(),
@@ -178,23 +181,29 @@ object BlockExtractor {
                     rawText = raw(node.sourceSpans),
                     source = range(node.sourceSpans),
                     context = ctx,
-                    node = node,
+                    content = BlockContent.Html(HtmlFragment.parse(literal.trimEnd(), allowRemoteImages = true)),
                 )
             }
             return htmlBlock(BlockKind.HTML, node, ctx, literal)
         }
 
-        /** HTML is keyed, compared and rendered by its literal, without the quote markers around it. */
-        private fun htmlBlock(kind: BlockKind, node: HtmlBlock, ctx: BlockContext, literal: String = node.literal): Block =
-            Block(
+        /**
+         * HTML is keyed, compared and rendered by its literal, without the quote markers around it. The parts keep
+         * remote image sources so link and image changes can still be found; the renderer applies its own
+         * remote-image policy when it writes them.
+         */
+        private fun htmlBlock(kind: BlockKind, node: HtmlBlock, ctx: BlockContext, literal: String = node.literal): Block {
+            val rawText = literal.trimEnd()
+            return Block(
                 kind = kind,
                 key = keyPrefix(kind, ctx) + collapse(literal),
                 plainText = HtmlFragment.visibleText(literal),
-                rawText = literal.trimEnd(),
+                rawText = rawText,
                 source = range(node.sourceSpans),
                 context = ctx,
-                node = node,
+                content = BlockContent.Html(HtmlFragment.parse(rawText, allowRemoteImages = true)),
             )
+        }
 
         private fun visit(node: Node, ctx: BlockContext) {
             when (node) {
@@ -224,14 +233,22 @@ object BlockExtractor {
                 rawText = raw,
                 source = range(node.sourceSpans),
                 context = ctx,
-                node = node,
+                content = BlockContent.Commonmark(listOf(node)),
             )
         }
 
         /** `---`, `***` and `___` draw the same line, so a thematic break is keyed by its kind alone. */
         private fun thematicBreak(node: ThematicBreak, ctx: BlockContext): Block {
             val block = simple(BlockKind.THEMATIC_BREAK, node, ctx)
-            return Block(block.kind, keyPrefix(BlockKind.THEMATIC_BREAK, ctx) + "---", "", block.rawText, block.source, ctx, node)
+            return Block(
+                block.kind,
+                keyPrefix(BlockKind.THEMATIC_BREAK, ctx) + "---",
+                "",
+                block.rawText,
+                block.source,
+                ctx,
+                BlockContent.Commonmark(listOf(node)),
+            )
         }
 
         /**
@@ -252,7 +269,7 @@ object BlockExtractor {
                 rawText = raw(node.sourceSpans),
                 source = range(node.sourceSpans),
                 context = ctx,
-                node = node,
+                content = BlockContent.Commonmark(listOf(node)),
                 level = node.level,
             )
         }
@@ -268,8 +285,8 @@ object BlockExtractor {
                 rawText = raw,
                 source = range(node.sourceSpans),
                 context = ctx,
-                node = node,
-                renderNodes = content,
+                content = BlockContent.Commonmark(content),
+                label = node.label,
             )
         }
 
@@ -287,7 +304,7 @@ object BlockExtractor {
                 rawText = marker?.let(::slice).orEmpty(),
                 source = range(listOfNotNull(marker)),
                 context = inner,
-                node = node,
+                content = BlockContent.Commonmark(listOf(node)),
             )
             var child = node.firstChild
             while (child != null) {
@@ -335,8 +352,7 @@ object BlockExtractor {
                 rawText = raw,
                 source = range(rangeSpans),
                 context = ctx,
-                node = item,
-                renderNodes = content,
+                content = BlockContent.Commonmark(content),
             )
             nested.forEach { visitList(it, ctx) }
         }
@@ -419,7 +435,6 @@ object BlockExtractor {
                 rawText = raw(spans),
                 source = range(spans),
                 context = ctx,
-                node = node,
                 lines = lines,
             )
         }
@@ -458,7 +473,7 @@ object BlockExtractor {
                                 rawText = block.rawText,
                                 source = block.source,
                                 context = ctx,
-                                node = row,
+                                content = BlockContent.Commonmark(listOf(row)),
                             )
                         }
                         row = row.next
@@ -617,7 +632,7 @@ object BlockExtractor {
 
     fun mathText(math: MathBlock): String = "$$" + math.literal + "$$"
 
-    /** Kinds whose [Block.plainText] is the plain text of their [Block.renderNodes] joined with one character. */
+    /** Kinds whose [Block.plainText] is the plain text of their [Block.nodes] joined with one character. */
     private val INLINE_KINDS = setOf(BlockKind.PARAGRAPH, BlockKind.HEADING, BlockKind.LIST_ITEM, BlockKind.TABLE_ROW, BlockKind.FOOTNOTE)
 
     /** Ranges of [block]'s plain text that the word diff keeps whole: its inline formulas. */
@@ -625,7 +640,7 @@ object BlockExtractor {
         if (block.kind !in INLINE_KINDS) return emptyList()
         val atoms = mutableListOf<IntRange>()
         var base = 0
-        for (node in block.renderNodes) {
+        for (node in block.nodes) {
             val plain = plainTextWithOffsets(node)
             for ((n, offset) in plain.offsets) {
                 val length = when (n) {
@@ -647,4 +662,43 @@ object BlockExtractor {
     private const val UNCLOSED = -2
 
     private val DETAILS_CLOSE = Regex("</details\\s*>", RegexOption.IGNORE_CASE)
+}
+
+/**
+ * The old name of [MarkdownBlockSource], kept so callers and tests written before the format-neutral engine keep
+ * compiling. New code should use [MarkdownBlockSource].
+ */
+object BlockExtractor {
+
+    const val FRONT_MATTER_FENCE_KEY = MarkdownBlockSource.FRONT_MATTER_FENCE_KEY
+    const val MERMAID_LANGUAGE = MarkdownBlockSource.MERMAID_LANGUAGE
+
+    val extensions: List<Extension> get() = MarkdownBlockSource.extensions
+    val HARD_BREAKS_KEY: Regex get() = MarkdownBlockSource.HARD_BREAKS_KEY
+
+    fun extract(markdown: String, mermaidDiagrams: Boolean = true): List<Block> =
+        MarkdownBlockSource.extract(markdown, mermaidDiagrams)
+
+    fun extract(text: String, options: DiffOptions): List<Block> = MarkdownBlockSource.extract(text, options)
+
+    fun normalizeLineEndings(text: String): String = MarkdownBlockSource.normalizeLineEndings(text)
+
+    fun alertTitle(type: String): String = MarkdownBlockSource.alertTitle(type)
+
+    fun linkTargets(nodes: List<Node>): String = MarkdownBlockSource.linkTargets(nodes)
+
+    fun hardBreaks(nodes: List<Node>): String = MarkdownBlockSource.hardBreaks(nodes)
+
+    fun plainTextWithOffsets(node: Node): MarkdownBlockSource.PlainText =
+        MarkdownBlockSource.plainTextWithOffsets(node)
+
+    fun plainText(node: Node): String = MarkdownBlockSource.plainText(node)
+
+    fun mathText(math: InlineMath): String = MarkdownBlockSource.mathText(math)
+
+    fun mathText(math: MathBlock): String = MarkdownBlockSource.mathText(math)
+
+    fun atoms(block: Block): List<IntRange> = MarkdownBlockSource.atoms(block)
+
+    fun collapse(text: String): String = MarkdownBlockSource.collapse(text)
 }

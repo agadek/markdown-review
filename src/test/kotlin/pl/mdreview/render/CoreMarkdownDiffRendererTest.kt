@@ -2,6 +2,7 @@ package pl.mdreview.render
 
 import pl.mdreview.api.BlockStatus
 import pl.mdreview.api.DiffOptions
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.LineRange
 import pl.mdreview.api.MarkdownDiffRenderer
 import pl.mdreview.api.RenderRequest
@@ -69,6 +70,22 @@ class CoreMarkdownDiffRendererTest {
         )
         assertContains(result.bodyHtml, "src=\"file:///a/x.png\"")
         assertContains(result.bodyHtml, "src=\"file:///b/y.png\"")
+    }
+
+    @Test
+    fun `a format without a front end falls back to raw paragraphs`() {
+        val result = renderer.render(
+            RenderRequest(
+                "= Title\n\nOld paragraph.\n",
+                "= Title\n\nNew paragraph.\n",
+                ViewMode.SIDE_BY_SIDE,
+                format = DocumentFormat.ASCIIDOC,
+            ),
+        )
+        assertEquals(listOf(BlockStatus.EQUAL, BlockStatus.MODIFIED), result.blocks.map { it.status })
+        assertContains(result.bodyHtml, "Old paragraph.")
+        assertContains(result.bodyHtml, "New paragraph.")
+        assertContains(result.bodyHtml, "class=\"mdr-block mdr-modified\"")
     }
 
     @Test

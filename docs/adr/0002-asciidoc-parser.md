@@ -1,6 +1,6 @@
 # ADR 0002: Parse AsciiDoc with AsciidoctorJ
 
-Status: proposed (P4.1 confirms), phase 4.
+Status: accepted (P4.1 confirmed), phase 4.
 
 ## Context
 
@@ -54,17 +54,40 @@ Parse with AsciidoctorJ:
 - End lines, the document header, comments and `include::` lines, which the tree does not give, come from a line
   scanner over the source that uses the tree's start lines as anchors.
 
-If P4.1 shows that one instance cannot `load` from two threads at once, calls are serialized behind a lock in the
-front end; `render()` stays callable concurrently, and results that arrive after the input changed are already
-discarded by the IDE layer.
+P4.1 found that one instance can `load` and convert from two threads at once, so calls are not serialized. If a
+future AsciidoctorJ version regresses, calls are serialized behind a lock in the front end; `render()` stays callable
+concurrently, and results that arrive after the input changed are already discarded by the IDE layer.
+
+## Spike results (P4.1)
+
+Measured on macOS 15.7.7 (Apple Silicon), Oracle JDK 21.0.9, 2 GB heap, with AsciidoctorJ 3.0.0 (the version in
+AsciiDoc plugin 0.44.10) and 3.0.1 (0.45.11):
+
+- First `Asciidoctor.Factory.create()`: 1.57–2.14 s and roughly 37–57 MB extra used heap. The first `load` of a
+  1,015-line document took 236–266 ms and left about 49–68 MB of used heap. The first AsciiDoc render therefore
+  starts Asciidoctor well inside NFR-12's 5 s; the 10,000-line first load was not measured separately, but its
+  steady-state load plus conversion is below 300 ms.
+- Steady state, median of 10 after two warm-up loads: 1,015 lines 46–52 ms load, 11–15 ms inline conversion,
+  60–65 ms both; 10,003 lines 107–251 ms load, 31–45 ms conversion, 138–295 ms both. The 10,000-line spread is
+  JIT and GC noise; the worst median is still far below NFR-12's 2 s.
+- Two threads called `load` and converted every inline value on one instance, 1,000 times each, released together
+  from a barrier: no exception and no wrong or cross-contaminated tree. This agrees with AsciidoctorJ's
+  documentation, which describes Asciidoctor as thread-safe. One shared instance needs no lock.
+- `shutdown()`/`close()` stops the Ruby runtime threads; without it a `Ruby-0-JIT-1` thread stays alive. Neither
+  call makes the defining class loader reclaimable on JDK 21; that unload limitation is recorded in
+  [ADR 0003](0003-asciidoctorj-from-asciidoc-plugin.md).
+
+These are JVM used-heap numbers, not process RSS. The 2,791-line Markdown fixture `20-large-file` was not converted
+to AsciiDoc; the 1,015- and 10,003-line generated samples cover the NFR-2 sizes, and no AsciiDoc fixture exists
+before P4.3.
 
 ## Consequences
 
 - The block structure, attribute substitution and inline conversion match Asciidoctor, so the rendered diff agrees
   with the reviewer's build.
 - The first AsciiDoc diff in a session waits for JRuby (NFR-12); the IDE shows a notice instead of an empty viewer.
-- Line ranges depend on the source map plus our scanner; P4.1 measures where the source map is missing or
-  imprecise (list items, table cells, description list entries, preprocessor directives) and ADR 0005 lists the
-  fallbacks.
+- Line ranges depend on the source map plus our scanner; P4.1 measured where the source map is missing or
+  imprecise (conditional tail paragraphs, block titles, comments, includes, admonition paragraphs and table rows)
+  and ADR 0005 lists the fallbacks.
 - AsciidoctorJ's API (2.x/3.x) is stable, but its JRuby runtime is large; where it comes from is decided separately
   in [ADR 0003](0003-asciidoctorj-from-asciidoc-plugin.md).

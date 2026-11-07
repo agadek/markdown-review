@@ -365,6 +365,49 @@ class AsciiDocFixturesTest {
         assertFalse(rendered.bodyHtml.contains("= Installation Guide"))
     }
 
+    @Test
+    fun `every fixture renders with the AsciiDoc renderer`() {
+        val renderer = CoreMarkdownDiffRenderer(provider)
+        val cases = (50..64).map { n ->
+            File(javaClass.getResource("/fixtures")!!.toURI()).listFiles()!!.first { it.name.startsWith("$n-") }.name
+        }
+        for (case in cases) {
+            for (mode in ViewMode.entries) {
+                val rendered = renderer.render(
+                    RenderRequest(read(case, "old.adoc"), read(case, "new.adoc"), mode, format = DocumentFormat.ASCIIDOC),
+                )
+                assertEquals(
+                    diff(case).blocks.map { it.status.name },
+                    rendered.blocks.map { it.status.name },
+                    "$case ${mode.name}",
+                )
+            }
+        }
+        // The AsciiDoc-only markup reached the renderer.
+        val containers = renderer.render(
+            RenderRequest(
+                read("56-adoc-containers", "old.adoc"),
+                read("56-adoc-containers", "new.adoc"),
+                ViewMode.SIDE_BY_SIDE,
+                format = DocumentFormat.ASCIIDOC,
+            ),
+        ).bodyHtml
+        for (kind in listOf("example", "sidebar", "quote", "open")) {
+            assertContains(containers, "mdr-container-$kind")
+        }
+        assertContains(containers, "mdr-page-break")
+        val listing = renderer.render(
+            RenderRequest(
+                read("54-adoc-listing", "old.adoc"),
+                read("54-adoc-listing", "new.adoc"),
+                ViewMode.SIDE_BY_SIDE,
+                format = DocumentFormat.ASCIIDOC,
+            ),
+        ).bodyHtml
+        assertContains(listing, "data-change-note=\"source \u2192 kotlin\"")
+        assertContains(listing, "mdr-callout")
+    }
+
     private object TestProvider : AsciidoctorProvider {
         private val instance: Asciidoctor by lazy { Asciidoctor.Factory.create() }
         override fun asciidoctor(): Asciidoctor = instance

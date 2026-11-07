@@ -1,0 +1,15 @@
+= Support Matrix
+
+The table below lists the supported IDEs.
+
+[cols="1,1,3",options="header"]
+|===
+| IDE | Version | Notes
+
+| IntelliJ IDEA | 2025.1 | Supported since 2024.
+| PyCharm | 2025.1 a| *Community* and _Professional_.
+| WebStorm | 2024.3 | Tested with JCEF.
+| Rider | 2025.1 | Unknown.
+|===
+
+The notes column may contain AsciiDoc markup.

@@ -1,0 +1,17 @@
+= Warnings
+
+NOTE: Remote images are blocked by default.
+
+[WARNING]
+====
+Deleting a branch cannot be undone.
+
+Check the target branch before you continue.
+====
+
+TIP: Press F7 to jump to the next change.
+
+[NOTE]
+====
+The rendered diff uses the same colors as Markdown.
+====

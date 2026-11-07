@@ -1,0 +1,16 @@
+= Notes
+
+// TODO: add screenshots
+
+Text between comments.
+
+////
+Generated section starts here.
+Do not edit by hand.
+////
+
+// This comment stays unchanged.
+
+Paragraph with an inline note.
+
+Visibly unchanged paragraph.

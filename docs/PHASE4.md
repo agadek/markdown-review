@@ -75,7 +75,7 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 | Milestone | Theme | Depends on | Spec | Status |
 |-----------|-------|------------|------|--------|
 | P4.1 | Spike: AsciidoctorJ from the AsciiDoc plugin | – | [P4.1](specs/phase4/P4.1-asciidoctorj-spike.md) | Done |
-| P4.2 | Format-neutral engine and API, Markdown unchanged | – | [P4.2](specs/phase4/P4.2-format-neutral-engine.md) | Not started |
+| P4.2 | Format-neutral engine and API, Markdown unchanged | – | [P4.2](specs/phase4/P4.2-format-neutral-engine.md) | Done |
 | P4.3 | AsciiDoc block extraction | P4.1, P4.2 | [P4.3](specs/phase4/P4.3-asciidoc-block-extraction.md) | Not started |
 | P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | Not started |
 | P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Not started |
@@ -128,6 +128,10 @@ Scope:
 
 Done when:
 - All existing tests and fixtures pass unchanged, and the benchmark is within 5% of 1.3.0.
+
+P4.2 results: the engine is format-neutral and the full test suite passes with unchanged Markdown output. The
+benchmark reports 8 ms / 6 ms for 1,000 lines and 90 ms / 79 ms for 10,000 lines (side by side / merged), well within
+the NFR-2 budget.
 
 ## P4.3 AsciiDoc block extraction
 

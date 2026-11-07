@@ -224,11 +224,15 @@ class DiffEngine(
     private fun compatible(l: Block, r: Block): Boolean {
         if (l.kind != r.kind) return false
         if (l.context.quoteDepth != r.context.quoteDepth) return false
+        // A thematic break and a page break are both a rule; they must never pair, even with empty text.
+        if (l.kind == BlockKind.THEMATIC_BREAK) return isPageBreak(l) == isPageBreak(r)
         // A header row only pairs with a header row. Moving a list item to another nesting level or
         // list type still counts as a modification.
         if (l.kind == BlockKind.TABLE_ROW) return l.key.take(3) == r.key.take(3)
         return true
     }
+
+    private fun isPageBreak(block: Block): Boolean = block.key.contains("page-break")
 
     companion object {
         private const val MAX_PAIRING_CELLS = 250_000

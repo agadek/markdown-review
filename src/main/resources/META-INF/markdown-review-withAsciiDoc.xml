@@ -1,0 +1,10 @@
+<!--
+  Loaded only when the JetBrains AsciiDoc plugin is installed and enabled. This descriptor must stay free of
+  AsciidoctorJ classes: it only registers the plugin's file type, so an absent AsciiDoc plugin loads nothing.
+  P4.6 integration adds the Asciidoctor provider here or next to AsciiDocSupport and installs it there.
+-->
+<idea-plugin>
+    <extensions defaultExtensionNs="pl.mdreview">
+        <documentFileTypeRecognizer implementation="pl.mdreview.ide.asciidoc.AsciiDocPluginFileTypeRecognizer"/>
+    </extensions>
+</idea-plugin>

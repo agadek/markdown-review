@@ -24,12 +24,13 @@ import com.intellij.openapi.vcs.changes.ChangesUtil
 import com.intellij.openapi.vcs.changes.ContentRevision
 import com.intellij.openapi.vcs.changes.CurrentContentRevision
 import com.intellij.ui.jcef.JBCefApp
+import pl.mdreview.api.DocumentFormat
 
 /**
  * "Show Rendered Diff" (P3.4) in the Git log's changed files, in file history and in the Commit window: opens the
- * selected Markdown changes in a rendered viewer, whatever viewer those windows open with by default. The window is
- * IntelliJ's own diff window at [DefaultViewerOrder.RENDERED_DIFF_PLACE], so the viewer switcher, the text viewer and
- * the block menu work as in any other diff window.
+ * selected Markdown or AsciiDoc changes in a rendered viewer, whatever viewer those windows open with by default.
+ * The window is IntelliJ's own diff window at [DefaultViewerOrder.RENDERED_DIFF_PLACE], so the viewer switcher, the
+ * text viewer and the block menu work as in any other diff window.
  *
  * The requests are built here from the changes' revisions, through the diff and VCS APIs only: the platform's
  * `ShowDiffAction` and `ChangeDiffRequestProducer` live in `vcs-impl`, which plugins do not compile against.
@@ -39,12 +40,12 @@ open class ShowRenderedDiffAction : DumbAwareAction() {
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     override fun update(e: AnActionEvent) {
-        e.presentation.isEnabledAndVisible = e.project != null && JBCefApp.isSupported() && markdownChanges(e).isNotEmpty()
+        e.presentation.isEnabledAndVisible = e.project != null && JBCefApp.isSupported() && renderedChanges(e).isNotEmpty()
     }
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val changes = markdownChanges(e)
+        val changes = renderedChanges(e)
         if (changes.isEmpty()) return
         DefaultViewerOrder.preferRendered()
         showDiff(project, changes)
@@ -100,18 +101,34 @@ open class ShowRenderedDiffAction : DumbAwareAction() {
 
     companion object {
         /**
-         * The selected changes of Markdown files, in selection order; F7 and the file list of the window walk them.
+         * The selected Markdown or AsciiDoc changes, in selection order; F7 and the file list of the window walk them.
          * The Git log and file history give their selection as [VcsDataKeys.SELECTED_CHANGES]; the Commit window's
          * Changes list gives only [VcsDataKeys.CHANGES], which there holds the selected changes.
          */
-        fun markdownChanges(e: AnActionEvent): List<Change> =
-            markdownChanges((e.getData(VcsDataKeys.SELECTED_CHANGES) ?: e.getData(VcsDataKeys.CHANGES)).orEmpty().asList())
+        fun renderedChanges(e: AnActionEvent): List<Change> =
+            renderedChanges((e.getData(VcsDataKeys.SELECTED_CHANGES) ?: e.getData(VcsDataKeys.CHANGES)).orEmpty().asList())
 
-        /** Like the rendered viewers, a change counts when either side is Markdown, so a rename to `.txt` does too. */
-        fun markdownChanges(changes: List<Change>): List<Change> =
-            changes.filter { change ->
-                listOfNotNull(ChangesUtil.getBeforePath(change), ChangesUtil.getAfterPath(change)).any(MarkdownFiles::isMarkdown)
-            }
+        /**
+         * Like the rendered viewers, a change counts when its existing sides have one supported format. A side with
+         * an unknown format is ignored, so a rename to or from Markdown or AsciiDoc counts; a rename between the two
+         * formats does not (ADR 0007).
+         */
+        fun renderedChanges(changes: List<Change>): List<Change> = changes.filter(::isRenderedChange)
+
+        fun isRenderedChange(change: Change): Boolean {
+            val format = formatOf(change) ?: return false
+            return ReviewFiles.isSupported(format)
+        }
+
+        /** The common format of the change's existing sides; `null` for a mixed `.md` / `.adoc` pair. */
+        fun formatOf(change: Change): DocumentFormat? =
+            ReviewFiles.commonFormat(listOfNotNull(ChangesUtil.getBeforePath(change), ChangesUtil.getAfterPath(change)))
+
+        @Deprecated("Use renderedChanges", ReplaceWith("ShowRenderedDiffAction.renderedChanges(e)"))
+        fun markdownChanges(e: AnActionEvent): List<Change> = renderedChanges(e)
+
+        @Deprecated("Use renderedChanges", ReplaceWith("ShowRenderedDiffAction.renderedChanges(changes)"))
+        fun markdownChanges(changes: List<Change>): List<Change> = renderedChanges(changes)
 
         /** A Git commit hash shortened the way the log shows it; other revision numbers stay as they are. */
         fun shortRevision(revision: String): String =

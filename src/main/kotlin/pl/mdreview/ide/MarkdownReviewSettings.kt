@@ -9,7 +9,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.messages.Topic
 import pl.mdreview.api.DiffOptions
 
-/** Viewer that the diff window shows first for a Markdown file (FR-11). */
+/** Viewer that the diff window shows first for a Markdown or AsciiDoc file (FR-11). */
 enum class DefaultViewer(val messageKey: String) {
     RENDERED_SIDE_BY_SIDE("settings.viewer.side.by.side"),
     RENDERED_MERGED("settings.viewer.merged"),

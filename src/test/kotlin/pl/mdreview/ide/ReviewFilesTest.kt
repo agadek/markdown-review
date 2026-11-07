@@ -54,7 +54,8 @@ class ReviewFilesTest : BasePlatformTestCase() {
     }
 
     fun `test asc is accepted only through the AsciiDoc plugin's file type`() {
-        assertNull(ReviewFiles.formatOf(FakeAsciiDocFileType))
+        // The optional descriptor is present in this test environment, so replace its recognizers with the one
+        // under test instead of assuming the extension point is empty.
         ExtensionTestUtil.maskExtensions(
             ReviewFiles.DOCUMENT_RECOGNIZER_EP,
             listOf(AsciiDocPluginFileTypeRecognizer()),

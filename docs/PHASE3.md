@@ -189,4 +189,4 @@ Done when:
 ## Not in phase 3
 
 WYSIWYG editing, other document formats (AsciiDoc, reStructuredText), editors outside the JetBrains platform (VS
-Code, Fleet), and telemetry. Each can be reopened from P3.1 feedback.
+Code, Fleet), and telemetry. Each can be reopened from P3.1 feedback. AsciiDoc is planned in [PHASE4.md](PHASE4.md).

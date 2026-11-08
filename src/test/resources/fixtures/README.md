@@ -4,12 +4,16 @@ Each `<case>/` directory contains:
 - `old.md` / `new.md` for a Markdown pair, or `old.adoc` / `new.adoc` for an AsciiDoc pair (the versions before and after the change, left and right side),
 - `EXPECTED.md`: expected changes at block level (`equal` / `modified` / `added` / `removed`, optionally `moved`) and in the word diff.
 
-Cases 01-41 are Markdown. Cases 50-64 are AsciiDoc, added for P4.3; their `EXPECTED.md` files state the intended result until the AsciiDoc front end is implemented.
+AsciiDoc fixtures use exactly the `.adoc` names, `old.adoc` and `new.adoc`; the fixture test picks the format from the
+extension, so `.asciidoc` is not used here even when the document is named that way in real projects. Both sides of a
+pair have the same extension.
+
+Cases 01-41 are Markdown. Cases 50-66 are AsciiDoc: 50-64 were added for P4.3, 65-66 for P4.7 (Mermaid and math).
 
 Every confirmed rendering or diff bug gets a case here before it is fixed, built from the reporter's files cut down to
 the smallest pair that still shows the problem.
 
-The files are input for the diff engine tests (M1), the HTML generator (M2) and the preview. `.gitattributes` disables line-ending normalization because some cases depend on exact bytes.
+The files are input for the diff engine tests (M1), the HTML generator (M2) and the preview. `.gitattributes` disables line-ending normalization because some cases depend on exact bytes; that includes every `.adoc` file.
 
 | Case | What it checks |
 |---|---|
@@ -70,3 +74,5 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 62-adoc-conditionals | `ifdef` around a paragraph, condition changed |
 | 63-adoc-moved | a section moved without changes |
 | 64-adoc-large | ~500 sections, performance |
+| 65-adoc-mermaid | `[mermaid]` listing and literal blocks: unchanged, changed, added, removed, and an unparsable diagram; source diff behind a toggle |
+| 66-adoc-math | inline and block `latexmath`, `stem` with `:stem: latexmath`, an AsciiMath formula (not drawn, marked), changed formulas |

@@ -11,11 +11,20 @@ import com.intellij.openapi.project.Project
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.ui.jcef.JBCefApp
 import org.intellij.plugins.markdown.lang.MarkdownFileType
+import pl.mdreview.api.DocumentFormat
 import javax.swing.Icon
 
 class MarkdownDiffToolsTest : BasePlatformTestCase() {
 
     private val factory get() = DiffContentFactory.getInstance()
+
+    override fun tearDown() {
+        try {
+            AsciiDocSupport.uninstall()
+        } finally {
+            super.tearDown()
+        }
+    }
 
     private fun file(name: String, text: String): DiffContent =
         factory.create(project, myFixture.addFileToProject(name, text).virtualFile)
@@ -24,6 +33,20 @@ class MarkdownDiffToolsTest : BasePlatformTestCase() {
         2 -> SimpleDiffRequest("test", contents[0], contents[1], "left", "right")
         3 -> SimpleDiffRequest("test", contents[0], contents[1], contents[2], "left", "base", "right")
         else -> error("unsupported")
+    }
+
+    private class FakeRuntime : AsciiDocSupport.Runtime {
+        override fun isReady() = true
+        override fun prepare(onReady: () -> Unit) = onReady()
+    }
+
+    private fun <T> withAsciiDoc(block: () -> T): T {
+        AsciiDocSupport.install(FakeRuntime())
+        try {
+            return block()
+        } finally {
+            AsciiDocSupport.uninstall()
+        }
     }
 
     fun `test two Markdown documents are accepted`() {
@@ -37,6 +60,41 @@ class MarkdownDiffToolsTest : BasePlatformTestCase() {
     fun `test other file types are rejected`() {
         assertFalse(RenderedMarkdownDiffTool.accepts(request(file("a.txt", "a"), file("b.txt", "b"))))
         assertFalse(RenderedMarkdownDiffTool.accepts(request(file("A.java", "class A {}"), file("B.java", "class B {}"))))
+    }
+
+    fun `test a Markdown file renamed to an unknown type is still accepted`() {
+        assertTrue(RenderedMarkdownDiffTool.accepts(request(file("a.md", "# A"), file("b.txt", "plain"))))
+        assertTrue(RenderedMarkdownDiffTool.accepts(request(file("a.txt", "plain"), file("b.md", "# B"))))
+    }
+
+    fun `test AsciiDoc is rejected while AsciiDoc support is unavailable`() {
+        assertFalse(AsciiDocSupport.isAvailable())
+        assertFalse(RenderedMarkdownDiffTool.accepts(request(file("a.adoc", "= A"), file("b.adoc", "= B"))))
+        assertFalse(RenderedMarkdownDiffTool.accepts(request(EmptyContent(), file("new.adoc", "= New"))))
+    }
+
+    fun `test AsciiDoc is accepted while AsciiDoc support is available`() = withAsciiDoc {
+        assertTrue(RenderedMarkdownDiffTool.accepts(request(file("a.adoc", "= A"), file("b.adoc", "= B"))))
+        assertTrue(RenderedMarkdownDiffTool.accepts(request(file("c.asciidoc", "= C"), file("d.adoc", "= D"))))
+        assertTrue(RenderedMarkdownDiffTool.accepts(request(EmptyContent(), file("new.adoc", "= New"))))
+    }
+
+    fun `test a mixed Markdown and AsciiDoc pair is rejected`() = withAsciiDoc {
+        val mixed = request(file("a.md", "# A"), file("b.adoc", "= B"))
+        assertFalse(RenderedMarkdownDiffTool.accepts(mixed))
+        assertFalse(RenderedMarkdownDiffTool.accepts(request(file("c.adoc", "= C"), file("d.md", "# D"))))
+        assertNull(RenderedMarkdownDiffTool.formatOf(mixed.contents))
+    }
+
+    fun `test the format of a request is the common format of its sides`() = withAsciiDoc {
+        assertEquals(
+            DocumentFormat.MARKDOWN,
+            RenderedMarkdownDiffTool.formatOf(request(file("a.md", "# A"), file("b.md", "# B")).contents),
+        )
+        assertEquals(
+            DocumentFormat.ASCIIDOC,
+            RenderedMarkdownDiffTool.formatOf(request(file("a.adoc", "= A"), file("b.adoc", "= B")).contents),
+        )
     }
 
     fun `test empty content on one side is accepted`() {
@@ -65,7 +123,8 @@ class MarkdownDiffToolsTest : BasePlatformTestCase() {
         val left = factory.create(project, "# A", MarkdownFileType.INSTANCE)
         val right = factory.create(project, "# B", MarkdownFileType.INSTANCE)
         assertTrue(RenderedMarkdownDiffTool.accepts(request(left, right)))
-        assertTrue(MarkdownFiles.RECOGNIZER_EP.extensionList.isNotEmpty())
+        assertTrue(ReviewFiles.MARKDOWN_RECOGNIZER_EP.extensionList.isNotEmpty())
+        assertTrue(ReviewFiles.isSupported(ReviewFiles.formatOf(MarkdownFileType.INSTANCE)))
     }
 
     fun `test canShow also needs JCEF`() {
@@ -75,9 +134,20 @@ class MarkdownDiffToolsTest : BasePlatformTestCase() {
         assertEquals(JBCefApp.isSupported(), RenderedMergedTool().canShow(context, request))
     }
 
-    fun `test tool names come from the bundle`() {
-        assertEquals("Rendered Markdown (side by side)", RenderedSideBySideTool().name)
-        assertEquals("Rendered Markdown (merged)", RenderedMergedTool().name)
+    fun `test canShow for AsciiDoc also needs support and JCEF`() = withAsciiDoc {
+        val request = request(file("a.adoc", "= A"), file("b.adoc", "= B"))
+        val context = TestDiffContext(project)
+        assertEquals(JBCefApp.isSupported(), RenderedSideBySideTool().canShow(context, request))
+        assertEquals(JBCefApp.isSupported(), RenderedMergedTool().canShow(context, request))
+    }
+
+    fun `test tool names and tooltips come from the bundle`() {
+        assertEquals("Rendered (side by side)", RenderedSideBySideTool().name)
+        assertEquals("Rendered (merged)", RenderedMergedTool().name)
+        assertTrue(RenderedSideBySideTool().getTooltip().contains("Markdown"))
+        assertTrue(RenderedSideBySideTool().getTooltip().contains("AsciiDoc"))
+        assertTrue(RenderedMergedTool().getTooltip().contains("Markdown"))
+        assertTrue(RenderedMergedTool().getTooltip().contains("AsciiDoc"))
     }
 
     fun `test each rendered viewer has its own switcher icon`() {

@@ -75,6 +75,14 @@ class DefaultViewerOrderTest : BasePlatformTestCase() {
         assertTrue(tools.any { it is RenderedMergedTool })
     }
 
+    fun `test rendered viewer class names stay stable for the stored order`() {
+        // ADR 0001 stores the order by class name; the format-neutral display names must not change them.
+        assertEquals("pl.mdreview.ide.RenderedSideBySideTool", sideBySide)
+        assertEquals("pl.mdreview.ide.RenderedMergedTool", merged)
+        assertEquals("Rendered (side by side)", RenderedSideBySideTool().name)
+        assertEquals("Rendered (merged)", RenderedMergedTool().name)
+    }
+
     fun `test each setting decides the first viewer of every known place`() {
         val viewers = arrayOf(RenderedSideBySideTool::class.java, RenderedMergedTool::class.java, SimpleDiffTool::class.java, UnifiedDiffTool::class.java)
         for (place in DefaultViewerOrder.KNOWN_PLACES) {

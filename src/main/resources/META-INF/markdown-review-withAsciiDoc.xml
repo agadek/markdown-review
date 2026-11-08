@@ -1,5 +1,10 @@
 <!--
-  Loaded only when the JetBrains AsciiDoc plugin is installed and enabled. P4.3 only declares the optional
-  dependency so AsciidoctorJ is on the run-time class path; P4.6 registers the provider and file-type recognizer here.
+  Loaded only when the JetBrains AsciiDoc plugin is installed and enabled. This descriptor must stay free of
+  AsciidoctorJ classes: it only registers the plugin's file type, so an absent AsciiDoc plugin loads nothing.
+  P4.6 integration adds the Asciidoctor provider here or next to AsciiDocSupport and installs it there.
 -->
-<idea-plugin/>
+<idea-plugin>
+    <extensions defaultExtensionNs="pl.mdreview">
+        <documentFileTypeRecognizer implementation="pl.mdreview.ide.asciidoc.AsciiDocPluginFileTypeRecognizer"/>
+    </extensions>
+</idea-plugin>

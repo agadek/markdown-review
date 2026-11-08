@@ -225,6 +225,8 @@ data class RenderedDiff(
     val bodyHtml: String,
     val css: String,
     val blocks: List<BlockInfo>,
+    /** The format of both sides, so the IDE can label its block editor and source. */
+    val format: DocumentFormat = DocumentFormat.MARKDOWN,
 ) {
     val changes: List<BlockInfo> get() = blocks.filter { it.status != BlockStatus.EQUAL }
     val identical: Boolean get() = blocks.all { it.status == BlockStatus.EQUAL }

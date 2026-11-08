@@ -81,7 +81,7 @@ internal object AsciiDocRegionRules : RegionRules {
         left: EditRegions.Side,
         right: EditRegions.Side,
         removed: Boolean,
-    ): EditRegion {
+    ): EditRegion? {
         val block = blocks[k]
         val side = if (removed) left else right
         val other = if (removed) right else left
@@ -89,9 +89,11 @@ internal object AsciiDocRegionRules : RegionRules {
         if (group != null) return groupRegion(k, blocks, side, other, group, removed)
 
         val own = if (removed) block.left!! else block.right!!
+        // A delimiter added or removed without the rest of its code block would leave the document unbalanced.
+        if (own.kind == BlockKind.CODE_FENCE) return null
         if (own.kind == BlockKind.BLOCK_TITLE) return titleRegion(k, blocks, side, other, own)
         if (own.kind == BlockKind.TABLE_ROW) {
-            headerOptionRegion(k, blocks, side, own, removed)?.let { return it }
+            headerOptionRegion(blocks, side, own, removed)?.let { return it }
         }
         if (own.kind == BlockKind.CODE_LINE) {
             val code = own.editGroups.lastOrNull { it.kind == BlockGroupKind.CODE }
@@ -111,7 +113,6 @@ internal object AsciiDocRegionRules : RegionRules {
      * changes the option and the row together.
      */
     private fun headerOptionRegion(
-        k: Int,
         blocks: List<DiffBlock>,
         side: EditRegions.Side,
         own: Block,
@@ -230,7 +231,7 @@ internal object AsciiDocRegionRules : RegionRules {
             val block = side.block(previous)!!
             val continuesRun = side.block(first) != null && blocks[previous].status == blocks[first].status
             when {
-                continuesRun -> regionEnd(previous, side, block, blocks)
+                continuesRun -> regionEnd(previous, side, block)
                 inside && block.kind in CODE_KINDS -> block.source.endLine
                 else -> side.extendedEnd(previous)
             }
@@ -241,7 +242,7 @@ internal object AsciiDocRegionRules : RegionRules {
     }
 
     /** Where the region of the block at diff index [i] ends, before the next block's own group prefix. */
-    private fun regionEnd(i: Int, side: EditRegions.Side, block: Block, blocks: List<DiffBlock>): Int =
+    private fun regionEnd(i: Int, side: EditRegions.Side, block: Block): Int =
         side.next(i)?.let { next -> blockStart(side.block(next)!!, block) } ?: side.lineCount
 
     /** The first line that belongs to [next] and not to [current]'s own groups. */

@@ -762,7 +762,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         } else {
             ""
         }
-        return "<div class=\"$cls${noteClass(note)}\"${noteAttributes(note)}>" +
+        return "<div class=\"$cls mdr-math-block${noteClass(note)}\"${noteAttributes(note)}>" +
             "<div class=\"mdr-math mdr-math-display$failed\"$attributes>" +
             escape(block.plainText) + "</div>$error</div>"
     }

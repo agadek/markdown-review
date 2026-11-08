@@ -506,6 +506,11 @@ class AsciiDocFixturesTest {
             assertContains(math.bodyHtml, "<details class=\"mdr-math-source\">", message = mode.name)
             assertContains(math.bodyHtml, "data-source=\"sum_(i=1)^n i\"", message = mode.name)
             assertContains(math.bodyHtml, "data-tex=\"\\sum_{i = 1}^{n} i\"", message = mode.name)
+            assertContains(
+                math.bodyHtml,
+                "class=\"mdr-block mdr-equal mdr-math-block\"><div class=\"mdr-math mdr-math-display\" data-tex=",
+                message = mode.name,
+            )
             assertFalse(math.bodyHtml.contains("AsciiMath is not supported"), mode.name)
             assertContains(math.bodyHtml, "\\frac{1}{", message = mode.name)
             assertContains(math.bodyHtml, "e^{i\\pi} + 1 = 0", message = mode.name)

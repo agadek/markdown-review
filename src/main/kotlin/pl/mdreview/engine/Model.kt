@@ -34,6 +34,21 @@ enum class BlockKind {
     MATH,
     /** An HTML block that is exactly one comment (`<!-- ... -->`); [Block.plainText] is the comment's text. */
     HTML_COMMENT,
+
+    /** An AsciiDoc attribute entry (`:name: value`), compared as written; [Block.plainText] is the entry. */
+    ATTRIBUTE,
+
+    /** An AsciiDoc block title (`.Title`) before the block it titles; [Block.plainText] is the title. */
+    BLOCK_TITLE,
+
+    /** The term of an AsciiDoc description list entry (`term:: description`). */
+    DESCRIPTION_TERM,
+
+    /** An AsciiDoc block image (`image::target[alt]`); [Block.target] is the target, [Block.plainText] the alt text. */
+    IMAGE,
+
+    /** An AsciiDoc `include::target[]` directive; [Block.target] is the target, never resolved. */
+    INCLUDE,
 }
 
 enum class DiffStatus { EQUAL, MODIFIED, REMOVED, ADDED }
@@ -95,6 +110,10 @@ class Block(
     val lines: List<Block> = emptyList(),
     /** For a [BlockKind.FOOTNOTE]: its label, without the `[^` and `]`. */
     val label: String? = null,
+    /** For an [BlockKind.IMAGE] or [BlockKind.INCLUDE]: its target, as written; never resolved for includes. */
+    val target: String? = null,
+    /** Optional title, for example a block image's caption (`.Title` is a [BlockKind.BLOCK_TITLE] of its own). */
+    val title: String? = null,
 ) {
     /** The commonmark nodes to render, or an empty list when the content is not [BlockContent.Commonmark]. */
     val nodes: List<Node>

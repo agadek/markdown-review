@@ -72,6 +72,8 @@ object HtmlFragment {
                         !allowRemoteImages && isRemote(value) -> ""
                         else -> value
                     }
+                    // Only the Asciidoctor inline classes that carry meaning and are styled; everything else is dropped.
+                    "class" -> value.split(whitespace).filter { it in safeClasses }.joinToString(" ").ifEmpty { null }
                     else -> value
                 } ?: continue
                 sb.append(' ').append(attr).append("=\"").append(safe.replace("\"", "&quot;").replace("<", "&lt;")).append('"')
@@ -181,6 +183,12 @@ object HtmlFragment {
 
     private val safeSchemes = setOf("http", "https", "mailto", "file")
 
+    /**
+     * Asciidoctor's semantic inline classes. They only select the styles in `diff.css` for menu paths and footnotes;
+     * keeping any other class would let raw HTML opt into a site's own rules, so all others are dropped.
+     */
+    private val safeClasses = setOf("menuseq", "menuref", "footnote", "footnoteref")
+
     private val dropWithContent = setOf(
         "script", "style", "iframe", "object", "embed", "template", "noscript", "noembed", "noframes",
         "textarea", "title", "xmp", "select", "frameset",
@@ -197,6 +205,6 @@ object HtmlFragment {
 
     private val allowedAttributes = setOf(
         "href", "src", "alt", "title", "width", "height", "align", "valign", "colspan", "rowspan", "open", "start",
-        "type", "reversed", "lang", "dir", "datetime", "cite", "abbr", "span",
+        "type", "reversed", "lang", "dir", "datetime", "cite", "abbr", "span", "class",
     )
 }

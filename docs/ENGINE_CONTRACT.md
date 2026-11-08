@@ -208,7 +208,8 @@ footnotes arrive as converted inline HTML and are sanitized like the rest of the
 The DOM contract in "Output" above is unchanged: rows, sides, statuses, `data-idx`, `data-side`, `data-line` and
 `BlockInfo` mean the same thing, and AsciiDoc adds only the classes listed in
 [CLASSES.md](../src/main/resources/pl/mdreview/css/CLASSES.md): `mdr-container*`, `mdr-block-title`, `mdr-dlist`,
-`mdr-callout`, `mdr-include`, `mdr-attribute`, `mdr-image` and `mdr-page-break`. `MERMAID` and `MATH` reuse the
+`mdr-callout`, `mdr-include`, `mdr-attribute`, `mdr-image`, `mdr-alert-body` and `mdr-page-break`. `MERMAID` and
+`MATH` reuse the
 Markdown `.mdr-mermaid*` and `.mdr-math*` markup and page scripts, so the source-diff toggle and the Mermaid/KaTeX
 settings work unchanged.
 
@@ -218,7 +219,7 @@ settings work unchanged.
 - Accepts an AsciiDoc request only while the optional integration is available; without the AsciiDoc plugin the
   viewers report `canShow = false` for AsciiDoc and the text viewer stays. A pair of different formats, such as a
   rename from `.md` to `.adoc`, keeps the text diff. While Asciidoctor starts, the panel shows "Preparing AsciiDoc
-  renderer..."; a failure shows a notice with an **Open Text Viewer** button and reports once per session.
+  renderer..." until the first render can run.
 - JCEF panel, change navigation, Ctrl/Cmd+click on a block opens its source in the editor (FR-14), toggles for ignoring whitespace and collapsing unchanged blocks in the diff window's settings menu.
 - Block menu (P3.4): a right-click on an element with `data-side` and `data-line` sends
   `menu|<side>|<idx>|<stamp>|<x>|<y>`; the viewer shows a popup there with Go to Source, Open in Text Diff Here (in a

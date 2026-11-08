@@ -62,11 +62,12 @@ class CoreMarkdownDiffRenderer(private val asciidoctor: AsciidoctorProvider? = n
                 rightBaseUri = request.rightBaseUri,
             ),
         )
-        val edits = EditRegions(diff, left, right).compute()
+        val rules = if (request.format == DocumentFormat.ASCIIDOC) AsciiDocRegionRules else MarkdownRegionRules
+        val edits = EditRegions(diff, left, right, rules).compute()
         val blocks = diff.blocks.mapIndexed { i, b ->
             BlockInfo(i, status(b.status), b.left?.source?.let(::lines), b.right?.source?.let(::lines), edits[i], b.movedFrom, b.movedTo)
         }
-        return RenderedDiff(renderer.renderBody(diff), renderer.css(), blocks)
+        return RenderedDiff(renderer.renderBody(diff), renderer.css(), blocks, request.format)
     }
 
     private fun lines(range: SourceRange) = LineRange(range.startLine, range.endLine)

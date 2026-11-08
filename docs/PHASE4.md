@@ -84,7 +84,7 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 | P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Done |
 | P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | In progress: provider wired and tested headless; runIde/manual check pending |
 | P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Done |
-| P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | In progress: docs and screenshots done; manual runIde and release pending |
+| P4.8 | Fixtures, documentation and release | P4.4–P4.7, P4.9 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | In progress: docs and screenshots done; manual runIde and release pending |
 | P4.9 | AsciiMath in AsciiDoc | P4.7 | [P4.9](specs/phase4/P4.9-asciidoc-asciimath.md) | Not started |
 
 P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1
@@ -243,8 +243,9 @@ Done when:
 - Fixtures `66-adoc-math` and `67-adoc-asciimath` render with AsciiMath drawn, in both modes, light and dark, and
   their exports include the drawings; Markdown fixtures are unchanged.
 
-Release: P4.9 does not hold back 1.4.0. It ships in the next minor release after 1.4.0; until then AsciiMath stays
-source, marked "AsciiMath is not supported", as P4.7 left it.
+Release: P4.9 ships in 1.4.0, and the release waits for it. P4.8's manual `runIde` checks run once, on the build
+with P4.9, and SPECIFICATION.md, README, the docs site and the CHANGELOG drop "AsciiMath is not supported" as part of
+P4.9.
 
 ## Not in phase 4
 

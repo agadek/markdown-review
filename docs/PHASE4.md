@@ -80,12 +80,12 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 | P4.1 | Spike: AsciidoctorJ from the AsciiDoc plugin | – | [P4.1](specs/phase4/P4.1-asciidoctorj-spike.md) | Done |
 | P4.2 | Format-neutral engine and API, Markdown unchanged | – | [P4.2](specs/phase4/P4.2-format-neutral-engine.md) | Done |
 | P4.3 | AsciiDoc block extraction | P4.1, P4.2 | [P4.3](specs/phase4/P4.3-asciidoc-block-extraction.md) | Done |
-| P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | Done |
+| P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | Done; light/dark check at release |
 | P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Done |
-| P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | Done |
+| P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | Done; manual runIde check at release |
 | P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Done |
 | P4.8 | Fixtures, documentation and release | P4.4–P4.7, P4.9 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | Done: release PR prepared; Marketplace publication pending |
-| P4.9 | AsciiMath in AsciiDoc | P4.7 | [P4.9](specs/phase4/P4.9-asciidoc-asciimath.md) | Done |
+| P4.9 | AsciiMath in AsciiDoc | P4.7 | [P4.9](specs/phase4/P4.9-asciidoc-asciimath.md) | Done; visual/export check at release |
 
 P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1
 confirmed [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it had failed, the fallback in that ADR

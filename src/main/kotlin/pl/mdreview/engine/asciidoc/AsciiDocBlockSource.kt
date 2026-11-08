@@ -113,8 +113,9 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
             footnoteLabels = assignFootnoteLabels(footnotes)
             labelFootnoteReferences()
             // Conversion fills in the footnote bodies; it also appends duplicate catalog entries, so the snapshot
-            // above (and not the catalog after this call) defines the FOOTNOTE blocks and their labels.
-            val converted = document.convert()
+            // above (and not the catalog after this call) defines the FOOTNOTE blocks and their labels. Documents
+            // without footnotes need no second conversion.
+            val converted = if (footnotes.isEmpty()) null else document.convert()
             return finish() + footnoteBlocks(footnotes, converted)
         }
 

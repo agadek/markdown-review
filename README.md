@@ -61,7 +61,8 @@ the block's lines, for a file under version control.
 ![Rendered merged diff in a dark theme](docs/screenshots/merged-dark.png)
 
 Settings | Tools | Markdown Review picks the viewer a Markdown or AsciiDoc diff opens with (**Rendered (side by
-side)**, **Rendered (merged)**, or text) and holds the whitespace, collapse, pairing threshold, large-file,
+side)**, **Rendered (merged)**, or text), can turn the rendered diff off for Markdown or for AsciiDoc so that format
+keeps IntelliJ's text diff, and holds the whitespace, collapse, pairing threshold, large-file,
 remote-image, Mermaid and math options. The colors of added, removed and modified blocks and of changed words are set per color scheme in
 Settings | Editor | Color Scheme | Markdown Review; a color left unset follows the scheme's Diff colors. A custom
 stylesheet (a CSS file on the same settings page) can restyle the rendered view, for example to match a documentation

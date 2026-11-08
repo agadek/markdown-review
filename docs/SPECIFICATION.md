@@ -42,12 +42,14 @@ only the plugin; AsciiDoc diffs also need the JetBrains AsciiDoc plugin, which s
 | FR-23 | Document attributes defined in the file's own header or body are applied, so `{product-version}` renders as its value and changing an attribute entry shows as a change on the entry and on every block whose text it changes. `include::` directives are not followed; each is shown as its own block with the target, and a changed target is a change. | Shipped (P4.3) |
 | FR-24 | AsciiDoc comments (`//` and `////`) are hidden unless they changed, like HTML comments in Markdown. | Shipped (P4.3) |
 | FR-25 | AsciiMath formulas (`asciimath:[...]`, `[asciimath]` blocks, and `stem` when the document's `stem` attribute is unset or `asciimath`) are drawn with the bundled KaTeX, compared and toggled like `latexmath` formulas; a formula that cannot be converted stays source and is marked. | Shipped (P4.9) |
+| FR-26 | Rendered diffs can be turned off per format: with Markdown or AsciiDoc unchecked in the settings, that format's diffs open in IntelliJ's text viewer and the rendered actions skip it. Both are on by default. | Implemented for the next release, see [ADR 0009](adr/0009-per-format-switch.md) |
 
 The text diff is IntelliJ's built-in viewer, one click away in the diff window's viewer switcher.
 
 ### Settings (FR-11)
 
 - Default viewer for Markdown and AsciiDoc diffs.
+- Show rendered diffs for Markdown and for AsciiDoc, each on by default (FR-26).
 - Ignore whitespace and line wrapping; collapse unchanged blocks.
 - Pairing threshold: the word similarity at which a removed and an added block show as one modified block with a
   word diff. Default 0.5, adjustable from 0.2 to 0.8; changing it re-renders open diffs.

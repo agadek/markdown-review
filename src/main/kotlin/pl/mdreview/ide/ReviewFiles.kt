@@ -66,11 +66,19 @@ object ReviewFiles {
         return null
     }
 
-    /** Whether rendered support for [format] is active now; Markdown always is, AsciiDoc only with [AsciiDocSupport]. */
-    fun isSupported(format: DocumentFormat?): Boolean = when (format) {
+    /**
+     * Whether rendered support for [format] is active now: the format is turned on in the settings (FR-26), and it is
+     * available. Markdown always is available, AsciiDoc only with [AsciiDocSupport].
+     */
+    fun isSupported(format: DocumentFormat?): Boolean {
+        if (format == null || !MarkdownReviewSettings.getInstance().isEnabled(format)) return false
+        return isAvailable(format)
+    }
+
+    /** Whether [format] can be rendered at all, regardless of the settings; AsciiDoc needs [AsciiDocSupport]. */
+    fun isAvailable(format: DocumentFormat): Boolean = when (format) {
         DocumentFormat.MARKDOWN -> true
         DocumentFormat.ASCIIDOC -> AsciiDocSupport.isAvailable()
-        null -> false
     }
 
     fun isSupported(file: VirtualFile): Boolean = isSupported(formatOf(file))

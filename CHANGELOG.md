@@ -6,6 +6,12 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
+### Added
+
+- **Show rendered diffs for Markdown / AsciiDoc:** a new pair of checkboxes in Settings | Tools | Markdown Review
+  turns the rendered diff off for one format, so its diffs open in IntelliJ's text viewer and Show Rendered Diff,
+  Export Rendered Diff and Compare Rendered Files skip it. Both formats stay on by default.
+
 ## [1.4.0] - 2026-11-08
 
 ### Added

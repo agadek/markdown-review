@@ -84,7 +84,8 @@ equal.
 
 ### Supported AsciiDoc
 
-AsciiDoc through AsciidoctorJ, taken from the JetBrains AsciiDoc plugin and not bundled (NFR-11, NFR-13):
+AsciiDoc through AsciidoctorJ, taken from the JetBrains AsciiDoc plugin and not bundled (NFR-11,
+[ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md)):
 
 - Sections and the document title, including discrete headings; a changed section level is marked.
 - Paragraphs, including literal paragraphs; inline formatting, links (`link:`), cross-references (`xref:` and

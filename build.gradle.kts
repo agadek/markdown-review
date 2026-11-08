@@ -24,6 +24,8 @@ dependencies {
         create("IC", "2025.1.3")
         // Optional dependency: recognizes the Markdown file type, see markdown-review-withMarkdown.xml.
         bundledPlugin("org.intellij.plugins.markdown")
+        // Optional dependency: supplies AsciidoctorJ at run time and to verifyPlugin, see ADR 0003.
+        plugin("org.asciidoctor.intellij.asciidoc", "0.44.10")
         testFramework(TestFrameworkType.Platform)
     }
     val commonmark = "0.30.1"

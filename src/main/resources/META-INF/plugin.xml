@@ -62,6 +62,9 @@
     <depends>com.intellij.modules.platform</depends>
     <!-- Only to recognize the Markdown file type for files without a .md-like extension; rendering uses commonmark. -->
     <depends optional="true" config-file="markdown-review-withMarkdown.xml">org.intellij.plugins.markdown</depends>
+    <!-- AsciidoctorJ comes from the optional AsciiDoc plugin; the plugin declares the dependency so verifyPlugin
+         resolves org.asciidoctor.*, and P4.6 wires its classes into the IDE layer. -->
+    <depends optional="true" config-file="markdown-review-withAsciiDoc.xml">org.asciidoctor.intellij.asciidoc</depends>
 
     <resource-bundle>messages.MarkdownReviewBundle</resource-bundle>
 

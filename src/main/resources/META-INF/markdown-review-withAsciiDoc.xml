@@ -1,0 +1,5 @@
+<!--
+  Loaded only when the JetBrains AsciiDoc plugin is installed and enabled. P4.3 only declares the optional
+  dependency so AsciidoctorJ is on the run-time class path; P4.6 registers the provider and file-type recognizer here.
+-->
+<idea-plugin/>

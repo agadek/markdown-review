@@ -735,12 +735,14 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         val end = start + target.length
         val base = if (side == "left") options.leftBaseUri else options.rightBaseUri
         val href = base?.let { LinkAttributeProvider.resolve(it, target) } ?: target
+        val safe = HtmlFragment.safeUrl(target) && HtmlFragment.safeUrl(href)
         val other = htmlLinks[0]
         val tooltip = if (side == "left") options.labels.newUrl else options.labels.previousUrl
-        val changed = if (other == null) "" else " class=\"mdr-link-changed\" title=\"" + escape(tooltip(other)) + "\""
+        val changed = if (other == null || !safe) "" else " class=\"mdr-link-changed\" title=\"" + escape(tooltip(other)) + "\""
         val writer = MarkedTextWriter(marks, ::escape)
-        val html = writer.write(0, text.substring(0, start)) +
-            "<a href=\"" + escape(href) + "\"$changed>" + writer.write(start, target) + "</a>" +
+        val targetHtml = writer.write(start, target)
+        val link = if (safe) "<a href=\"" + escape(href) + "\"$changed>$targetHtml</a>" else targetHtml
+        val html = writer.write(0, text.substring(0, start)) + link +
             writer.write(end, text.substring(end)) + writer.rest()
         return "<div class=\"$cls mdr-include${noteClass(note)}\"${noteAttributes(note)}>$html</div>"
     }

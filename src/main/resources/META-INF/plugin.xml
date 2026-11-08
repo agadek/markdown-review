@@ -91,6 +91,9 @@
                                  key="settings.display.name"/>
         <colorSettingsPage implementation="pl.mdreview.ide.MarkdownReviewColorSettingsPage"/>
         <postStartupActivity implementation="pl.mdreview.ide.DefaultViewerStartupActivity"/>
+        <!-- Enables AsciiDoc support when the optional AsciiDoc plugin is enabled while the IDE is running. -->
+        <applicationListener class="pl.mdreview.ide.AsciiDocPluginListener"
+                             topic="com.intellij.dynamicPluginListener"/>
         <errorHandler implementation="pl.mdreview.ide.GitHubErrorReporter"/>
         <notificationGroup id="Markdown Review" displayType="BALLOON" key="notification.group"/>
     </extensions>

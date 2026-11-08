@@ -155,8 +155,11 @@ object HtmlFragment {
 
     private fun isRemote(url: String): Boolean = normalizeUrl(url).let { it.startsWith("http:") || it.startsWith("https:") || it.startsWith("//") }
 
-    /** Relative URLs, anchors and the http, https, mailto and file schemes; `data:image/...` for images. */
-    private fun safeUrl(url: String, image: Boolean): Boolean {
+    /**
+     * Relative URLs, anchors and the http, https, mailto and file schemes; `data:image/...` for images.
+     * Public for links the engine builds itself, such as an AsciiDoc `include::` target.
+     */
+    fun safeUrl(url: String, image: Boolean = false): Boolean {
         val u = normalizeUrl(url)
         val colon = u.indexOf(':')
         if (colon < 0 || u.indexOfAny(charArrayOf('/', '?', '#')).let { it in 0 until colon }) return true

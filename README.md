@@ -66,6 +66,8 @@ remote-image, Mermaid and math options. The colors of added, removed and modifie
 Settings | Editor | Color Scheme | Markdown Review; a color left unset follows the scheme's Diff colors. A custom
 stylesheet (a CSS file on the same settings page) can restyle the rendered view, for example to match a documentation
 site, and the Export button on the viewer's toolbar saves the rendered diff as a standalone HTML file or a PDF.
+HTML export inlines local images up to 10 MB; larger images, or images of a format it does not know, stay as local
+`file:` links and open only on the machine that made the export.
 
 Supported Markdown: CommonMark with GitHub Flavored Markdown (tables, task lists, strikethrough, autolinks,
 footnotes, alerts), HTML blocks and inline HTML (sanitized), `<details>`, HTML comments, hard line breaks, emoji
@@ -90,7 +92,7 @@ cross-references, block images, block titles, thematic and page breaks, Mermaid 
 AsciiMath, Antora cross-component links and Asciidoctor PDF themes are not supported. Comparing a Markdown file with
 an AsciiDoc file (for example after a rename) keeps the text diff.
 
-Status: 1.3, with AsciiDoc support in the next release. What the plugin does and does not do is described in
+Status: 1.4.0 release candidate. What the plugin does and does not do is described in
 [docs/SPECIFICATION.md](docs/SPECIFICATION.md), what comes next in [docs/PHASE3.md](docs/PHASE3.md) and
 [docs/PHASE4.md](docs/PHASE4.md), and releases in [docs/RELEASING.md](docs/RELEASING.md). The contract between the
 diff engine and the IDE layer is described in [docs/ENGINE_CONTRACT.md](docs/ENGINE_CONTRACT.md). The screenshots are

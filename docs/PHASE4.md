@@ -89,9 +89,8 @@ confirmed [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it had f
 blocks exist.
 P4.6 can start on P4.4's output with edit actions disabled, and turns them on when P4.5 lands.
 
-Release: AsciiDoc ships behind no flag, in one minor release once P4.1 to P4.7 are done (tentatively 1.5). If P4.7
-slips, it can follow in a later minor release; until then Mermaid blocks and formulas show as source, compared line
-by line.
+Release: AsciiDoc ships behind no flag in 1.4.0, in one minor release once P4.1 to P4.7 are done. If P4.7 slips,
+it can follow in a later minor release; until then Mermaid blocks and formulas show as source, compared line by line.
 
 ## P4.1 Spike: AsciidoctorJ from the AsciiDoc plugin
 

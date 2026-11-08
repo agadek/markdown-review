@@ -9,7 +9,9 @@ import java.util.Base64
 /**
  * Turns a snapshot of the rendered page (P3.6) into a standalone HTML file to attach to a review or a ticket: the page
  * as drawn, with Mermaid diagrams and formulas already rendered, no scripts, a policy that allows none, and local
- * images inlined as data: URIs so the file opens offline on another machine.
+ * images inlined as data: URIs so the file opens offline on another machine. Images above
+ * [MAX_INLINED_IMAGE_BYTES] or with an extension the export does not know stay as local `file:` links; the exported
+ * page's policy allows `file:` for them, so they still load on the machine that made the export.
  *
  * The snapshot itself comes from the page's `mdr.snapshot()`, which drops the scripts, block buttons and the open
  * block editor before serializing the document.
@@ -31,7 +33,7 @@ object HtmlExport {
         remoteImages: Boolean = false,
         readImage: (Path) -> ByteArray? = ::readLocalImage,
     ): String {
-        val policy = "default-src 'none'; img-src data:${if (remoteImages) " https: http:" else ""}; " +
+        val policy = "default-src 'none'; img-src data: file:${if (remoteImages) " https: http:" else ""}; " +
             "style-src 'unsafe-inline'; font-src data:"
         var html = CSP.replace(snapshot) { "<meta http-equiv=\"Content-Security-Policy\" content=\"$policy\">" }
         html = SCRIPT.replace(html, "")
@@ -75,7 +77,7 @@ object HtmlExport {
             when {
                 file.diff == null -> body.append("<p class=\"mdr-export-note\">").append(escape(file.error.orEmpty())).append("</p>\n")
                 file.diff.identical -> body.append("<p class=\"mdr-export-note\">").append(escape(noChanges)).append("</p>\n")
-                else -> body.append(file.diff.bodyHtml).append("\n")
+                else -> body.append(uniqueFootnoteIds(file.diff.bodyHtml, i + 1)).append("\n")
             }
             body.append("</section>\n")
         }
@@ -102,6 +104,15 @@ object HtmlExport {
         val base = fileName?.substringBeforeLast('.')?.takeIf { it.isNotBlank() } ?: "markdown"
         return "$base.diff.$extension"
     }
+
+    /**
+     * Footnote IDs are unique per side, not per file; in a multi-file export two files that both use `[^1]`
+     * would otherwise define and link the same anchor. Prefix both the definitions and the references with the
+     * file number.
+     */
+    private fun uniqueFootnoteIds(html: String, file: Int): String =
+        html.replace("id=\"mdr-fn-", "id=\"mdr-fn-f$file-")
+            .replace("href=\"#mdr-fn-", "href=\"#mdr-fn-f$file-")
 
     private fun dataUri(uri: String, readImage: (Path) -> ByteArray?): String? {
         val path = try {

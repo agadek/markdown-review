@@ -77,9 +77,8 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
     private var sourceProvider: (String, Int, String) -> String? = { _, _, _ -> null }
     private var blockMenuHandler: (String, Int, String, Point) -> Unit = { _, _, _, _ -> }
 
-    /** Waiting for the page's `export|` answer to [snapshot]. */
-    @Volatile
-    private var snapshotHandler: ((String?) -> Unit)? = null
+    /** Snapshot requests waiting for the page's `export|` answer; only one may be in flight. */
+    private val snapshots = SnapshotQueue<String?>()
 
     /** Whether the page has a block editor open; read and written on the EDT. */
     private var editing = false
@@ -94,7 +93,10 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
         Disposer.register(parent, query)
         query.addHandler { msg ->
             if (msg.startsWith("export|")) {
-                snapshotHandler?.let { handler -> snapshotHandler = null; handler(msg.substring("export|".length)) }
+                val value = msg.substring("export|".length)
+                val completion = snapshots.complete(value)
+                completion.callback?.invoke(value)
+                if (completion.next) execute("mdr.snapshot()")
                 return@addHandler null
             }
             val parts = msg.split('|', limit = 4)
@@ -185,8 +187,7 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
 
     override fun snapshot(done: (String?) -> Unit) {
         if (current == null) return done(null)
-        snapshotHandler = done
-        execute("mdr.snapshot()")
+        if (snapshots.enqueue(done)) execute("mdr.snapshot()")
     }
 
     override fun printToPdf(path: Path, done: (Boolean) -> Unit) {

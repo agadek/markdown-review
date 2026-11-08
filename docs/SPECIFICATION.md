@@ -41,6 +41,7 @@ only the plugin; AsciiDoc diffs also need the JetBrains AsciiDoc plugin, which s
 | FR-22 | `[mermaid]` listing blocks are drawn with the bundled Mermaid and `stem:[...]` / `latexmath:[...]` / `[stem]` blocks with the bundled KaTeX, with the same toggles and source diff as Markdown diagrams and formulas. | In 1.4.0 (RC); P4.7 |
 | FR-23 | Document attributes defined in the file's own header or body are applied, so `{product-version}` renders as its value and changing an attribute entry shows as a change on the entry and on every block whose text it changes. `include::` directives are not followed; each is shown as its own block with the target, and a changed target is a change. | In 1.4.0 (RC); P4.3 |
 | FR-24 | AsciiDoc comments (`//` and `////`) are hidden unless they changed, like HTML comments in Markdown. | In 1.4.0 (RC); P4.3 |
+| FR-25 | AsciiMath formulas (`asciimath:[...]`, `[asciimath]` blocks, and `stem` when the document's `stem` attribute is unset or `asciimath`) are drawn with the bundled KaTeX, compared and toggled like `latexmath` formulas; a formula that cannot be converted stays source and is marked. | In 1.4.0 (RC); P4.9 |
 
 The text diff is IntelliJ's built-in viewer, one click away in the diff window's viewer switcher.
 
@@ -109,12 +110,14 @@ AsciiDoc through AsciidoctorJ, taken from the JetBrains AsciiDoc plugin and not 
 - Thematic breaks (`'''`) and page breaks (`<<<`); the kind of break is compared.
 - Mermaid: a `[mermaid]` listing or literal block is drawn with the bundled Mermaid, with the same source diff as a
   Markdown diagram (FR-22).
-- Math: `latexmath:[...]` inline formulas, `[latexmath]` blocks, and `stem:[...]` / `[stem]` when `stem` is
-  `latexmath`, are drawn with the bundled KaTeX as Markdown formulas are. AsciiMath is not drawn.
+- Math: `latexmath:[...]` and `asciimath:[...]` inline formulas, `[latexmath]`, `[asciimath]`, and `stem:[...]` /
+  `[stem]` when `stem` is `latexmath`, `asciimath` or unset, are drawn with the bundled KaTeX as Markdown formulas
+  are. AsciiMath is converted to LaTeX in the engine; the original formula stays in `data-source` and is shown if the
+  conversion or KaTeX fails.
 
 Not supported in AsciiDoc diffs: resolved `include::` files, Asciidoctor extensions other than Mermaid
-(asciidoctor-diagram's PlantUML, Graphviz, Kroki and similar styles stay code blocks), AsciiMath, Antora
-cross-component links, and Asciidoctor PDF themes. Comparing a Markdown file with an AsciiDoc file (for example a
+(asciidoctor-diagram's PlantUML, Graphviz, Kroki and similar styles stay code blocks), Antora cross-component links,
+and Asciidoctor PDF themes. Comparing a Markdown file with an AsciiDoc file (for example a
 rename from `README.md` to `README.adoc`) keeps IntelliJ's text diff; both sides of a rendered diff have one format.
 
 ## Non-functional requirements
@@ -163,9 +166,9 @@ their own licenses ([THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md); Mermaid
 ## Out of scope
 
 WYSIWYG editing (HTML back to source normalizes the file and clutters the diff), three-way merge, other markup
-formats (reStructuredText), resolved AsciiDoc includes, Asciidoctor extensions other than Mermaid, AsciiMath,
+formats (reStructuredText), resolved AsciiDoc includes, Asciidoctor extensions other than Mermaid,
 Antora cross-component links, Asciidoctor PDF themes, comparing a Markdown file with an AsciiDoc file, and a paid
-tier inside the plugin. AsciiDoc is supported from phase 4 (FR-16 to FR-24); reStructuredText is not.
+tier inside the plugin. AsciiDoc is supported from phase 4 (FR-16 to FR-25); reStructuredText is not.
 
 ## Answered open questions
 
@@ -175,10 +178,10 @@ tier inside the plugin. AsciiDoc is supported from phase 4 (FR-16 to FR-24); reS
   remembered order per kind of diff window; `DiffToolSubstitutor` was rejected
   ([ADR 0001](adr/0001-default-diff-viewer.md)).
 - **Mermaid and math**: Mermaid moved from out of scope into 1.0; math rendering followed after 1.0. AsciiDoc
-  Mermaid blocks and `latexmath` formulas followed in P4.7; AsciiMath stays out.
+  Mermaid blocks and `latexmath` formulas followed in P4.7; AsciiMath followed in P4.9, converted to LaTeX for KaTeX.
 - **AsciiDoc**: out of scope for 1.0 and kept out of phase 3, then supported in phase 4. ADR 0003 takes AsciidoctorJ
   from the AsciiDoc plugin instead of bundling it, which keeps Markdown's download unchanged (NFR-11, NFR-14).
-  Resolved includes, extensions other than Mermaid, AsciiMath and mixed-format pairs remain out of scope.
+  Resolved includes, extensions other than Mermaid and mixed-format pairs remain out of scope.
 - **Block source editing and moved blocks** (FR-13, FR-15): deferred past 1.0 to P3.2; both followed after 1.0.
 - **Pairing of rewritten blocks**: a user setting, default 0.5, range 0.2 to 0.8.
 - **Renderer**: commonmark-java for Markdown and AsciidoctorJ for AsciiDoc; JCEF for display; diff on the block model

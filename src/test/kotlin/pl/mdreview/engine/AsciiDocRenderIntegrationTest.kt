@@ -46,7 +46,7 @@ class AsciiDocRenderIntegrationTest {
     @Test
     fun `every AsciiDoc fixture renders with a mark on every modified block`() {
         val cases = cases()
-        assertTrue(cases.size >= 17, "expected all AsciiDoc fixtures, found $cases")
+        assertTrue(cases.size >= 18, "expected all AsciiDoc fixtures, found $cases")
         for (case in cases) {
             for (mode in ViewMode.entries) {
                 val rendered = renderer.render(
@@ -75,7 +75,7 @@ class AsciiDocRenderIntegrationTest {
     }
 
     private companion object {
-        val MARKER = Regex("mdr-del|mdr-ins|mdr-(?:link|img)-changed|data-change-note|mdr-moved|mdr-(?:mermaid|math)-row")
+        val MARKER = Regex("mdr-del|mdr-ins|mdr-(?:link|img)-changed|data-change-note|mdr-moved|mdr-(?:mermaid|math)-row|mdr-math-error")
 
         val ASCIIDOC_BLOCK_MARKUP = listOf(
             "class=\"admonitionblock\"",

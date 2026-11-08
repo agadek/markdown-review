@@ -8,7 +8,8 @@ AsciiDoc fixtures use exactly the `.adoc` names, `old.adoc` and `new.adoc`; the 
 extension, so `.asciidoc` is not used here even when the document is named that way in real projects. Both sides of a
 pair have the same extension.
 
-Cases 01-41 are Markdown. Cases 50-66 are AsciiDoc: 50-64 were added for P4.3, 65-66 for P4.7 (Mermaid and math).
+Cases 01-41 are Markdown. Cases 50-67 are AsciiDoc: 50-64 were added for P4.3, 65-66 for P4.7 (Mermaid and math),
+and 67 for P4.9 (AsciiMath).
 
 Every confirmed rendering or diff bug gets a case here before it is fixed, built from the reporter's files cut down to
 the smallest pair that still shows the problem.
@@ -75,4 +76,5 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 63-adoc-moved | a section moved without changes |
 | 64-adoc-large | ~500 sections, performance |
 | 65-adoc-mermaid | `[mermaid]` listing and literal blocks: unchanged, changed, removed, added, an unparsable diagram and an attribute-only change; source diff behind a toggle |
-| 66-adoc-math | inline and block `latexmath` / `stem` formulas (`:stem: latexmath`), AsciiMath not drawn, changed, added, removed and an unparsable formula |
+| 66-adoc-math | inline and block `latexmath` / `stem` formulas (`:stem: latexmath`), drawn AsciiMath, changed, added, removed and an unparsable formula |
+| 67-adoc-asciimath | AsciiMath via unset `:stem:`, `asciimath:[...]`, `[stem]` and `[asciimath]` blocks: fractions, matrices, a vector, a spelling-only change and rejected input |

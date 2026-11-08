@@ -111,7 +111,7 @@ class AsciiDocDiagramsMathTest {
     }
 
     @Test
-    fun `inline latex and stem become atoms while asciimath stays text`() {
+    fun `inline latex stem and asciimath all become atoms`() {
         val paragraph = extract(
             """
             = T
@@ -121,14 +121,20 @@ class AsciiDocDiagramsMathTest {
             """,
         ).single { it.kind == BlockKind.PARAGRAPH }
         assertEquals("Area A = \\pi r^2 and C = 2 \\pi r and a+b.", paragraph.plainText)
-        assertEquals(2, paragraph.atoms.size)
-        assertEquals("A = \\pi r^2", paragraph.plainText.substring(paragraph.atoms[0].first, paragraph.atoms[0].last + 1))
-        assertEquals("C = 2 \\pi r", paragraph.plainText.substring(paragraph.atoms[1].first, paragraph.atoms[1].last + 1))
-        val parts = (paragraph.content as BlockContent.Html).parts
-        val spans = parts.filterIsInstance<HtmlFragment.Markup>().filter { it.tag == "span" && !it.closing }
-        assertContains(spans.map { it.html }.joinToString(""), "class=\"mdr-math mdr-math-inline\"")
-        assertContains(spans.map { it.html }.joinToString(""), "mdr-math-failed")
-        assertContains(spans.map { it.html }.joinToString(""), "AsciiMath is not supported")
+        assertEquals(3, paragraph.atoms.size)
+        assertEquals(
+            listOf("A = \\pi r^2", "C = 2 \\pi r", "a+b"),
+            paragraph.atoms.map { paragraph.plainText.substring(it.first, it.last + 1) },
+        )
+        val spans = (paragraph.content as BlockContent.Html).parts
+            .filterIsInstance<HtmlFragment.Markup>()
+            .filter { it.tag == "span" && !it.closing }
+            .joinToString("")
+        assertContains(spans, "class=\"mdr-math mdr-math-inline\"")
+        assertContains(spans, "data-tex=\"a + b\"")
+        assertContains(spans, "data-source=\"a+b\"")
+        assertFalse(spans.contains("mdr-math-failed"))
+        assertFalse(spans.contains("AsciiMath is not supported"))
     }
 
     @Test
@@ -141,18 +147,23 @@ class AsciiDocDiagramsMathTest {
             """,
         ).single { it.kind == BlockKind.PARAGRAPH }
         assertEquals("Inline a+b and c+d.", ascii.plainText)
-        assertEquals(listOf("c+d"), ascii.atoms.map { ascii.plainText.substring(it.first, it.last + 1) })
+        assertEquals(listOf("a+b", "c+d"), ascii.atoms.map { ascii.plainText.substring(it.first, it.last + 1) })
 
         val latex = extract(
             """
             = T
-            :stem:
+            :stem: latexmath
 
             Inline stem:[a+b] and latexmath:[c+d].
             """,
         ).single { it.kind == BlockKind.PARAGRAPH }
         assertEquals("Inline a+b and c+d.", latex.plainText)
-        assertEquals(listOf("c+d"), latex.atoms.map { latex.plainText.substring(it.first, it.last + 1) })
+        assertEquals(listOf("a+b", "c+d"), latex.atoms.map { latex.plainText.substring(it.first, it.last + 1) })
+        val spans = (latex.content as BlockContent.Html).parts
+            .filterIsInstance<HtmlFragment.Markup>()
+            .filter { it.tag == "span" && !it.closing }
+            .joinToString("")
+        assertFalse(spans.contains("data-source"))
     }
 
     @Test
@@ -188,7 +199,26 @@ class AsciiDocDiagramsMathTest {
     }
 
     @Test
-    fun `an asciimath block is marked as not drawn`() {
+    fun `asciimath input the converter rejects stays source`() {
+        val paragraph = extract(
+            """
+            = T
+
+            Broken asciimath:[a + (b].
+            """,
+        ).single { it.kind == BlockKind.PARAGRAPH }
+        assertEquals("Broken a + (b.", paragraph.plainText)
+        assertTrue(paragraph.atoms.isEmpty())
+        val spans = (paragraph.content as BlockContent.Html).parts
+            .filterIsInstance<HtmlFragment.Markup>()
+            .filter { it.tag == "span" && !it.closing }
+            .joinToString("")
+        assertContains(spans, "mdr-math-failed")
+        assertContains(spans, "AsciiMath formula could not be converted")
+    }
+
+    @Test
+    fun `an asciimath block carries the converted latex`() {
         val block = extract(
             """
             = T
@@ -201,6 +231,7 @@ class AsciiDocDiagramsMathTest {
         ).single { it.kind == BlockKind.MATH }
         assertEquals("asciimath", block.language)
         assertEquals("sum_(i=1)^n i", block.plainText)
+        assertEquals("\\sum_{i = 1}^{n} i", block.mathTex)
         assertFalse(block.atoms.isNotEmpty())
     }
 

@@ -15,7 +15,7 @@ The quadratic formula:
 x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2 a}
 ++++
 
-An AsciiMath formula, not drawn: asciimath:[sum_(i=1)^n i].
+An AsciiMath formula: asciimath:[sum_(i=1)^n i] and a fraction asciimath:[frac(a)(b)].
 
 [asciimath]
 ++++

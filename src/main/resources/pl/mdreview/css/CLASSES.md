@@ -1,6 +1,6 @@
 # Preview CSS classes (`diff.css`)
 
-Contract between the HTML generator and the `diff.css` stylesheet. All classes use the `mdr-` prefix. Full structure example: `demo.html` (open it in a browser; the button toggles the theme).
+Contract between the HTML generator and the `diff.css` stylesheet for rendered Markdown and AsciiDoc diffs. All classes use the `mdr-` prefix, except the Asciidoctor inline classes listed under [AsciiDoc](#asciidoc). Full structure example: `demo.html` (open it in a browser; the button toggles the theme).
 
 ## Theme
 
@@ -109,6 +109,77 @@ A `<details>` element spanning several Markdown blocks is rendered as `<details 
 | `mdr-math-drawn` / `mdr-math-failed` | on `.mdr-math`, added by the page script | Drawn: KaTeX's output replaced the source. Failed: the source stays, underlined, with KaTeX's message as its tooltip and, for a block formula, in a `.mdr-math-error` below it. Without the script the source shows as monospace text. |
 | `mdr-math-row` | `.mdr-row` (side by side) or `.mdr-item` (merged) of a changed block formula | Starts with `details.mdr-math-source`. In the merged view the formulas sit in `.mdr-math-pair`: `.mdr-math-old` (the old one, dimmed), then the new one. |
 | `mdr-math-source` | `details` with a `summary` ("Show source changes") | Its `.mdr-math-lines` hold the source line diff as nested rows or items without `data-idx`. While open, the formulas are hidden. The page script opens it when a formula fails to draw. |
+
+## AsciiDoc
+
+AsciiDoc reuses the rows, sides, blocks, status classes and change notes above. Only the structures below are new
+(ADR 0006, P4.4). A delimited AsciiDoc block is a frame repeated on each side of every row, nested outermost first,
+with the block itself innermost:
+
+```html
+<div class="mdr-row blk-modified" data-idx="7" data-block-id="b7">
+  <div class="mdr-side mdr-left" data-side="left" data-line="12">
+    <div class="mdr-container mdr-container-example mdr-container-first">
+      <div class="mdr-container mdr-container-quote mdr-container-first mdr-container-last">
+        <div class="mdr-block mdr-modified">…</div>
+      </div>
+    </div>
+  </div>
+  <div class="mdr-side mdr-right" data-side="right" data-line="12">
+    <div class="mdr-container mdr-container-example mdr-container-first">
+      <div class="mdr-block mdr-modified">…</div>
+    </div>
+  </div>
+</div>
+```
+
+In the merged view the same wrappers sit inside `.mdr-item` instead of `.mdr-side`. The renderer builds them from
+`BlockContext.containers`, one `.mdr-container` per depth.
+
+- `mdr-container-first` goes on the first row of a container on that side, `mdr-container-last` on its last row. A
+  container that starts and ends on the same row carries both; nested containers carry their own pair. Without the
+  pair a bar or box still composes vertically, but a box has no top and bottom border and an admonition has no icon.
+- A side with no block keeps its `.mdr-placeholder` and gets no container wrappers: a container that exists on one
+  side never frames the other side's placeholder.
+- The container's `.Title` is a normal `BLOCK_TITLE` block row (`div.mdr-block.mdr-block-title`), placed inside the
+  container as its first row, so a changed title keeps its status and word diff.
+- Containers never wrap `.mdr-actions`, `.mdr-moved-note` or a placeholder.
+
+### Containers
+
+| Class | Where | Meaning |
+|---|---|---|
+| `mdr-container` | `div` in `.mdr-side` (side by side) or `.mdr-item` (merged) | One depth of a delimited AsciiDoc block around one row's block. Outermost first; the block is the innermost child. |
+| `mdr-container-example` | with `mdr-container` | `====` example block: a box filled with `--mdr-code-bg`. |
+| `mdr-container-sidebar` | with `mdr-container` | `****` sidebar: a box with a thicker left rail. |
+| `mdr-container-quote` | with `mdr-container` | `____` quote block: muted text behind a left bar. |
+| `mdr-container-verse` | with `mdr-container` | `____` verse block: the quote bar, italic. |
+| `mdr-container-open` | with `mdr-container` | `--` open block: a dashed rail, because AsciiDoc gives it no visible frame. |
+| `mdr-container-admonition` | with `mdr-container`, `mdr-alert` and `mdr-alert-<type>` | `[NOTE] ====`, `[WARNING] ====` and the other admonition blocks: a colored left bar, with the type icon on the first row. Types are `note`, `tip`, `important`, `warning`, `caution`. |
+| `mdr-container-first` / `mdr-container-last` | with `mdr-container` | First / last row of that container on that side. Closes example and sidebar boxes and draws the admonition icon. |
+
+### AsciiDoc blocks
+
+These are normal `mdr-block` elements with the usual status class and `data-block-id`, plus one of:
+
+| Class | Element | Meaning |
+|---|---|---|
+| `mdr-block-title` | `div.mdr-block` | An AsciiDoc block title (`.Title`). Also the title row that opens a container. |
+| `mdr-dlist` | `dl` with a `dt` (`DESCRIPTION_TERM`) or `dd` (`LIST_ITEM`) child | Description list entry. Two fixed grid columns align every term above its description across rows. |
+| `mdr-callout` | `ol` (together with `mdr-li`, and `start` from `BlockContext.number`) | Callout list. Its `li` items are blocks; the marker draws `<1>`, `<2>` from the list item counter, and `start` keeps the number when each row has its own `ol`. |
+| `mdr-include` | `div.mdr-block` | `include::target[]` row; the target is a link resolved against the side's base URI. Monospace and muted, like a front matter line. |
+| `mdr-attribute` | `div.mdr-block` | Attribute entry (header or body), `:name: value`; monospace, muted and whitespace-preserving. |
+| `mdr-page-break` | `hr` inside `div.mdr-block` | Page break (`<<<`); a dashed rule. A thematic break stays a plain `hr`. |
+
+### Asciidoctor inline markup
+
+| Element / class | Meaning |
+|---|---|
+| `span.menuseq`, `b.menuref` | A `menu:` path and its final item. Bold, and kept on one line. |
+| `mark` | Highlighted text; background from `--md-modified-bg` (a tint of `--mdr-modified-marker` in the standalone demo). |
+| `sup.mdr-fnref` | Footnote reference, as in Markdown: links to `#mdr-fn-<side>-<label>`. |
+| `div.mdr-footnote` with `.mdr-fn-label` / `.mdr-fn-body` | Footnote definition, as in Markdown. Prefer these classes over Asciidoctor's `div.footnote` markup. |
+| `sup.footnote` | Asciidoctor's converted footnote reference, if it survives sanitizing; styled like `mdr-fnref`. |
 
 ## Per-block actions
 

@@ -42,8 +42,8 @@
               footnotes, thematic and page breaks, Mermaid diagrams and <code>latexmath</code> / AsciiMath formulas,
               with the same viewers and actions as Markdown. AsciiDoc diffs need the free AsciiDoc plugin installed
               and enabled; mixed Markdown/AsciiDoc pairs keep the text diff.</li>
-          <li>Settings | Tools | Markdown Review picks the viewer a Markdown or AsciiDoc diff opens with and how
-              readily a rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
+          <li>Settings | Tools | Markdown Review picks the viewer a Markdown or AsciiDoc diff opens with, can turn
+              the rendered diff off for either format, and sets how readily a rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
               large-file, remote-image, Mermaid and math options. The diff colors are set per color scheme in
               Settings | Editor | Color Scheme | Markdown Review.</li>
         </ul>

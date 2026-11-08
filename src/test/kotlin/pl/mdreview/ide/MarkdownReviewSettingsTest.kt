@@ -4,6 +4,7 @@ import com.intellij.ide.util.PropertiesComponent
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.xmlb.XmlSerializer
 import pl.mdreview.api.DiffOptions
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.SizeLimit
 import java.awt.Component
 import java.awt.Container
@@ -14,6 +15,8 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
     fun `test defaults`() {
         val settings = MarkdownReviewSettings()
         assertEquals(DefaultViewer.RENDERED_SIDE_BY_SIDE, settings.defaultViewer)
+        assertTrue(settings.renderMarkdown)
+        assertTrue(settings.renderAsciiDoc)
         assertFalse(settings.ignoreWhitespace)
         assertTrue(settings.collapseUnchanged)
         assertEquals(20_000, settings.largeFileLines)
@@ -23,6 +26,17 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         assertTrue(settings.renderMath)
         assertEquals(DiffOptions.DEFAULT_PAIRING_THRESHOLD, settings.pairingThreshold)
         assertEquals("", settings.customCssPath)
+    }
+
+    fun `test each format can be turned off on its own`() {
+        val settings = MarkdownReviewSettings()
+        settings.renderAsciiDoc = false
+        assertTrue(settings.isEnabled(DocumentFormat.MARKDOWN))
+        assertFalse(settings.isEnabled(DocumentFormat.ASCIIDOC))
+        settings.renderAsciiDoc = true
+        settings.renderMarkdown = false
+        assertFalse(settings.isEnabled(DocumentFormat.MARKDOWN))
+        assertTrue(settings.isEnabled(DocumentFormat.ASCIIDOC))
     }
 
     fun `test pairing threshold stays in range`() {
@@ -47,6 +61,8 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
     fun `test state survives serialization`() {
         val settings = MarkdownReviewSettings().apply {
             defaultViewer = DefaultViewer.TEXT
+            renderMarkdown = false
+            renderAsciiDoc = false
             ignoreWhitespace = true
             collapseUnchanged = false
             largeFileLines = 500
@@ -63,6 +79,8 @@ class MarkdownReviewSettingsTest : BasePlatformTestCase() {
         restored.loadState(XmlSerializer.deserialize(element, MarkdownReviewSettings.SettingsState::class.java))
 
         assertEquals(DefaultViewer.TEXT, restored.defaultViewer)
+        assertFalse(restored.renderMarkdown)
+        assertFalse(restored.renderAsciiDoc)
         assertTrue(restored.ignoreWhitespace)
         assertFalse(restored.collapseUnchanged)
         assertEquals(500, restored.largeFileLines)

@@ -30,6 +30,10 @@ class MarkdownReviewConfigurable : BoundConfigurable(MarkdownReviewBundle.messag
                 .bindItem(settings::defaultViewer.toNullableProperty())
                 .comment(MarkdownReviewBundle.message("settings.default.viewer.comment"))
         }
+        row(MarkdownReviewBundle.message("settings.formats")) {
+            checkBox(MarkdownReviewBundle.message("settings.formats.markdown")).bindSelected(settings::renderMarkdown)
+            checkBox(MarkdownReviewBundle.message("settings.formats.asciidoc")).bindSelected(settings::renderAsciiDoc)
+        }.rowComment(MarkdownReviewBundle.message("settings.formats.comment"))
         group(MarkdownReviewBundle.message("settings.group.diff")) {
             row {
                 checkBox(MarkdownReviewBundle.message("toggle.ignore.whitespace")).bindSelected(settings::ignoreWhitespace)

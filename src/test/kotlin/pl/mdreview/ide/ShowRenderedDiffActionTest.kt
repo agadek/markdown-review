@@ -110,6 +110,22 @@ class ShowRenderedDiffActionTest : BasePlatformTestCase() {
         assertEmpty(ShowRenderedDiffAction.renderedChanges(listOf(adoc, mixed)))
     }
 
+    fun `test formats turned off in the settings are ignored`() = withAsciiDoc {
+        val settings = MarkdownReviewSettings.getInstance()
+        val readme = change("README.md", "README.md")
+        val adoc = change("docs/guide.adoc", "docs/guide.adoc")
+        try {
+            settings.renderMarkdown = false
+            assertEquals(listOf(adoc), ShowRenderedDiffAction.renderedChanges(listOf(readme, adoc)))
+            settings.renderMarkdown = true
+            settings.renderAsciiDoc = false
+            assertEquals(listOf(readme), ShowRenderedDiffAction.renderedChanges(listOf(readme, adoc)))
+        } finally {
+            settings.renderMarkdown = true
+            settings.renderAsciiDoc = true
+        }
+    }
+
     fun `test a file renamed to or from Markdown counts`() {
         val toMarkdown = change("notes.txt", "notes.md")
         val fromMarkdown = change("notes.md", "notes.txt")

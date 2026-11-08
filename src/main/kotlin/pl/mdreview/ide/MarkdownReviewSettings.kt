@@ -8,6 +8,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.messages.Topic
 import pl.mdreview.api.DiffOptions
+import pl.mdreview.api.DocumentFormat
 
 /** Viewer that the diff window shows first for a Markdown or AsciiDoc file (FR-11). */
 enum class DefaultViewer(val messageKey: String) {
@@ -26,6 +27,8 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
 
     class SettingsState {
         var defaultViewer: DefaultViewer = DefaultViewer.RENDERED_SIDE_BY_SIDE
+        var renderMarkdown: Boolean = true
+        var renderAsciiDoc: Boolean = true
         var ignoreWhitespace: Boolean = false
         var collapseUnchanged: Boolean = true
         var largeFileLines: Int = DEFAULT_LARGE_FILE_LINES
@@ -56,6 +59,22 @@ class MarkdownReviewSettings : PersistentStateComponent<MarkdownReviewSettings.S
     var defaultViewer: DefaultViewer
         get() = state.defaultViewer
         set(value) { state.defaultViewer = value }
+
+    /** Rendered viewers and actions take Markdown diffs (FR-26); off leaves them to IntelliJ's text diff. */
+    var renderMarkdown: Boolean
+        get() = state.renderMarkdown
+        set(value) { state.renderMarkdown = value }
+
+    /** Rendered viewers and actions take AsciiDoc diffs (FR-26); off leaves them to IntelliJ's text diff. */
+    var renderAsciiDoc: Boolean
+        get() = state.renderAsciiDoc
+        set(value) { state.renderAsciiDoc = value }
+
+    /** Whether the user lets the rendered viewers handle [format]; says nothing about whether it is available. */
+    fun isEnabled(format: DocumentFormat): Boolean = when (format) {
+        DocumentFormat.MARKDOWN -> renderMarkdown
+        DocumentFormat.ASCIIDOC -> renderAsciiDoc
+    }
 
     var ignoreWhitespace: Boolean
         get() = state.ignoreWhitespace

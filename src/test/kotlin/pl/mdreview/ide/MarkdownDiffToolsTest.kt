@@ -97,6 +97,35 @@ class MarkdownDiffToolsTest : BasePlatformTestCase() {
         )
     }
 
+    private fun <T> withFormats(markdown: Boolean, asciidoc: Boolean, block: () -> T): T {
+        val settings = MarkdownReviewSettings.getInstance()
+        val saved = settings.renderMarkdown to settings.renderAsciiDoc
+        settings.renderMarkdown = markdown
+        settings.renderAsciiDoc = asciidoc
+        try {
+            return block()
+        } finally {
+            settings.renderMarkdown = saved.first
+            settings.renderAsciiDoc = saved.second
+        }
+    }
+
+    fun `test Markdown turned off in the settings is left to the text viewer`() = withAsciiDoc {
+        withFormats(markdown = false, asciidoc = true) {
+            assertFalse(RenderedMarkdownDiffTool.accepts(request(file("a.md", "# A"), file("b.md", "# B"))))
+            assertFalse(RenderedSideBySideTool().canShow(TestDiffContext(project), request(file("c.md", "# C"), file("d.md", "# D"))))
+            assertTrue(RenderedMarkdownDiffTool.accepts(request(file("a.adoc", "= A"), file("b.adoc", "= B"))))
+        }
+    }
+
+    fun `test AsciiDoc turned off in the settings is left to the text viewer`() = withAsciiDoc {
+        withFormats(markdown = true, asciidoc = false) {
+            assertFalse(RenderedMarkdownDiffTool.accepts(request(file("a.adoc", "= A"), file("b.adoc", "= B"))))
+            assertFalse(RenderedMarkdownDiffTool.accepts(request(EmptyContent(), file("new.adoc", "= New"))))
+            assertTrue(RenderedMarkdownDiffTool.accepts(request(file("a.md", "# A"), file("b.md", "# B"))))
+        }
+    }
+
     fun `test empty content on one side is accepted`() {
         assertTrue(RenderedMarkdownDiffTool.accepts(request(EmptyContent(), file("new.md", "# New"))))
         assertTrue(RenderedMarkdownDiffTool.accepts(request(file("old.md", "# Old"), EmptyContent())))

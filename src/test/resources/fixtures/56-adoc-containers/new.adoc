@@ -1,0 +1,41 @@
+= Containers
+
+Intro paragraph before the containers.
+
+.Example block
+====
+Example content, revised.
+====
+
+.Sidebar
+****
+Sidebar content with extra detail.
+****
+
+[quote, Ada Lovelace]
+____
+The Analytical Engine has no pretensions to originate anything.
+____
+
+--
+Open block content with an inline *bold* phrase.
+--
+
+.Example with a sidebar
+====
+Outer content.
+
+****
+Inner sidebar content, revised.
+****
+====
+
+Closing paragraph after the containers.
+
+'''
+
+<<<
+
+++++
+<p>Raw <strong>HTML</strong> from a passthrough block.</p>
+++++

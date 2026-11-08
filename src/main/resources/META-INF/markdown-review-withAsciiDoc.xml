@@ -1,0 +1,13 @@
+<!--
+  Loaded only when the JetBrains AsciiDoc plugin is installed and enabled. Everything here may use AsciidoctorJ
+  classes; without the AsciiDoc plugin none of it loads, so AsciiDoc diffs fall back to the text viewer (NFR-11).
+-->
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="pl.mdreview.ide.asciidoc.PluginAsciidoctorProvider"/>
+        <postStartupActivity implementation="pl.mdreview.ide.asciidoc.AsciiDocIntegrationStartup"/>
+    </extensions>
+    <extensions defaultExtensionNs="pl.mdreview">
+        <documentFileTypeRecognizer implementation="pl.mdreview.ide.asciidoc.AsciiDocPluginFileTypeRecognizer"/>
+    </extensions>
+</idea-plugin>

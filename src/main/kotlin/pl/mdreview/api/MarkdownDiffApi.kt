@@ -13,13 +13,21 @@ package pl.mdreview.api
  */
 interface MarkdownDiffRenderer {
     /**
-     * Compares two Markdown sources and renders the result.
+     * Compares two Markdown or AsciiDoc sources and renders the result.
      *
      * Called off the EDT, inside a read action; must be pure (no IntelliJ APIs, no I/O, no network)
      * and thread-safe, since several diff windows may render at once. Long computations should be
      * fine to abandon: the IDE layer discards results that arrive after the input changed.
      */
     fun render(request: RenderRequest): RenderedDiff
+}
+
+/** Format of both sides of a [RenderRequest]. */
+enum class DocumentFormat {
+    MARKDOWN,
+
+    /** No front end yet; a request for it falls back to raw text until one is registered. */
+    ASCIIDOC,
 }
 
 enum class ViewMode {
@@ -64,6 +72,8 @@ data class DiffOptions(
  *   `file:///home/me/project/docs/`). Relative image paths on that side resolve against it; `null`
  *   leaves them as written.
  * @property rightBaseUri the same for the right side.
+ * @property format format of both sides; [DocumentFormat.MARKDOWN] unless the caller says otherwise.
+ *   A format without a front end falls back to a raw-text paragraph diff.
  */
 data class RenderRequest(
     val left: String?,
@@ -72,6 +82,7 @@ data class RenderRequest(
     val options: DiffOptions = DiffOptions(),
     val leftBaseUri: String? = null,
     val rightBaseUri: String? = null,
+    val format: DocumentFormat = DocumentFormat.MARKDOWN,
 )
 
 /**
@@ -214,6 +225,8 @@ data class RenderedDiff(
     val bodyHtml: String,
     val css: String,
     val blocks: List<BlockInfo>,
+    /** The format of both sides, so the IDE can label its block editor and source. */
+    val format: DocumentFormat = DocumentFormat.MARKDOWN,
 ) {
     val changes: List<BlockInfo> get() = blocks.filter { it.status != BlockStatus.EQUAL }
     val identical: Boolean get() = blocks.all { it.status == BlockStatus.EQUAL }

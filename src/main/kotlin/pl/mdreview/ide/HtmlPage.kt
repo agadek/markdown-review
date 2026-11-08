@@ -7,6 +7,7 @@ import com.intellij.ui.ColorUtil
 import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.RenderedDiff
 import pl.mdreview.render.Theme
 import java.awt.Color
@@ -113,15 +114,18 @@ object HtmlPage {
     private fun isDark() = ColorUtil.isDark(EditorColorsManager.getInstance().globalScheme.defaultBackground)
 
     /** The calls that add the block buttons and turn on source editing, or nothing when the page has neither. */
-    fun actionsJs(diff: RenderedDiff, actions: BlockActions): String = buttonsJs(diff, actions) + editingJs(actions)
+    fun actionsJs(diff: RenderedDiff, actions: BlockActions): String = buttonsJs(diff, actions) + editingJs(diff, actions)
 
-    /** Double-click editing of the sides [actions] allows (FR-13), with the editor's hints. */
-    private fun editingJs(actions: BlockActions): String {
+    /** Double-click editing of the sides [actions] allows (FR-13), with the editor's label and hints. */
+    private fun editingJs(diff: RenderedDiff, actions: BlockActions): String {
         if (!actions.edits) return ""
         val save = (if (SystemInfo.isMac) "Cmd" else "Ctrl") + "+Enter"
+        val label = MarkdownReviewBundle.message(
+            if (diff.format == DocumentFormat.ASCIIDOC) "block.editor.label.asciidoc" else "block.editor.label.markdown",
+        )
         return "mdr.editing({left: ${actions.editLeft}, right: ${actions.editRight}}, ${jsString(actions.stamp)}, " +
             "${jsString(MarkdownReviewBundle.message("block.editor.hint", save))}, " +
-            "${jsString(MarkdownReviewBundle.message("block.editor.refused"))});"
+            "${jsString(MarkdownReviewBundle.message("block.editor.refused"))}, ${jsString(label)});"
     }
 
     private fun buttonsJs(diff: RenderedDiff, actions: BlockActions): String {
@@ -226,16 +230,17 @@ object HtmlPage {
           ['wheel', 'keydown', 'mousedown', 'touchstart'].forEach(function(t) {
             window.addEventListener(t, function() { moved = true; }, {once: true, passive: true});
           });
-          var all = Array.prototype.slice.call(document.querySelectorAll('.mdr-math'));
+          var all = Array.prototype.slice.call(document.querySelectorAll('.mdr-math:not(.mdr-math-failed)'));
           var n = 0;
           function draw(el) {
-            var tex = el.textContent;
+            var tex = el.getAttribute('data-tex') || el.textContent;
+            var source = el.getAttribute('data-source');
             var display = el.classList.contains('mdr-math-display');
             try {
               katex.render(tex, el, {displayMode: display, throwOnError: true, trust: false, strict: 'ignore'});
               el.classList.add('mdr-math-drawn');
             } catch (err) {
-              el.textContent = tex;
+              el.textContent = source || tex;
               var text = String((err && err.message) || err);
               el.classList.add('mdr-math-failed');
               el.title = text;
@@ -318,6 +323,7 @@ object HtmlPage {
         .mdr-item:hover > .mdr-actions { opacity: 1; }
         .mdr-editing > :not(.mdr-editor) { display: none; }
         .mdr-editor { padding: 4px 0; }
+        .mdr-editor-label { margin-bottom: 2px; font-size: 0.75em; font-weight: 600; letter-spacing: 0.04em; color: var(--md-muted); text-transform: uppercase; }
         .mdr-editor textarea {
           box-sizing: border-box; width: 100%; resize: vertical; padding: 6px 8px; border-radius: 4px;
           border: 1px solid var(--md-link); background: var(--md-bg); color: var(--md-fg);
@@ -358,7 +364,7 @@ object HtmlPage {
             }, 150);
           });
           var stamp = '';
-          var editSides = {}, editHint = '', editRefused = '', asked = null, editor = null;
+          var editSides = {}, editHint = '', editRefused = '', editLabel = '', asked = null, editor = null;
           function closeEditor() {
             if (!editor) return;
             editor.cell.classList.remove('mdr-editing');
@@ -418,8 +424,8 @@ object HtmlPage {
           });
           return {
             setStamp: function(pageStamp) { stamp = pageStamp; },
-            editing: function(sides, pageStamp, hint, refused) {
-              editSides = sides; stamp = pageStamp; editHint = hint; editRefused = refused;
+            editing: function(sides, pageStamp, hint, refused, label) {
+              editSides = sides; stamp = pageStamp; editHint = hint; editRefused = refused; editLabel = label;
             },
             openEditor: function(side, idx, text) {
               if (editor || !asked || asked.side !== side || String(asked.idx) !== String(idx) || !asked.cell.isConnected) return false;
@@ -427,13 +433,18 @@ object HtmlPage {
               asked = null;
               var box = document.createElement('div');
               box.className = 'mdr-editor';
+              var label = document.createElement('div');
+              label.className = 'mdr-editor-label';
+              label.textContent = editLabel;
               var area = document.createElement('textarea');
               area.value = text;
               area.spellcheck = false;
+              area.setAttribute('aria-label', editLabel);
               area.rows = Math.max(2, text.split('\n').length + 1);
               var note = document.createElement('div');
               note.className = 'mdr-editor-hint';
               note.textContent = editHint;
+              box.appendChild(label);
               box.appendChild(area);
               box.appendChild(note);
               cell.appendChild(box);

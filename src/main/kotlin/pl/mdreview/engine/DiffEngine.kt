@@ -1,12 +1,11 @@
 package pl.mdreview.engine
 
 import com.github.difflib.DiffUtils
-import org.commonmark.ext.footnotes.FootnoteDefinition
 
 /**
- * Compares two Markdown documents block by block.
+ * Compares two documents block by block, whatever their format.
  *
- * 1. Both sides are flattened into blocks ([BlockExtractor]).
+ * 1. Both sides are flattened into blocks by the [BlockSource] of their format.
  * 2. A Myers/LCS diff on block keys finds the unchanged blocks.
  * 3. Inside each changed window, removed and added blocks of the same kind are paired in order
  *    when their word similarity reaches [DiffOptions.pairingThreshold]; pairs become MODIFIED
@@ -14,10 +13,13 @@ import org.commonmark.ext.footnotes.FootnoteDefinition
  * 4. A REMOVED and an ADDED block with equal keys are linked as one move (FR-15): they keep their
  *    statuses and point at each other through [DiffBlock.movedTo] and [DiffBlock.movedFrom].
  */
-class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
+class DiffEngine(
+    private val options: DiffOptions = DiffOptions(),
+    private val source: BlockSource = MarkdownBlockSource,
+) {
 
     fun diff(left: String, right: String): MarkdownDiff =
-        diff(BlockExtractor.extract(left, options.mermaidDiagrams), BlockExtractor.extract(right, options.mermaidDiagrams))
+        diff(source.extract(left, options), source.extract(right, options))
 
     fun diff(left: List<Block>, right: List<Block>): MarkdownDiff {
         val leftKeys = left.map(::compareKey)
@@ -68,7 +70,7 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
 
     /** With [DiffOptions.ignoreWhitespace], hard line breaks (trailing spaces) are ignored too. */
     private fun compareKey(block: Block): String =
-        if (options.ignoreWhitespace) block.key.replace(BlockExtractor.HARD_BREAKS_KEY, "").filterNot { it.isWhitespace() } else block.key
+        if (options.ignoreWhitespace) block.key.replace(MarkdownBlockSource.HARD_BREAKS_KEY, "").filterNot { it.isWhitespace() } else block.key
 
     private fun pairWindow(removed: List<Block>, added: List<Block>, out: MutableList<DiffBlock>) {
         val pairs = findPairs(removed, added)
@@ -217,23 +219,31 @@ class MarkdownDiffEngine(private val options: DiffOptions = DiffOptions()) {
         block.plainText.lineSequence().map { it.trim() }.firstOrNull { it.isNotEmpty() && !it.startsWith("%%") }
             ?.substringBefore(' ').orEmpty()
 
-    private fun footnoteLabel(block: Block): String? = (block.node as? FootnoteDefinition)?.label
+    private fun footnoteLabel(block: Block): String? = block.label
 
     private fun compatible(l: Block, r: Block): Boolean {
         if (l.kind != r.kind) return false
         if (l.context.quoteDepth != r.context.quoteDepth) return false
+        // A thematic break and a page break are both a rule; they must never pair, even with empty text.
+        if (l.kind == BlockKind.THEMATIC_BREAK) return isPageBreak(l) == isPageBreak(r)
         // A header row only pairs with a header row. Moving a list item to another nesting level or
         // list type still counts as a modification.
         if (l.kind == BlockKind.TABLE_ROW) return l.key.take(3) == r.key.take(3)
         return true
     }
 
+    private fun isPageBreak(block: Block): Boolean = block.key.contains("page-break")
+
     companion object {
         private const val MAX_PAIRING_CELLS = 250_000
         private const val MIN_SCORE = 0.01
         private val UNMOVABLE_KINDS = setOf(
             BlockKind.CODE_LINE, BlockKind.CODE_FENCE, BlockKind.FRONT_MATTER, BlockKind.THEMATIC_BREAK, BlockKind.HTML_COMMENT,
+            BlockKind.ATTRIBUTE, BlockKind.INCLUDE, BlockKind.BLOCK_TITLE,
         )
         private val CONTINUING_KINDS = setOf(BlockKind.CODE_LINE, BlockKind.FRONT_MATTER, BlockKind.LIST_ITEM, BlockKind.TABLE_ROW)
     }
 }
+
+/** The old, Markdown-specific name of [DiffEngine]; kept for existing callers. */
+typealias MarkdownDiffEngine = DiffEngine

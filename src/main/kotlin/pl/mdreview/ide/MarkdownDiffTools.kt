@@ -9,6 +9,7 @@ import com.intellij.diff.requests.ContentDiffRequest
 import com.intellij.diff.requests.DiffRequest
 import com.intellij.openapi.util.Key
 import com.intellij.ui.jcef.JBCefApp
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.SizeLimit
 import pl.mdreview.api.ViewMode
 import javax.swing.Icon
@@ -17,10 +18,14 @@ import javax.swing.Icon
  * Rendered viewers registered as `diff.DiffTool`, so they appear in the viewer switcher of every
  * IntelliJ diff window (commit, history, branch compare, PR review) next to the built-in text viewers.
  * Without JCEF they report `canShow = false` and IntelliJ keeps its text viewer (NFR-6).
+ *
+ * One pair of viewers serves both formats (ADR 0007). Class names are kept because the stored viewer order in
+ * ADR 0001 is keyed by them.
  */
 abstract class RenderedMarkdownDiffTool(
     private val mode: ViewMode,
     private val nameKey: String,
+    private val tooltipKey: String,
     private val icon: Icon,
 ) : FrameDiffTool {
 
@@ -33,6 +38,9 @@ abstract class RenderedMarkdownDiffTool(
      * a drop-down of names that never calls it.
      */
     fun getIcon(): Icon = icon
+
+    /** Names both formats, for a tooltip where the platform has one next to [getName]. */
+    fun getTooltip(): String = MarkdownReviewBundle.message(tooltipKey)
 
     override fun canShow(context: DiffContext, request: DiffRequest): Boolean {
         if (!accepts(request)) return false
@@ -47,13 +55,28 @@ abstract class RenderedMarkdownDiffTool(
         RenderedDiffViewer(context, request as ContentDiffRequest, mode)
 
     companion object {
-        /** The request part of [canShow]: two sides, each a document or missing, at least one of them Markdown. */
+        /**
+         * The request part of [canShow]: two sides, each a document or missing, with one common format that is
+         * available. Sides that exist but have no recognizable format are ignored, so a rename from `.md` to `.txt`
+         * keeps working; a pair of different known formats, such as `.md` to `.adoc`, is rejected (ADR 0007).
+         */
         fun accepts(request: DiffRequest): Boolean {
             if (request !is ContentDiffRequest) return false
             val contents = request.contents
             if (contents.size != 2) return false
             if (contents.any { it !is DocumentContent && it !is EmptyContent }) return false
-            return contents.any { it is DocumentContent && isMarkdown(it) }
+            val format = formatOf(contents) ?: return false
+            return ReviewFiles.isSupported(format)
+        }
+
+        /** The one format of the contents that exist, or `null` when none is recognizable or two formats differ. */
+        fun formatOf(contents: List<DiffContent>): DocumentFormat? =
+            contents.mapNotNull(::formatOf).distinct().singleOrNull()
+
+        fun formatOf(content: DiffContent): DocumentFormat? {
+            val document = content as? DocumentContent ?: return null
+            document.highlightFile?.let { file -> ReviewFiles.formatOf(file)?.let { return it } }
+            return document.contentType?.let(ReviewFiles::formatOf)
         }
 
         /** Set on the diff context by the large-file notice's button; rendered viewers then step aside. */
@@ -65,16 +88,13 @@ abstract class RenderedMarkdownDiffTool(
         fun isTooLarge(contents: List<DiffContent>, limit: SizeLimit = LargeFiles.limit()): Boolean =
             contents.any { limit.exceeds((it as? DocumentContent)?.document?.immutableCharSequence) }
 
-        fun isMarkdown(content: DiffContent): Boolean {
-            val file = (content as? DocumentContent)?.highlightFile
-            if (file != null && MarkdownFiles.isMarkdown(file)) return true
-            val type = content.contentType ?: return false
-            return MarkdownFiles.isMarkdown(type)
-        }
+        @Deprecated("Use formatOf(content) == DocumentFormat.MARKDOWN")
+        fun isMarkdown(content: DiffContent): Boolean = formatOf(content) == DocumentFormat.MARKDOWN
     }
 }
 
 class RenderedSideBySideTool :
-    RenderedMarkdownDiffTool(ViewMode.SIDE_BY_SIDE, "tool.side.by.side", MarkdownReviewIcons.RENDERED_SIDE_BY_SIDE)
+    RenderedMarkdownDiffTool(ViewMode.SIDE_BY_SIDE, "tool.side.by.side", "tool.side.by.side.tooltip", MarkdownReviewIcons.RENDERED_SIDE_BY_SIDE)
 
-class RenderedMergedTool : RenderedMarkdownDiffTool(ViewMode.MERGED, "tool.merged", MarkdownReviewIcons.RENDERED_MERGED)
+class RenderedMergedTool :
+    RenderedMarkdownDiffTool(ViewMode.MERGED, "tool.merged", "tool.merged.tooltip", MarkdownReviewIcons.RENDERED_MERGED)

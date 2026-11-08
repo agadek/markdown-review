@@ -72,6 +72,8 @@ object HtmlFragment {
                         !allowRemoteImages && isRemote(value) -> ""
                         else -> value
                     }
+                    // Only the Asciidoctor inline classes that carry meaning and are styled; everything else is dropped.
+                    "class" -> value.split(whitespace).filter { it in safeClasses }.joinToString(" ").ifEmpty { null }
                     else -> value
                 } ?: continue
                 sb.append(' ').append(attr).append("=\"").append(safe.replace("\"", "&quot;").replace("<", "&lt;")).append('"')
@@ -86,6 +88,55 @@ object HtmlFragment {
     fun visibleText(parts: List<Part>): String = parts.filterIsInstance<TextRun>().joinToString("") { it.text }
 
     fun visibleText(html: String): String = visibleText(parse(html))
+
+    /** Value of attribute [name] in [markup], decoded; `null` when it has none. */
+    fun attribute(markup: Markup, name: String): String? {
+        for (match in attribute.findAll(markup.html)) {
+            if (!match.groupValues[1].equals(name, ignoreCase = true)) continue
+            val raw = match.groups[2]?.value ?: match.groups[3]?.value ?: match.groups[4]?.value
+            return raw?.let(::decode).orEmpty()
+        }
+        return null
+    }
+
+    /** [markup] with attribute [name] set to [value], replacing an existing value or adding the attribute. */
+    fun withAttribute(markup: Markup, name: String, value: String): Markup {
+        if (markup.closing) return markup
+        val encoded = value.replace("\"", "&quot;").replace("<", "&lt;")
+        val existing = attribute.findAll(markup.html).firstOrNull { it.groupValues[1].equals(name, ignoreCase = true) }
+        val html = if (existing != null) {
+            markup.html.substring(0, existing.range.first) + name + "=\"" + encoded + "\"" +
+                markup.html.substring(existing.range.last + 1)
+        } else {
+            markup.html.dropLast(1) + " " + name + "=\"" + encoded + "\">"
+        }
+        return Markup(html, markup.tag, markup.closing)
+    }
+
+    /**
+     * [parts] as [parse] would return them with `allowRemoteImages = false`: the `src` of a remote image becomes
+     * empty. [parse] kept remote sources for link and image change detection; the renderer applies this when it
+     * writes the page.
+     */
+    fun withoutRemoteImages(parts: List<Part>): List<Part> = parts.map { part ->
+        if (part !is Markup || part.closing) return@map part
+        val match = attribute.findAll(part.html).firstOrNull {
+            it.groupValues[1].equals("src", ignoreCase = true) &&
+                (it.groups[2]?.value ?: it.groups[3]?.value ?: it.groups[4]?.value)?.let(::isRemote) == true
+        } ?: return@map part
+        val value = match.groups[2]?.range ?: match.groups[3]?.range ?: match.groups[4]?.range ?: return@map part
+        val html = part.html.substring(0, value.first) + part.html.substring(value.last + 1)
+        Markup(html, part.tag, false)
+    }
+
+    /** [parts] as [parse] would return them with `openDetails = true`: every `<details>` without `open` gets it. */
+    fun withOpenDetails(parts: List<Part>): List<Part> = parts.map { part ->
+        if (part is Markup && !part.closing && part.tag == "details" && attribute(part, "open") == null) {
+            Markup(part.html.dropLast(1) + " open>", part.tag, false)
+        } else {
+            part
+        }
+    }
 
     /** Text of every `<!-- comment -->` in [html], trimmed. */
     fun comments(html: String): List<String> = comment.findAll(html).map { it.groupValues[1].trim() }.toList()
@@ -104,8 +155,11 @@ object HtmlFragment {
 
     private fun isRemote(url: String): Boolean = normalizeUrl(url).let { it.startsWith("http:") || it.startsWith("https:") || it.startsWith("//") }
 
-    /** Relative URLs, anchors and the http, https, mailto and file schemes; `data:image/...` for images. */
-    private fun safeUrl(url: String, image: Boolean): Boolean {
+    /**
+     * Relative URLs, anchors and the http, https, mailto and file schemes; `data:image/...` for images.
+     * Public for links the engine builds itself, such as an AsciiDoc `include::` target.
+     */
+    fun safeUrl(url: String, image: Boolean = false): Boolean {
         val u = normalizeUrl(url)
         val colon = u.indexOf(':')
         if (colon < 0 || u.indexOfAny(charArrayOf('/', '?', '#')).let { it in 0 until colon }) return true
@@ -132,6 +186,12 @@ object HtmlFragment {
 
     private val safeSchemes = setOf("http", "https", "mailto", "file")
 
+    /**
+     * Asciidoctor's semantic inline classes. They only select the styles in `diff.css` for menu paths and footnotes;
+     * keeping any other class would let raw HTML opt into a site's own rules, so all others are dropped.
+     */
+    private val safeClasses = setOf("menuseq", "menuref", "footnote", "footnoteref")
+
     private val dropWithContent = setOf(
         "script", "style", "iframe", "object", "embed", "template", "noscript", "noembed", "noframes",
         "textarea", "title", "xmp", "select", "frameset",
@@ -148,6 +208,6 @@ object HtmlFragment {
 
     private val allowedAttributes = setOf(
         "href", "src", "alt", "title", "width", "height", "align", "valign", "colspan", "rowspan", "open", "start",
-        "type", "reversed", "lang", "dir", "datetime", "cite", "abbr", "span",
+        "type", "reversed", "lang", "dir", "datetime", "cite", "abbr", "span", "class",
     )
 }

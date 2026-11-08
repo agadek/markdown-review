@@ -1,0 +1,45 @@
+= Release Tasks
+
+== Checklist
+
+=== Bullet list
+
+* Diff engine
+** AST parsing
+** LCS matching
+*** blocks
+*** words
+* HTML generator
+* IDE integration
+
+=== Ordered list
+
+. First step
+. Second step
+. Third step
+
+=== Checklist items
+
+* [ ] Update the changelog
+* [x] Bump the version
+* [ ] Tag the release
+
+=== Description list
+
+[horizontal]
+`old.adoc`:: The left side of the diff.
+`new.adoc`:: The right side of the diff.
+`EXPECTED.md`:: The expected changes.
+
+== Continuation
+
+* Source blocks
++
+[source,adoc]
+----
+== Section
+----
++
+The block above is a section heading.
+
+Closing paragraph.

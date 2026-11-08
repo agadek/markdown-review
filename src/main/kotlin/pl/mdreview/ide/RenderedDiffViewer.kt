@@ -58,6 +58,7 @@ import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.ui.components.panels.VerticalLayout
 import com.intellij.util.ui.JBUI
 import pl.mdreview.api.BlockInfo
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.EditRegion
 import pl.mdreview.api.LineRange
 import pl.mdreview.api.RenderRequest
@@ -87,6 +88,8 @@ class RenderedDiffViewer(
 
     private val disposable = Disposer.newDisposable("Markdown Review viewer")
     private val contents: List<DiffContent> = request.contents
+    /** The common format of the sides; `null` only for a pair the tool would not show. */
+    internal val format: DocumentFormat? = RenderedMarkdownDiffTool.formatOf(contents)
     private val documents = contents.map { (it as? DocumentContent)?.document }
     private val baseUris = contents.map(::baseUri)
     private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, disposable)
@@ -97,8 +100,14 @@ class RenderedDiffViewer(
     }
     private val root = RootPanel()
     private val largeFileNotice by lazy { createLargeFileNotice() }
+    private val preparingAsciiDocNotice by lazy { createPreparingAsciiDocNotice() }
 
     private var changes: List<BlockInfo> = emptyList()
+
+    /** True while the first AsciiDoc render waits for Asciidoctor; the panel shows [preparingAsciiDocNotice]. */
+    @Volatile
+    internal var isPreparingAsciiDoc: Boolean = false
+        private set
 
     /** The diff on screen, with the document stamps and texts it was computed from; block actions edit against it. */
     @Volatile
@@ -153,12 +162,18 @@ class RenderedDiffViewer(
     }
 
     private fun render() {
+        if (awaitAsciiDoc()) return
+        val format = format ?: DocumentFormat.MARKDOWN
         val options = settings.options()
         ReadAction.nonBlocking<Rendered?> {
             if (RenderedMarkdownDiffTool.isTooLarge(contents)) return@nonBlocking null
             val stamp = stamp()
             val texts = documents.map { it?.let { doc -> StringUtil.convertLineSeparators(doc.text) } }
-            Rendered(RendererProvider.renderer.render(RenderRequest(texts[0], texts[1], mode, options, baseUris[0], baseUris[1])), stamp, texts)
+            Rendered(
+                RendererProvider.renderer.render(RenderRequest(texts[0], texts[1], mode, options, baseUris[0], baseUris[1], format)),
+                stamp,
+                texts,
+            )
         }
             .expireWith(disposable)
             .coalesceBy(this)
@@ -212,7 +227,7 @@ class RenderedDiffViewer(
 
     /**
      * Replaces the block's lines on the target side with the other side's lines, or for a source edit with the
-     * edited Markdown, as one undoable command. Refused, with a re-render, when a document changed after the page was rendered. Returns whether it edited.
+     * edited source, as one undoable command. Refused, with a re-render, when a document changed after the page was rendered. Returns whether it edited.
      */
     internal fun performBlockAction(request: BlockActionRequest): Boolean {
         val (diff, stamp) = rendered ?: return false
@@ -251,7 +266,7 @@ class RenderedDiffViewer(
     }
 
     /**
-     * The raw Markdown of block [idx] on [side] (`left` or `right`) as it was when the page at [stamp] was rendered,
+     * The raw source of block [idx] on [side] (`left` or `right`) as it was when the page at [stamp] was rendered,
      * for the editor a double-click opens (FR-13); `null` when that page is stale. Called on the CEF thread, so it
      * reads only the rendered snapshot; whether the side may be edited is the page's [BlockActions], and saving
      * checks it again.
@@ -266,12 +281,12 @@ class RenderedDiffViewer(
         return text.split('\n').subList(range.start, range.end).joinToString("\n")
     }
 
-    /** Replaces the lines of [block] on [side] with [markdown], as one undoable command. */
-    private fun saveSource(block: BlockInfo, side: Int, markdown: String): Boolean {
+    /** Replaces the lines of [block] on [side] with [edited], as one undoable command. */
+    private fun saveSource(block: BlockInfo, side: Int, edited: String): Boolean {
         val range = (if (side == 0) block.left else block.right) ?: return false
         val document = documents[side] ?: return false
         // Trailing line breaks would add blank lines after the block; an emptied editor removes the block's lines.
-        val source = StringUtil.convertLineSeparators(markdown).trimEnd('\n')
+        val source = StringUtil.convertLineSeparators(edited).trimEnd('\n')
         val sourceLines = if (source.isBlank()) LineRange(0, 0) else LineRange(0, source.count { it == '\n' } + 1)
         val edit = TextEdit.replaceLines(document.charsSequence, range, source, sourceLines)
         val project = context.project
@@ -282,6 +297,35 @@ class RenderedDiffViewer(
         }
         scheduleRender(0)
         return true
+    }
+
+    /**
+     * Waits for the optional Asciidoctor runtime before the first AsciiDoc render (NFR-12), showing the preparing
+     * notice instead of a blank page. Markdown never enters here, and without a runtime the existing raw-text
+     * fallback renders as before (NFR-11). Returns true when this render must wait.
+     */
+    internal fun awaitAsciiDoc(): Boolean {
+        val documentFormat = format ?: DocumentFormat.MARKDOWN
+        if (documentFormat != DocumentFormat.ASCIIDOC || !AsciiDocSupport.isAvailable() || AsciiDocSupport.isReady()) return false
+        changes = emptyList()
+        currentChange = -1
+        root.showContent(preparingAsciiDocNotice)
+        statusLabel.text = MarkdownReviewBundle.message("asciidoc.preparing")
+        if (!isPreparingAsciiDoc) {
+            isPreparingAsciiDoc = true
+            AsciiDocSupport.prepare {
+                isPreparingAsciiDoc = false
+                scheduleRender(0)
+            }
+        }
+        return true
+    }
+
+    /** Shown while Asciidoctor starts; the page follows when the runtime reports ready. */
+    private fun createPreparingAsciiDocNotice(): JComponent {
+        val panel = JPanel(VerticalLayout(JBUI.scale(8))).apply { border = JBUI.Borders.empty(16) }
+        panel.add(JBLabel(MarkdownReviewBundle.message("asciidoc.preparing")))
+        return panel
     }
 
     /** Shown instead of the page when a side is above [LargeFiles.limit] (NFR-4). */

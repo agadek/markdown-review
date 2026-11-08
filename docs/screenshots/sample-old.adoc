@@ -1,0 +1,46 @@
+= Deployment guide
+:product: checkout
+:min-jdk: 17
+:registry: registry.example.com
+
+This guide explains how to deploy the {product} service to the staging cluster. Run every step from the repository root.
+
+== Requirements
+
+* JDK {min-jdk}
+* Docker 24 or newer
+* Access to the staging registry
+
+== Steps
+
+. Build the image with `./gradlew jibDockerBuild`.
+. Push the image to {registry}.
+. Apply the manifests with `kubectl apply -f k8s/`.
+
+.Deployment targets
+[cols="1,1,1", options="header"]
+|===
+| Environment | Replicas | Region
+| staging | 2 | eu-west-1
+| production | 4 | eu-west-1
+|===
+
+[source,bash]
+----
+kubectl apply -f k8s/
+----
+
+[mermaid]
+....
+flowchart LR
+    Build --> Push --> Deploy
+....
+
+NOTE: Deployments to production need an approval from the on-call engineer.
+
+[latexmath]
+++++
+t_{\mathrm{deploy}} = t_{\mathrm{build}} + t_{\mathrm{rollout}}
+++++
+
+The old rollback script is kept for reference only.

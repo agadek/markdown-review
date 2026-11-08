@@ -24,6 +24,9 @@ dependencies {
         create("IC", "2025.1.3")
         // Optional dependency: recognizes the Markdown file type, see markdown-review-withMarkdown.xml.
         bundledPlugin("org.intellij.plugins.markdown")
+        // Optional dependency: AsciidoctorJ and the AsciiDoc file type, see markdown-review-withAsciiDoc.xml.
+        // 0.44.10 is the newest build compatible with IC 2025.1.3 (AsciidoctorJ 3.0.0).
+        plugin("org.asciidoctor.intellij.asciidoc", "0.44.10")
         testFramework(TestFrameworkType.Platform)
     }
     val commonmark = "0.30.1"
@@ -36,6 +39,10 @@ dependencies {
     implementation("org.commonmark:commonmark-ext-gfm-alerts:$commonmark")
     // Block and word diffs in the engine (pl.mdreview.engine), usable without the IntelliJ Platform.
     implementation("io.github.java-diff-utils:java-diff-utils:4.15")
+    // AsciidoctorJ comes from the JetBrains AsciiDoc plugin at run time (ADR 0003); tests use it directly.
+    val asciidoctorj = "3.0.0"
+    compileOnly("org.asciidoctor:asciidoctorj:$asciidoctorj")
+    testImplementation("org.asciidoctor:asciidoctorj:$asciidoctorj")
     testImplementation(kotlin("test"))
     // Gradle 9 no longer puts the JUnit Platform launcher on the test classpath by itself.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")

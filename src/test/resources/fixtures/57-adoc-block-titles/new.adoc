@@ -1,0 +1,21 @@
+= Titles
+
+.New title
+====
+Content in a titled example.
+====
+
+.Modern example
+====
+Content without a title.
+====
+
+----
+literal content
+----
+
+.Retained title
+[source,java]
+----
+val x = 2
+----

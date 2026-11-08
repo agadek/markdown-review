@@ -15,7 +15,7 @@
 <body>
 <div class="demo-bar">
   <button type="button" onclick="document.documentElement.classList.toggle('mdr-theme-dark');document.documentElement.classList.toggle('mdr-theme-light')">Toggle theme</button>
-  <span>Data: fixture <code>18-mixed</code> (excerpt). Hover over a block to see the buttons.</span>
+  <span>Data: fixture <code>18-mixed</code> (excerpt) and an AsciiDoc release guide. Hover over a block to see the buttons.</span>
 </div>
 
 <!-- ===================== Side-by-side view ===================== -->
@@ -114,6 +114,197 @@
 
   <div class="mdr-block mdr-removed" data-block-id="b7"><h2>License</h2><p>To be decided.</p>
     <div class="mdr-actions"><button class="mdr-revert" data-block-id="b7">⟲ Revert</button></div></div>
+</div>
+
+<!-- ===================== AsciiDoc: side-by-side view ===================== -->
+<div class="demo-title">AsciiDoc: side-by-side view</div>
+<div class="mdr-root mdr-sbs">
+  <div class="mdr-sbs-header"><div>release-guide.adoc (1.3.0)</div><div>release-guide.adoc (1.4.0)</div></div>
+
+  <div class="mdr-row" data-block-id="a0">
+    <div class="mdr-side mdr-left"><div class="mdr-block mdr-equal"><h1>Release guide</h1></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-equal"><h1>Release guide</h1></div></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a1">
+    <div class="mdr-side mdr-left"><div class="mdr-block mdr-modified mdr-attribute">:product-version: <del class="mdr-del">1.3.0</del></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-modified mdr-attribute">:product-version: <ins class="mdr-ins">1.4.0</ins></div></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a1" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a2">
+    <div class="mdr-side mdr-left"><div class="mdr-block mdr-modified mdr-include">include::<a href="#">chapters/setup.adoc</a>[]</div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-modified mdr-include">include::<a href="#">chapters/<del class="mdr-del">setup</del><ins class="mdr-ins">install</ins>.adoc</a>[]</div></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a2" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a3">
+    <div class="mdr-side mdr-left"><div class="mdr-block mdr-modified"><p>Open <span class="menuseq"><b class="menu">File</b>&#160;&#8250;&#160;<b class="submenu">Settings</b>&#160;&#8250;&#160;<b class="menuref">Markdown Review</b></span> and <del class="mdr-del">enable preview</del>.</p></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-modified"><p>Open <span class="menuseq"><b class="menu">File</b>&#160;&#8250;&#160;<b class="submenu">Settings</b>&#160;&#8250;&#160;<b class="menuref">Markdown Review</b></span> and <ins class="mdr-ins">enable <mark>rendered diff</mark></ins>.<sup class="mdr-fnref"><a href="#mdr-fn-right-a3">1</a></sup></p></div></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a3" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a4">
+    <div class="mdr-side mdr-left"><div class="mdr-placeholder"></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-added mdr-footnote" id="mdr-fn-right-a3"><span class="mdr-fn-label">1</span><div class="mdr-fn-body">The AsciiDoc plugin is required.</div></div></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a4" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a5">
+    <div class="mdr-side mdr-left"><dl class="mdr-dlist"><dt class="mdr-block mdr-equal">repository</dt></dl></div>
+    <div class="mdr-side mdr-right"><dl class="mdr-dlist"><dt class="mdr-block mdr-equal">repository</dt></dl></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a6">
+    <div class="mdr-side mdr-left"><dl class="mdr-dlist"><dd class="mdr-block mdr-modified">github.com/example/markdown-review</dd></dl></div>
+    <div class="mdr-side mdr-right"><dl class="mdr-dlist"><dd class="mdr-block mdr-modified">github.com/example/markdown-review<ins class="mdr-ins">/tree/main/docs</ins></dd></dl></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a6" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a7">
+    <div class="mdr-side mdr-left"><ol class="mdr-li mdr-callout" start="1"><li class="mdr-block mdr-equal">Install the AsciiDoc plugin.</li></ol></div>
+    <div class="mdr-side mdr-right"><ol class="mdr-li mdr-callout" start="1"><li class="mdr-block mdr-equal">Install the AsciiDoc plugin.</li></ol></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a8">
+    <div class="mdr-side mdr-left"><ol class="mdr-li mdr-callout" start="2"><li class="mdr-block mdr-modified">Enable <del class="mdr-del">preview</del>.</li></ol></div>
+    <div class="mdr-side mdr-right"><ol class="mdr-li mdr-callout" start="2"><li class="mdr-block mdr-modified">Enable <ins class="mdr-ins">rendered diff</ins>.</li></ol></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a8" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a9">
+    <div class="mdr-side mdr-left">
+      <div class="mdr-container mdr-container-example mdr-container-first">
+        <div class="mdr-block mdr-equal mdr-block-title">Preview settings</div>
+      </div>
+    </div>
+    <div class="mdr-side mdr-right">
+      <div class="mdr-container mdr-container-example mdr-container-first">
+        <div class="mdr-block mdr-equal mdr-block-title">Preview settings</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a10">
+    <div class="mdr-side mdr-left">
+      <div class="mdr-container mdr-container-example">
+        <div class="mdr-container mdr-container-sidebar mdr-container-first mdr-container-last">
+          <div class="mdr-block mdr-modified"><p>Preview <del class="mdr-del">uses the editor theme</del>.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="mdr-side mdr-right">
+      <div class="mdr-container mdr-container-example">
+        <div class="mdr-container mdr-container-sidebar mdr-container-first mdr-container-last">
+          <div class="mdr-block mdr-modified"><p>Preview <ins class="mdr-ins">follows the IDE theme</ins>.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a10" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a11">
+    <div class="mdr-side mdr-left">
+      <div class="mdr-container mdr-container-example mdr-container-last">
+        <div class="mdr-container mdr-container-admonition mdr-container-first mdr-container-last mdr-alert mdr-alert-note">
+          <div class="mdr-block mdr-equal"><p>The preview needs no network access.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="mdr-side mdr-right">
+      <div class="mdr-container mdr-container-example mdr-container-last">
+        <div class="mdr-container mdr-container-admonition mdr-container-first mdr-container-last mdr-alert mdr-alert-note">
+          <div class="mdr-block mdr-equal"><p>The preview needs no network access.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a12">
+    <div class="mdr-side mdr-left">
+      <div class="mdr-container mdr-container-quote mdr-container-first mdr-container-last">
+        <div class="mdr-block mdr-equal"><p>Rendered diffs are for review, not publishing.</p></div>
+      </div>
+    </div>
+    <div class="mdr-side mdr-right">
+      <div class="mdr-container mdr-container-quote mdr-container-first mdr-container-last">
+        <div class="mdr-block mdr-equal"><p>Rendered diffs are for review, not publishing.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a13">
+    <div class="mdr-side mdr-left">
+      <div class="mdr-container mdr-container-verse mdr-container-first mdr-container-last">
+        <div class="mdr-block mdr-equal"><p>Read the diff.<br>Trust the diff.<br>Review the diff.</p></div>
+      </div>
+    </div>
+    <div class="mdr-side mdr-right">
+      <div class="mdr-container mdr-container-verse mdr-container-first mdr-container-last">
+        <div class="mdr-block mdr-equal"><p>Read the diff.<br>Trust the diff.<br>Review the diff.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a14">
+    <div class="mdr-side mdr-left"><div class="mdr-placeholder"></div></div>
+    <div class="mdr-side mdr-right">
+      <div class="mdr-container mdr-container-open mdr-container-first mdr-container-last">
+        <div class="mdr-block mdr-added"><p>This open block exists on the new side only; the placeholder on the left has no frame.</p></div>
+      </div>
+    </div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a14" title="Revert change">⟲ Revert</button></div>
+  </div>
+
+  <div class="mdr-row" data-block-id="a15">
+    <div class="mdr-side mdr-left"><div class="mdr-placeholder"></div></div>
+    <div class="mdr-side mdr-right"><div class="mdr-block mdr-added"><hr class="mdr-page-break"></div></div>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a15" title="Revert change">⟲ Revert</button></div>
+  </div>
+</div>
+
+<!-- ===================== AsciiDoc: merged view ===================== -->
+<div class="demo-title">AsciiDoc: merged view</div>
+<div class="mdr-root mdr-merged">
+  <div class="mdr-block mdr-modified mdr-attribute" data-block-id="a1">:product-version: <del class="mdr-del">1.3.0</del><ins class="mdr-ins">1.4.0</ins>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a1">⟲ Revert</button></div></div>
+
+  <div class="mdr-block mdr-modified mdr-include" data-block-id="a2">include::<a href="#">chapters/<del class="mdr-del">setup</del><ins class="mdr-ins">install</ins>.adoc</a>[]
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a2">⟲ Revert</button></div></div>
+
+  <div class="mdr-block mdr-modified" data-block-id="a3"><p>Open <span class="menuseq"><b class="menu">File</b>&#160;&#8250;&#160;<b class="submenu">Settings</b>&#160;&#8250;&#160;<b class="menuref">Markdown Review</b></span> and <del class="mdr-del">enable preview</del><ins class="mdr-ins">enable <mark>rendered diff</mark></ins>.<sup class="mdr-fnref"><a href="#mdr-fn-right-a3m">1</a></sup></p>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a3">⟲ Revert</button></div></div>
+
+  <div class="mdr-block mdr-added mdr-footnote" data-block-id="a4" id="mdr-fn-right-a3m"><span class="mdr-fn-label">1</span><div class="mdr-fn-body">The AsciiDoc plugin is required.</div></div>
+
+  <div class="mdr-item" data-block-id="a5"><dl class="mdr-dlist"><dt class="mdr-block mdr-equal">repository</dt></dl></div>
+  <div class="mdr-item" data-block-id="a6"><dl class="mdr-dlist"><dd class="mdr-block mdr-modified">github.com/example/markdown-review<ins class="mdr-ins">/tree/main/docs</ins></dd></dl></div>
+
+  <div class="mdr-item" data-block-id="a7"><ol class="mdr-li mdr-callout" start="1"><li class="mdr-block mdr-equal">Install the AsciiDoc plugin.</li></ol></div>
+  <div class="mdr-item" data-block-id="a8"><ol class="mdr-li mdr-callout" start="2"><li class="mdr-block mdr-modified"><del class="mdr-del">Enable preview</del><ins class="mdr-ins">Enable rendered diff</ins>.</li></ol>
+    <div class="mdr-actions"><button class="mdr-revert" data-block-id="a8">⟲ Revert</button></div></div>
+
+  <div class="mdr-item" data-block-id="a9">
+    <div class="mdr-container mdr-container-example mdr-container-first">
+      <div class="mdr-block mdr-equal mdr-block-title">Preview settings</div>
+    </div>
+  </div>
+  <div class="mdr-item" data-block-id="a10">
+    <div class="mdr-container mdr-container-example mdr-container-last">
+      <div class="mdr-container mdr-container-admonition mdr-container-first mdr-container-last mdr-alert mdr-alert-warning">
+        <div class="mdr-block mdr-modified"><p><del class="mdr-del">Preview may load remote images.</del><ins class="mdr-ins">Remote images need the setting above.</ins></p>
+          <div class="mdr-actions"><button class="mdr-revert" data-block-id="a10">⟲ Revert</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mdr-item" data-block-id="a12">
+    <div class="mdr-container mdr-container-quote mdr-container-first mdr-container-last">
+      <div class="mdr-block mdr-equal"><p>Rendered diffs are for review, not publishing.</p></div>
+    </div>
+  </div>
+
+  <div class="mdr-item" data-block-id="a15"><div class="mdr-block mdr-added"><hr class="mdr-page-break"></div></div>
 </div>
 
 <div class="demo-title">Empty document</div>

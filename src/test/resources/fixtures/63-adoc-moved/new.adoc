@@ -1,0 +1,28 @@
+= Handbook
+
+== Overview
+
+This handbook describes the product.
+
+== Installation
+
+Install the product from the marketplace.
+
+== Troubleshooting
+
+Check the log file first.
+
+* Startup problems
+* Rendering problems
+
+== Appendix
+
+Additional reference material.
+
+== Configuration
+
+Configuration is stored in the project settings.
+
+* Project settings
+* IDE settings
+* Shared profiles

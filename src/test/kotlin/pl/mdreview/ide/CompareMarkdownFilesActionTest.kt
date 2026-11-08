@@ -3,6 +3,7 @@ package pl.mdreview.ide
 import com.intellij.diff.contents.FileContent
 import com.intellij.diff.requests.ContentDiffRequest
 import com.intellij.diff.requests.DiffRequest
+import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
 import com.intellij.openapi.project.Project
@@ -26,6 +27,19 @@ class CompareMarkdownFilesActionTest : BasePlatformTestCase() {
         }
     }
 
+    private class FakeRuntime : AsciiDocSupport.Runtime {
+        override fun isReady() = true
+        override fun prepare(onReady: () -> Unit) = onReady()
+    }
+
+    override fun tearDown() {
+        try {
+            AsciiDocSupport.uninstall()
+        } finally {
+            super.tearDown()
+        }
+    }
+
     private fun file(name: String) = myFixture.addFileToProject(name, "# $name\n").virtualFile
 
     private fun event(action: CompareMarkdownFilesAction, vararg selected: VirtualFile) = TestActionEvent.createTestEvent(
@@ -39,9 +53,27 @@ class CompareMarkdownFilesActionTest : BasePlatformTestCase() {
     private fun comparedFiles(request: DiffRequest): List<VirtualFile> =
         (request as ContentDiffRequest).contents.map { (it as FileContent).file }
 
+    private fun <T> withAsciiDoc(block: () -> T): T {
+        AsciiDocSupport.install(FakeRuntime())
+        try {
+            return block()
+        } finally {
+            AsciiDocSupport.uninstall()
+        }
+    }
+
     fun `test two selected files open without a chooser`() {
         val a = file("a.md")
         val b = file("b.md")
+        val action = TestAction(emptyList())
+        action.actionPerformed(event(action, a, b))
+        assertEmpty(action.chooserCalls)
+        assertEquals(listOf(a, b), comparedFiles(action.requests.single()))
+    }
+
+    fun `test two selected AsciiDoc files open while support is available`() = withAsciiDoc {
+        val a = file("a.adoc")
+        val b = file("b.asciidoc")
         val action = TestAction(emptyList())
         action.actionPerformed(event(action, a, b))
         assertEmpty(action.chooserCalls)
@@ -81,12 +113,60 @@ class CompareMarkdownFilesActionTest : BasePlatformTestCase() {
         }
     }
 
-    fun `test action is hidden for other files or more than two`() {
+    fun `test action is enabled for AsciiDoc only while support is available`() = withAsciiDoc {
         val action = CompareMarkdownFilesAction()
-        for (selected in listOf(arrayOf(file("a.txt")), arrayOf(file("x.md"), file("y.md"), file("z.md")))) {
+        for (selected in listOf(arrayOf(file("a.adoc")), arrayOf(file("b.adoc"), file("c.asciidoc")))) {
+            val e = event(action, *selected)
+            action.update(e)
+            assertTrue(selected.contentToString(), e.presentation.isEnabledAndVisible)
+        }
+    }
+
+    fun `test action is hidden for AsciiDoc while support is unavailable`() {
+        val action = CompareMarkdownFilesAction()
+        for (selected in listOf(arrayOf(file("a.adoc")), arrayOf(file("b.adoc"), file("c.asciidoc")))) {
             val e = event(action, *selected)
             action.update(e)
             assertFalse(selected.contentToString(), e.presentation.isEnabledAndVisible)
         }
+    }
+
+    fun `test action is hidden for other files, mixed formats or more than two`() {
+        AsciiDocSupport.install(FakeRuntime())
+        try {
+            val action = CompareMarkdownFilesAction()
+            val selected = listOf(
+                arrayOf(file("a.txt")),
+                arrayOf(file("x.md"), file("y.adoc")),
+                arrayOf(file("p.md"), file("q.md"), file("r.md")),
+            )
+            for (files in selected) {
+                val e = event(action, *files)
+                action.update(e)
+                assertFalse(files.contentToString(), e.presentation.isEnabledAndVisible)
+            }
+        } finally {
+            AsciiDocSupport.uninstall()
+        }
+    }
+
+    fun `test a mixed pair is not opened even when invoked programmatically`() {
+        AsciiDocSupport.install(FakeRuntime())
+        try {
+            val action = TestAction(emptyList())
+            action.actionPerformed(event(action, file("a.md"), file("b.adoc")))
+            assertEmpty(action.requests)
+        } finally {
+            AsciiDocSupport.uninstall()
+        }
+    }
+
+    fun `test action text is format neutral`() {
+        val action = ActionManager.getInstance().getAction("MarkdownReview.CompareFiles")
+        assertEquals("Compare Rendered Files...", action.templatePresentation.text)
+        assertEquals(
+            "Show a rendered diff of two files of the same format, Markdown or AsciiDoc",
+            action.templatePresentation.description,
+        )
     }
 }

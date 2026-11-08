@@ -1,14 +1,20 @@
-# Fixtures: Markdown file pairs
+# Fixtures: Markdown and AsciiDoc file pairs
 
 Each `<case>/` directory contains:
-- `old.md`: version before the change (left side),
-- `new.md`: version after the change (right side),
+- `old.md` / `new.md` for a Markdown pair, or `old.adoc` / `new.adoc` for an AsciiDoc pair (the versions before and after the change, left and right side),
 - `EXPECTED.md`: expected changes at block level (`equal` / `modified` / `added` / `removed`, optionally `moved`) and in the word diff.
+
+AsciiDoc fixtures use exactly the `.adoc` names, `old.adoc` and `new.adoc`; the fixture test picks the format from the
+extension, so `.asciidoc` is not used here even when the document is named that way in real projects. Both sides of a
+pair have the same extension.
+
+Cases 01-41 are Markdown. Cases 50-68 are AsciiDoc: 50-64 were added for P4.3, 65-66 for P4.7 (Mermaid and math),
+67 for P4.9 (AsciiMath), and 68 for AsciiDoc footnotes.
 
 Every confirmed rendering or diff bug gets a case here before it is fixed, built from the reporter's files cut down to
 the smallest pair that still shows the problem.
 
-The files are input for the diff engine tests (M1), the HTML generator (M2) and the preview. `.gitattributes` disables line-ending normalization because some cases depend on exact bytes.
+The files are input for the diff engine tests (M1), the HTML generator (M2) and the preview. `.gitattributes` disables line-ending normalization because some cases depend on exact bytes; that includes every `.adoc` file.
 
 | Case | What it checks |
 |---|---|
@@ -54,3 +60,22 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 39-short-list-items | a short list item replaced by another that shares only common words, which must not pair |
 | 40-math | inline and block formulas: equal, changed, added, unparsable, and dollar signs that are not formulas |
 | 41-wiki-links | `[[target]]` and `[[target\|label]]` wiki links: changed label, changed target, and text that is not a link |
+| 50-adoc-paragraph-edit | AsciiDoc paragraphs: word diff and a formatting-only change |
+| 51-adoc-sections | section text and level changes, discrete headings, document title |
+| 52-adoc-lists | nested, ordered, checklist and description lists, list continuations |
+| 53-adoc-tables | changed, added and removed rows, header row, `a\|` cell |
+| 54-adoc-listing | source blocks: language change, line changes, callouts |
+| 55-adoc-admonitions | admonition paragraph and block, type change |
+| 56-adoc-containers | example, sidebar, quote and open blocks, nested content changes |
+| 57-adoc-block-titles | added, removed and changed `.Title` |
+| 58-adoc-attributes | header and body attribute entries; a changed value changes a referencing paragraph |
+| 59-adoc-comments | line and block comments added and edited; unchanged comments hidden |
+| 60-adoc-includes | `include::` added, removed and retargeted; never resolved |
+| 61-adoc-links-images | link text vs target, `xref:`, `<<id>>`, inline and block images |
+| 62-adoc-conditionals | `ifdef` around a paragraph, condition changed |
+| 63-adoc-moved | a section moved without changes |
+| 64-adoc-large | ~500 sections, performance |
+| 65-adoc-mermaid | `[mermaid]` listing and literal blocks: unchanged, changed, removed, added, an unparsable diagram and an attribute-only change; source diff behind a toggle |
+| 66-adoc-math | inline and block `latexmath` / `stem` formulas (`:stem: latexmath`), drawn AsciiMath, changed, added, removed and an unparsable formula |
+| 67-adoc-asciimath | AsciiMath via unset `:stem:`, `asciimath:[...]`, `[stem]` and `[asciimath]` blocks: fractions, matrices, a vector, a spelling-only change and rejected input |
+| 68-adoc-footnotes | AsciiDoc footnotes: unchanged, changed, added, removed, an explicit id referenced twice, and an insertion that renumbers later footnotes |

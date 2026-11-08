@@ -1,0 +1,18 @@
+= Product Guide
+
+== Overview
+
+A short overview of the product.
+
+==== Installation
+
+Install the product from the marketplace.
+
+== Settings
+
+Configuration is stored in the project settings.
+
+[discrete]
+=== Release Notes
+
+What changed in this release.

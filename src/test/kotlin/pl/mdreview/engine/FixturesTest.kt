@@ -1,5 +1,6 @@
 package pl.mdreview.engine
 
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.LineRange
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.DiffOptions as ApiDiffOptions
@@ -36,6 +37,23 @@ class FixturesTest {
     private fun changes(case: String): List<String> = diff(case).changes.map {
         val b = (it.right ?: it.left)!!
         "${it.status} ${b.kind} ${b.plainText.trim().take(24).trim()}".trim()
+    }
+
+    @Test
+    fun `without a format the renderer is Markdown, exactly as with an explicit one`() {
+        for (case in listOf("01-paragraph-edit", "09-links-images", "29-html-blocks", "32-details")) {
+            val request = RenderRequest(
+                read(case, "old.md"),
+                read(case, "new.md"),
+                ViewMode.SIDE_BY_SIDE,
+                ApiDiffOptions(collapseUnchanged = false),
+            )
+            val default = CoreMarkdownDiffRenderer().render(request)
+            val markdown = CoreMarkdownDiffRenderer().render(request.copy(format = DocumentFormat.MARKDOWN))
+            assertEquals(markdown.bodyHtml, default.bodyHtml, case)
+            assertEquals(markdown.blocks, default.blocks, case)
+            assertEquals(markdown.css, default.css, case)
+        }
     }
 
     @Test

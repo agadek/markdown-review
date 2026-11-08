@@ -3,8 +3,8 @@
     <name>Markdown Review</name>
     <vendor url="https://github.com/agadek/markdown-review">agadek</vendor>
     <description><![CDATA[
-        Review changes to Markdown files in <b>rendered</b> form, right inside IntelliJ's own diff window,
-        instead of reading raw markup.
+        Review changes to Markdown and AsciiDoc files in <b>rendered</b> form, right inside IntelliJ's own diff
+        window, instead of reading raw markup.
         <br/><br/>
         A text diff of Markdown shows syntax, not content: a rewritten paragraph turns into scattered red and green
         lines, a table edit becomes shifted <code>|</code> characters, and re-indenting a list looks like everything
@@ -25,20 +25,25 @@
           <li><b>Block source editing:</b> double-click a block to edit its raw Markdown in place; saved as one Undo
               step.</li>
           <li><b>Show Rendered Diff</b> in the context menu of the Git log's changed files, of file history and of the
-              Commit window opens a Markdown change rendered, whichever viewer diffs open with by default.</li>
+              Commit window opens a Markdown or AsciiDoc change rendered, whichever viewer diffs open with by default.</li>
           <li><b>Export</b> the rendered diff as a standalone HTML file (no scripts, images inlined) or a PDF, to attach
               to a review or a ticket.</li>
           <li><b>Custom stylesheet:</b> a CSS file of your own on top of the rendered view, for example to match your
               documentation site.</li>
           <li><b>Text diff</b> one click away in the diff window's viewer switcher.</li>
           <li>Works for local changes (Commit window), file history, branch comparison and pull requests, plus
-              <i>Compare Markdown Files...</i> for any two files.</li>
+              <i>Compare Rendered Files...</i> for any two files of the same format.</li>
           <li>F7 and Shift+F7 move between changes; Ctrl/Cmd+click on a block opens its source in the editor.</li>
           <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts, plus HTML
               blocks, <code>&lt;details&gt;</code>, HTML comments, hard line breaks, emoji shortcodes, wiki links and YAML
               front matter.</li>
-          <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with and how readily a
-              rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
+          <li><b>AsciiDoc:</b> sections, lists, tables, source blocks, admonitions, containers, attributes, comments,
+              includes (shown, not resolved), conditionals, links and cross-references, images, block titles,
+              footnotes, thematic and page breaks, Mermaid diagrams and <code>latexmath</code> / AsciiMath formulas,
+              with the same viewers and actions as Markdown. AsciiDoc diffs need the free AsciiDoc plugin installed
+              and enabled; mixed Markdown/AsciiDoc pairs keep the text diff.</li>
+          <li>Settings | Tools | Markdown Review picks the viewer a Markdown or AsciiDoc diff opens with and how
+              readily a rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
               large-file, remote-image, Mermaid and math options. The diff colors are set per color scheme in
               Settings | Editor | Color Scheme | Markdown Review.</li>
         </ul>
@@ -47,7 +52,9 @@
         <a href="https://ko-fi.com/gadek">&#9749; Ko-fi</a>.
         <br/><br/>
         Requires an IntelliJ-based IDE 2025.1 or newer with JCEF (the default in JetBrains Runtime); without JCEF the
-        text diff stays in place.
+        text diff stays in place. AsciiDoc diffs also need the free AsciiDoc plugin
+        (<code>org.asciidoctor.intellij.asciidoc</code>) installed and enabled; AsciidoctorJ is not bundled, and
+        without the AsciiDoc plugin AsciiDoc diffs keep the text viewer.
         <br/><br/>
         Free for noncommercial use under the
         <a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial License 1.0.0</a>.
@@ -62,12 +69,18 @@
     <depends>com.intellij.modules.platform</depends>
     <!-- Only to recognize the Markdown file type for files without a .md-like extension; rendering uses commonmark. -->
     <depends optional="true" config-file="markdown-review-withMarkdown.xml">org.intellij.plugins.markdown</depends>
+    <!-- AsciiDoc support and AsciidoctorJ exist only while the AsciiDoc plugin is enabled (NFR-11, ADR 0003). -->
+
+    <depends optional="true" config-file="markdown-review-withAsciiDoc.xml">org.asciidoctor.intellij.asciidoc</depends>
 
     <resource-bundle>messages.MarkdownReviewBundle</resource-bundle>
 
     <extensionPoints>
         <extensionPoint qualifiedName="pl.mdreview.markdownFileTypeRecognizer"
                         interface="pl.mdreview.ide.MarkdownFileTypeRecognizer" dynamic="true"/>
+        <!-- Format-neutral file type recognition, for a format's own optional plugin descriptor. -->
+        <extensionPoint qualifiedName="pl.mdreview.documentFileTypeRecognizer"
+                        interface="pl.mdreview.ide.DocumentFileTypeRecognizer" dynamic="true"/>
     </extensionPoints>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -78,6 +91,9 @@
                                  key="settings.display.name"/>
         <colorSettingsPage implementation="pl.mdreview.ide.MarkdownReviewColorSettingsPage"/>
         <postStartupActivity implementation="pl.mdreview.ide.DefaultViewerStartupActivity"/>
+        <!-- Enables AsciiDoc support when the optional AsciiDoc plugin is enabled while the IDE is running. -->
+        <applicationListener class="pl.mdreview.ide.AsciiDocPluginListener"
+                             topic="com.intellij.dynamicPluginListener"/>
         <errorHandler implementation="pl.mdreview.ide.GitHubErrorReporter"/>
         <notificationGroup id="Markdown Review" displayType="BALLOON" key="notification.group"/>
     </extensions>

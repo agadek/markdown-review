@@ -5,8 +5,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting. A small pair of Markdown files that shows the problem is the most useful part:
-        every confirmed bug gets such a pair as a test fixture before it is fixed.
+        Thanks for reporting. A small pair of Markdown or AsciiDoc files that shows the problem is the most useful
+        part: every confirmed bug gets such a pair as a test fixture before it is fixed.
   - type: textarea
     id: what
     attributes:
@@ -18,7 +18,7 @@ body:
     id: old
     attributes:
       label: Old version (left side)
-      description: The smallest Markdown that still shows the problem.
+      description: The smallest Markdown or AsciiDoc document that still shows the problem.
       render: markdown
   - type: textarea
     id: new
@@ -33,6 +33,15 @@ body:
         - Rendered side by side
         - Rendered merged
         - Both
+  - type: dropdown
+    id: asciidoc-plugin
+    attributes:
+      label: For AsciiDoc diffs, is the AsciiDoc plugin installed and enabled?
+      options:
+        - Not an AsciiDoc diff
+        - "Yes"
+        - "No"
+        - Not sure
   - type: input
     id: ide
     attributes:

@@ -34,12 +34,68 @@ enum class BlockKind {
     MATH,
     /** An HTML block that is exactly one comment (`<!-- ... -->`); [Block.plainText] is the comment's text. */
     HTML_COMMENT,
+
+    /** An AsciiDoc attribute entry (`:name: value`), compared as written; [Block.plainText] is the entry. */
+    ATTRIBUTE,
+
+    /** An AsciiDoc block title (`.Title`) before the block it titles; [Block.plainText] is the title. */
+    BLOCK_TITLE,
+
+    /** The term of an AsciiDoc description list entry (`term:: description`). */
+    DESCRIPTION_TERM,
+
+    /** An AsciiDoc block image (`image::target[alt]`); [Block.target] is the target, [Block.plainText] the alt text. */
+    IMAGE,
+
+    /** An AsciiDoc `include::target[]` directive; [Block.target] is the target, never resolved. */
+    INCLUDE,
 }
 
 enum class DiffStatus { EQUAL, MODIFIED, REMOVED, ADDED }
 
 /** Zero-based, end-exclusive line and offset range of a block in its source text. */
 data class SourceRange(val startLine: Int, val endLine: Int, val startOffset: Int, val endOffset: Int)
+
+/** A delimited container a block sits in, independent of the document format. */
+data class Container(val kind: String, val type: String? = null, val title: String? = null)
+
+/** What kind of source range an [BlockGroup] covers. */
+enum class BlockGroupKind {
+    /** A delimited code or literal block, `++++` passthrough, or a future Mermaid or stem block. */
+    CODE,
+
+    /** A `|===` table. */
+    TABLE,
+
+    /** A delimited example, sidebar, quote, verse, open or admonition container. */
+    CONTAINER,
+
+    /** A list item together with the blocks attached to it (nested lists and `+` continuations). */
+    LIST_ITEM,
+
+    /** The document header: the title and the author, revision and attribute lines that follow it. */
+    HEADER,
+}
+
+/**
+ * A source range that one edit exchanges as a whole when every block in it is added or removed: a delimited
+ * code block, table or container with its open and close delimiters, a list item with its attached blocks, or
+ * the document header. [startLine] includes the group's own prefix lines (attributes, anchors and a block title);
+ * [openLine] and [closeLine] are the delimiter lines, so a change inside an existing group can stay inside them.
+ */
+data class BlockGroup(
+    val kind: BlockGroupKind,
+    /** First source line of the group, including its prefix lines. */
+    val startLine: Int,
+    /** End-exclusive line after the closing delimiter or the last attached block. */
+    val endLine: Int,
+    /** The opening delimiter line, or the first content line for a header or list item. */
+    val openLine: Int = startLine,
+    /** The closing delimiter line, or `null` when the group has no delimiter. */
+    val closeLine: Int? = null,
+    /** Metadata lines above the opening delimiter that belong to the group. */
+    val prefixLines: List<Int> = emptyList(),
+)
 
 /** Where a block sits: inside how many quotes, and for list items the list it belongs to. */
 data class BlockContext(
@@ -51,14 +107,28 @@ data class BlockContext(
     val alert: String? = null,
     /** How many multi-block `<details>` elements the block sits in. */
     val details: Int = 0,
+    /** Delimited containers the block sits in, outermost first. Empty for Markdown. */
+    val containers: List<Container> = emptyList(),
 )
 
+/** How a block's visible content is rendered. */
+sealed interface BlockContent {
+    /** commonmark nodes, rendered as Markdown. */
+    data class Commonmark(val nodes: List<Node>) : BlockContent
+
+    /** Sanitized HTML parts, rendered with word marks on their text runs. */
+    data class Html(val parts: List<HtmlFragment.Part>) : BlockContent
+
+    /** No structured content; the block is rendered from its source. */
+    data object Raw : BlockContent
+}
+
 /**
- * One comparable unit of a Markdown document.
+ * One comparable unit of a document.
  *
  * [key] is what the matcher compares; [plainText] is the visible text the word diff runs on.
- * [node] is the commonmark node to render (null for code lines, front matter and code fences,
- * which are rendered from [rawText]).
+ * [content] says how the block is rendered: commonmark nodes for Markdown blocks, sanitized HTML for HTML blocks,
+ * [BlockContent.Raw] for code lines, front matter and other blocks rendered from [rawText].
  */
 class Block(
     val kind: BlockKind,
@@ -67,9 +137,7 @@ class Block(
     val rawText: String,
     val source: SourceRange,
     val context: BlockContext = BlockContext(),
-    val node: Node? = null,
-    /** For a list item: the children to render (everything except nested lists). */
-    val renderNodes: List<Node> = listOfNotNull(node),
+    val content: BlockContent = BlockContent.Raw,
     val language: String? = null,
     /** Heading level (1–6), 0 for other blocks. */
     val level: Int = 0,
@@ -78,9 +146,31 @@ class Block(
      * [BlockKind.MATH] block: its source lines.
      */
     val lines: List<Block> = emptyList(),
+    /** For a [BlockKind.FOOTNOTE]: its label, without the `[^` and `]`. */
+    val label: String? = null,
+    /** For an [BlockKind.IMAGE] or [BlockKind.INCLUDE]: its target, as written; never resolved for includes. */
+    val target: String? = null,
+    /** Optional title, for example a block image's caption (`.Title` is a [BlockKind.BLOCK_TITLE] of its own). */
+    val title: String? = null,
+    /**
+     * Source lines directly above [source] that belong to this block's edit region: style attributes, anchors, a
+     * block title and a `+` continuation marker. Sorted, zero-based; empty when the block has none.
+     */
+    val prefixLines: List<Int> = emptyList(),
+    /** Delimited or attached groups this block is part of, outermost first. */
+    val editGroups: List<BlockGroup> = emptyList(),
+    /**
+     * For an AsciiMath [BlockKind.MATH] block: the LaTeX `AsciiMathToTex` produced for KaTeX. `null` when the
+     * converter rejected the source, which the renderer shows as source.
+     */
+    val mathTex: String? = null,
 ) {
+    /** The commonmark nodes to render, or an empty list when the content is not [BlockContent.Commonmark]. */
+    val nodes: List<Node>
+        get() = (content as? BlockContent.Commonmark)?.nodes.orEmpty()
+
     /** Ranges of [plainText] that the word diff keeps whole: inline formulas. */
-    val atoms: List<IntRange> by lazy { BlockExtractor.atoms(this) }
+    val atoms: List<IntRange> by lazy { MarkdownBlockSource.atoms(this) }
 
     override fun toString(): String = "$kind(${key.take(40)})"
 }

@@ -1,0 +1,27 @@
+= Code Samples
+
+[source,java]
+----
+fun main() {
+    val diff = MarkdownDiff.compute(old, new)
+    println(diff.blocks.size)
+}
+----
+
+[source]
+----
+val unchanged = true
+----
+
+[source,kotlin]
+----
+val diff = MarkdownDiff.compute(old, new)
+diff.blocks.forEach { println(it.status) } // <1>
+----
+<1> Prints the status of every block.
+
+Literal block:
+
+....
+$ ./gradlew test
+....

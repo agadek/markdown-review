@@ -2,10 +2,12 @@ package pl.mdreview.render
 
 import pl.mdreview.api.BlockStatus
 import pl.mdreview.api.DiffOptions
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.LineRange
 import pl.mdreview.api.MarkdownDiffRenderer
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.ViewMode
+import java.io.File
 import java.util.ServiceLoader
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -72,11 +74,48 @@ class CoreMarkdownDiffRendererTest {
     }
 
     @Test
+    fun `a format without a front end falls back to raw paragraphs`() {
+        val result = renderer.render(
+            RenderRequest(
+                "= Title\n\nOld paragraph.\n",
+                "= Title\n\nNew paragraph.\n",
+                ViewMode.SIDE_BY_SIDE,
+                format = DocumentFormat.ASCIIDOC,
+            ),
+        )
+        assertEquals(listOf(BlockStatus.EQUAL, BlockStatus.MODIFIED), result.blocks.map { it.status })
+        assertContains(result.bodyHtml, "Old paragraph.")
+        assertContains(result.bodyHtml, "New paragraph.")
+        assertContains(result.bodyHtml, "class=\"mdr-block mdr-modified\"")
+    }
+
+    @Test
     fun `remote images in raw html load only when allowed`() {
         val md = "<img src=\"https://example.com/a.png\">\n"
         val blocked = renderer.render(RenderRequest("", md, ViewMode.MERGED))
         assertTrue("https://example.com/a.png" !in blocked.bodyHtml)
         val allowed = renderer.render(RenderRequest("", md, ViewMode.MERGED, DiffOptions(loadRemoteImages = true)))
         assertContains(allowed.bodyHtml, "src=\"https://example.com/a.png\"")
+    }
+
+    /**
+     * The sanitizer change needed for AsciiDoc inline classes must not alter Markdown output. These snapshots were
+     * generated from the commit before the AsciiDoc renderer.
+     */
+    @Test
+    fun `31 html sanitizer output is unchanged by the AsciiDoc renderer`() {
+        fun read(name: String): String {
+            val url = javaClass.getResource(name) ?: error("Missing test resource $name")
+            return File(url.toURI()).readBytes().toString(Charsets.UTF_8)
+        }
+        val old = read("/fixtures/31-html-sanitizer/old.md")
+        val new = read("/fixtures/31-html-sanitizer/new.md")
+        for (mode in ViewMode.entries) {
+            val expected = read("/snapshots/31-html-sanitizer-${mode.name.lowercase()}.html")
+            val actual = renderer.render(
+                RenderRequest(old, new, mode, DiffOptions(collapseUnchanged = false)),
+            ).bodyHtml
+            assertEquals(expected, actual, mode.name)
+        }
     }
 }

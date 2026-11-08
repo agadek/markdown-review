@@ -1,0 +1,21 @@
+= Titles
+
+.Original title
+====
+Content in a titled example.
+====
+
+====
+Content without a title.
+====
+
+.Deprecated notice
+----
+literal content
+----
+
+.Retained title
+[source,java]
+----
+val x = 1
+----

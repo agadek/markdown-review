@@ -24,6 +24,7 @@ import com.intellij.testFramework.TestActionEvent
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.ui.jcef.JBCefApp
 import com.intellij.vcsUtil.VcsUtil
+import pl.mdreview.api.DocumentFormat
 
 class ShowRenderedDiffActionTest : BasePlatformTestCase() {
 
@@ -41,6 +42,11 @@ class ShowRenderedDiffActionTest : BasePlatformTestCase() {
         override fun getRevisionNumber(): VcsRevisionNumber = VcsRevisionNumber.NULL
     }
 
+    private class FakeRuntime : AsciiDocSupport.Runtime {
+        override fun isReady() = true
+        override fun prepare(onReady: () -> Unit) = onReady()
+    }
+
     private lateinit var savedOrder: List<String>
     private lateinit var savedViewer: Pair<DefaultViewer, DefaultViewer?>
 
@@ -53,12 +59,22 @@ class ShowRenderedDiffActionTest : BasePlatformTestCase() {
 
     override fun tearDown() {
         try {
+            AsciiDocSupport.uninstall()
             DiffSettings.getSettings(DefaultViewerOrder.RENDERED_DIFF_PLACE).diffToolsOrder = savedOrder
             val settings = MarkdownReviewSettings.getInstance()
             settings.defaultViewer = savedViewer.first
             settings.appliedDefaultViewer = savedViewer.second
         } finally {
             super.tearDown()
+        }
+    }
+
+    private fun <T> withAsciiDoc(block: () -> T): T {
+        AsciiDocSupport.install(FakeRuntime())
+        try {
+            return block()
+        } finally {
+            AsciiDocSupport.uninstall()
         }
     }
 
@@ -76,35 +92,56 @@ class ShowRenderedDiffActionTest : BasePlatformTestCase() {
             .build(),
     )
 
-    fun `test only Markdown changes are shown, in selection order`() {
+    fun `test only Markdown and AsciiDoc changes are shown, in selection order`() = withAsciiDoc {
         val readme = change("README.md", "README.md")
         val code = change("Main.kt", "Main.kt")
         val added = change(null, "docs/guide.markdown")
         val deleted = change("old.md", null)
-        assertEquals(listOf(readme, added, deleted), ShowRenderedDiffAction.markdownChanges(listOf(readme, code, added, deleted)))
+        val adoc = change("docs/guide.adoc", "docs/guide.adoc")
+        assertEquals(
+            listOf(readme, added, deleted, adoc),
+            ShowRenderedDiffAction.renderedChanges(listOf(readme, code, added, deleted, adoc)),
+        )
+    }
+
+    fun `test AsciiDoc changes are ignored while support is unavailable`() {
+        val adoc = change("docs/guide.adoc", "docs/guide.adoc")
+        val mixed = change("README.md", "README.adoc")
+        assertEmpty(ShowRenderedDiffAction.renderedChanges(listOf(adoc, mixed)))
     }
 
     fun `test a file renamed to or from Markdown counts`() {
         val toMarkdown = change("notes.txt", "notes.md")
         val fromMarkdown = change("notes.md", "notes.txt")
         val other = change("notes.txt", "notes.rst")
-        assertEquals(listOf(toMarkdown, fromMarkdown), ShowRenderedDiffAction.markdownChanges(listOf(toMarkdown, fromMarkdown, other)))
+        assertEquals(listOf(toMarkdown, fromMarkdown), ShowRenderedDiffAction.renderedChanges(listOf(toMarkdown, fromMarkdown, other)))
     }
 
-    fun `test action is hidden without a Markdown change`() {
+    fun `test a rename between Markdown and AsciiDoc does not count`() = withAsciiDoc {
+        val toAsciiDoc = change("README.md", "README.adoc")
+        val toMarkdown = change("README.adoc", "README.md")
+        val adocRename = change("docs/old.adoc", "docs/new.adoc")
+        assertEquals(listOf(adocRename), ShowRenderedDiffAction.renderedChanges(listOf(toAsciiDoc, toMarkdown, adocRename)))
+        assertNull(ShowRenderedDiffAction.formatOf(toAsciiDoc))
+        assertEquals(DocumentFormat.ASCIIDOC, ShowRenderedDiffAction.formatOf(adocRename))
+    }
+
+    fun `test action is hidden without a supported change`() {
         val action = ShowRenderedDiffAction()
-        for (selected in listOf(emptyArray(), arrayOf(change("Main.kt", "Main.kt")))) {
+        for (selected in listOf(emptyArray(), arrayOf(change("Main.kt", "Main.kt")), arrayOf(change("README.adoc", "README.adoc")))) {
             val e = event(action, *selected)
             action.update(e)
             assertFalse(selected.contentToString(), e.presentation.isEnabledAndVisible)
         }
     }
 
-    fun `test action is shown for a Markdown change when JCEF is available`() {
+    fun `test action is shown for a Markdown or AsciiDoc change when JCEF is available`() = withAsciiDoc {
         val action = ShowRenderedDiffAction()
-        val e = event(action, change("README.md", "README.md"))
-        action.update(e)
-        assertEquals(JBCefApp.isSupported(), e.presentation.isEnabledAndVisible)
+        for (selected in listOf(change("README.md", "README.md"), change("README.adoc", "README.adoc"))) {
+            val e = event(action, selected)
+            action.update(e)
+            assertEquals(JBCefApp.isSupported(), e.presentation.isEnabledAndVisible)
+        }
     }
 
     fun `test the Commit window's selection counts, which comes only as CHANGES`() {
@@ -114,7 +151,7 @@ class ShowRenderedDiffActionTest : BasePlatformTestCase() {
             ShowRenderedDiffAction(),
             SimpleDataContext.builder().add(CommonDataKeys.PROJECT, project).add(VcsDataKeys.CHANGES, arrayOf(readme, code)).build(),
         )
-        assertEquals(listOf(readme), ShowRenderedDiffAction.markdownChanges(e))
+        assertEquals(listOf(readme), ShowRenderedDiffAction.renderedChanges(e))
     }
 
     fun `test the window opens rendered even when diffs default to the text viewer`() {

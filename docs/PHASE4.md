@@ -23,7 +23,8 @@ Architecture decisions are recorded as ADRs in [docs/adr/](adr/), and every mile
 
 - Rendering AsciiDoc the way a site generator would: no resolved includes, no Asciidoctor extensions
   (asciidoctor-diagram, PlantUML, Kroki), no Antora cross-references between components, no Asciidoctor PDF themes.
-- AsciiMath. Formulas are drawn by the bundled KaTeX, so only `latexmath` (and `stem` set to `latexmath`) is drawn.
+- A second math engine. Formulas are drawn by the bundled KaTeX only; AsciiMath is converted to LaTeX for it
+  (P4.9, [ADR 0008](adr/0008-asciimath-to-latex.md)) rather than drawn by MathJax.
 - Comparing a Markdown file with an AsciiDoc file (for example a rename from `README.md` to `README.adoc`); such a
   pair keeps the text diff.
 - reStructuredText and other formats. ADR 0004 keeps the door open, nothing more.
@@ -43,6 +44,7 @@ Architecture decisions are recorded as ADRs in [docs/adr/](adr/), and every mile
 | FR-22 | `[mermaid]` listing blocks are drawn with the bundled Mermaid and `stem:[...]` / `latexmath:[...]` / `[stem]` blocks with the bundled KaTeX, with the same toggles and source diff as Markdown diagrams and formulas. |
 | FR-23 | Document attributes defined in the file's own header or body are applied, so `{product-version}` renders as its value and changing an attribute entry shows as a change on the entry and on every block whose text it changes. `include::` directives are not followed; each is shown as its own block with the target, and a changed target is a change. |
 | FR-24 | AsciiDoc comments (`//` and `////`) are hidden unless they changed, like HTML comments in Markdown. |
+| FR-25 | AsciiMath formulas (`asciimath:[...]`, `[asciimath]` blocks, and `stem` when the document's `stem` attribute is unset or `asciimath`) are drawn with the bundled KaTeX, compared and toggled like `latexmath` formulas; a formula that cannot be converted stays source and is marked. |
 
 ### Non-functional
 
@@ -69,6 +71,7 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 | [0005](adr/0005-asciidoc-block-model.md) | How AsciiDoc maps onto blocks: which nodes become blocks, keys and plain text from Asciidoctor's converted inline HTML, line ranges from the source map plus a line scanner, word marks applied to HTML text runs. |
 | [0006](adr/0006-asciidoc-rendering-reuse.md) | Reuse the page, CSS variables, `mdr-*` classes, Mermaid, KaTeX and export; our own block markup around Asciidoctor's inline HTML, never Asciidoctor's stylesheet or block HTML. |
 | [0007](adr/0007-asciidoc-ide-integration.md) | The same two viewers, settings page and actions serve both formats, with format-neutral names; a pair of different formats keeps the text diff. |
+| [0008](adr/0008-asciimath-to-latex.md) | Draw AsciiMath by converting it to LaTeX in the engine, in Kotlin, for the bundled KaTeX; no JavaScript converter and no MathJax. |
 
 ## Overview
 
@@ -81,7 +84,8 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 | P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Done |
 | P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | In progress: provider wired and tested headless; runIde/manual check pending |
 | P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Done |
-| P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | In progress: docs and screenshots done; manual runIde and release pending |
+| P4.8 | Fixtures, documentation and release | P4.4–P4.7, P4.9 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | In progress: docs and screenshots done; manual runIde and release pending |
+| P4.9 | AsciiMath in AsciiDoc | P4.7 | [P4.9](specs/phase4/P4.9-asciidoc-asciimath.md) | Not started |
 
 P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1
 confirmed [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it had failed, the fallback in that ADR
@@ -224,7 +228,26 @@ Scope:
 Done when:
 - The release is on Marketplace, and the docs describe what is and is not supported.
 
+## P4.9 AsciiMath in AsciiDoc
+
+Added to phase 4 after P4.1 to P4.8 were merged. AsciiMath is Asciidoctor's default math notation, so leaving it
+undrawn left most AsciiDoc formulas as source.
+
+Scope:
+- `AsciiMathToTex`, a Kotlin converter from AsciiMath to LaTeX in the AsciiDoc front end, per
+  [ADR 0008](adr/0008-asciimath-to-latex.md).
+- AsciiMath inline and block formulas as `MATH` atoms and blocks drawn by KaTeX, keyed and diffed by their AsciiMath
+  source; a formula the converter rejects stays source and is marked.
+
+Done when:
+- Fixtures `66-adoc-math` and `67-adoc-asciimath` render with AsciiMath drawn, in both modes, light and dark, and
+  their exports include the drawings; Markdown fixtures are unchanged.
+
+Release: P4.9 ships in 1.4.0, and the release waits for it. P4.8's manual `runIde` checks run once, on the build
+with P4.9, and SPECIFICATION.md, README, the docs site and the CHANGELOG drop "AsciiMath is not supported" as part of
+P4.9.
+
 ## Not in phase 4
 
-reStructuredText, resolved includes, Asciidoctor extensions, AsciiMath, mixed-format pairs and an editor outside
+reStructuredText, resolved includes, Asciidoctor extensions, mixed-format pairs and an editor outside
 the JetBrains platform. Each can be reopened from feedback on the AsciiDoc release.

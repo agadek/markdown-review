@@ -4,8 +4,8 @@ Phases 1 to 3 built a rendered diff for Markdown. Phase 4 brings the same review
 `.adoc` changes open rendered in IntelliJ's diff window, block by block, with word diffs, navigation, per-block
 revert and apply, block editing, the block menu and export, exactly as Markdown does today.
 
-The specification lists AsciiDoc as out of scope for 1.0, and [PHASE3.md](PHASE3.md) kept it out of phase 3. This
-plan reopens it. The requirements below get the next free IDs (FR-16 onward, NFR-11 onward) and move into
+The 1.0 specification listed AsciiDoc as out of scope, and [PHASE3.md](PHASE3.md) kept it out of phase 3. This plan
+reopened it. The requirements below get the next free IDs (FR-16 onward, NFR-11 onward) and move into
 [SPECIFICATION.md](SPECIFICATION.md) when they ship, like the phase 2 and phase 3 ones did.
 
 Architecture decisions are recorded as ADRs in [docs/adr/](adr/), and every milestone has a spec in

@@ -6,7 +6,7 @@ body:
     id: steps
     attributes:
       label: What were you doing
-      description: For example "opened the diff of README.md in the Commit window". The Markdown involved helps too.
+      description: For example "opened the diff of README.md or guide.adoc in the Commit window". The document involved helps too.
     validations:
       required: true
   - type: textarea

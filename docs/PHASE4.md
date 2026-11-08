@@ -176,6 +176,12 @@ Done when:
 - Reverting or applying every changed block of every AsciiDoc fixture turns one side into the other, and each is one
   Undo step.
 
+P4.5 results: `AsciiDocRegionRules` covers prefix lines, delimited code, whole containers and tables, list
+continuations, the header, comments and includes, and moves. Every fixture applies and reverts exactly and re-parses
+to the target block tree; revert and apply are one Undo step. Two changes derived from another edit (an admonition
+container type and an attribute value) have `edit = null` because no single line edit covers them; reverting the
+source edit resolves them, and the round trip stays exact.
+
 ## P4.6 IDE integration
 
 Scope:
@@ -190,8 +196,9 @@ Done when:
 P4.6 results: `ReviewFiles` classifies both formats, the viewers accept only a pair of the same supported format,
 the actions say "Markdown or AsciiDoc", and the optional descriptor installs one `PluginAsciidoctorProvider` and
 registers the AsciiDoc file type. AsciidoctorJ is not bundled (the plugin zip stays at 2.2 MB) and is created lazily.
-A headless test renders a real AsciiDoc diff through the provider. The `runIde`/manual check remains for P4.8, as
-does the failure notice with **Open Text Viewer**.
+A headless test renders a real AsciiDoc diff through the provider. `verifyPlugin` is Compatible on IC 2025.1.3 and
+IU 2026.1; IU 263 reports only the baseline VCS compatibility problems, none from AsciiDoc or AsciidoctorJ. The
+`runIde`/manual check remains for P4.8, as does the failure notice with **Open Text Viewer**.
 
 ## P4.7 Diagrams and math in AsciiDoc
 

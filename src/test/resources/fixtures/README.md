@@ -4,7 +4,7 @@ Each `<case>/` directory contains:
 - `old.md` / `new.md` for a Markdown pair, or `old.adoc` / `new.adoc` for an AsciiDoc pair (the versions before and after the change, left and right side),
 - `EXPECTED.md`: expected changes at block level (`equal` / `modified` / `added` / `removed`, optionally `moved`) and in the word diff.
 
-Cases 01-41 are Markdown. Cases 50-64 are AsciiDoc, added for P4.3; their `EXPECTED.md` files state the intended result until the AsciiDoc front end is implemented.
+Cases 01-41 are Markdown. Cases 50-66 are AsciiDoc.
 
 Every confirmed rendering or diff bug gets a case here before it is fixed, built from the reporter's files cut down to
 the smallest pair that still shows the problem.
@@ -70,3 +70,5 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 62-adoc-conditionals | `ifdef` around a paragraph, condition changed |
 | 63-adoc-moved | a section moved without changes |
 | 64-adoc-large | ~500 sections, performance |
+| 65-adoc-mermaid | `[mermaid]` blocks: unchanged, changed, removed, added, unparsable, attribute-only change |
+| 66-adoc-math | inline and block `latexmath` / `stem` formulas, AsciiMath not drawn, changed, added, removed, unparsable |

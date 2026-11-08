@@ -3,8 +3,11 @@ package pl.mdreview.ide
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.editor.markup.TextAttributes
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import org.asciidoctor.Asciidoctor
+import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.ViewMode
+import pl.mdreview.engine.asciidoc.AsciidoctorProvider
 import pl.mdreview.render.CoreMarkdownDiffRenderer
 import java.awt.Color
 import java.awt.Font
@@ -77,6 +80,72 @@ class HtmlPageTest : BasePlatformTestCase() {
         assertTrue(html.contains("mdrDrawMath("))
     }
 
+    private val adocDiagram = """
+        = Diagrams
+
+        [mermaid]
+        ----
+        flowchart LR
+            A --> B
+        ----
+    """.trimIndent()
+
+    private val adocFormula = """
+        = Formulas
+        :stem: latexmath
+
+        Area: latexmath:[A = \pi r^2].
+
+        [latexmath]
+        ++++
+        E = mc^2
+        ++++
+    """.trimIndent()
+
+    private fun adocPage(left: String, right: String, renderMath: Boolean = true): String {
+        val provider = object : AsciidoctorProvider {
+            override fun asciidoctor(): Asciidoctor = adocInstance
+        }
+        val diff = CoreMarkdownDiffRenderer(provider).render(
+            RenderRequest(left, right, ViewMode.SIDE_BY_SIDE, format = DocumentFormat.ASCIIDOC),
+        )
+        return HtmlPage.build(diff, "void 0", 0, renderMath = renderMath)
+    }
+
+    fun `test page with an AsciiDoc diagram inlines the bundled mermaid (P4_7)`() {
+        val html = adocPage(adocDiagram, adocDiagram.replace("B", "C"))
+        assertTrue(html.contains("mdrDrawDiagrams("))
+        assertTrue(html.contains("mdr-mermaid-source"))
+        assertFalse(html.contains("mdrDrawMath("))
+    }
+
+    fun `test page with an AsciiDoc formula inlines the bundled KaTeX (P4_7)`() {
+        val html = adocPage(adocFormula, adocFormula.replace("mc^2", "mc^3"))
+        assertTrue(html.contains("mdrDrawMath("))
+        assertTrue(html.contains("katex.render("))
+        assertTrue(html.contains("mdr-math-source"))
+        // AsciiMath elements are not drawn: the script only takes the drawn math elements.
+        val ascii = adocPage(
+            "$adocFormula\n\nAn AsciiMath formula: asciimath:[a+b].\n",
+            "$adocFormula\n\nAn AsciiMath formula: asciimath:[a+b].\n",
+        )
+        assertTrue(ascii.contains(".mdr-math:not(.mdr-math-failed)"))
+    }
+
+    fun `test with math rendering off AsciiDoc formulas stay source and KaTeX is not loaded (P4_7)`() {
+        val html = adocPage(adocFormula, adocFormula.replace("mc^2", "mc^3"), renderMath = false)
+        assertTrue(html.contains("<div class=\"mdr-math mdr-math-display\">E = mc^3</div>"))
+        assertFalse(html.contains("katex.render("))
+        assertFalse(html.contains("font-src"))
+    }
+
+    fun `test a plain AsciiDoc page loads neither library (P4_7)`() {
+        val text = "= Title\n\nA plain paragraph.\n"
+        val html = adocPage(text, text.replace("plain", "other"))
+        assertFalse(html.contains("mdrDrawDiagrams("))
+        assertFalse(html.contains("mdrDrawMath("))
+    }
+
     fun `test dark word marks are saturated and keep their hue`() {
         val inserted = java.awt.Color(0x294436)
         val word = HtmlPage.vivid(inserted)
@@ -128,5 +197,9 @@ class HtmlPageTest : BasePlatformTestCase() {
         assertTrue(html.contains("<html class=\"mdr-theme-light\">") || html.contains("<html class=\"mdr-theme-dark\">"))
         assertFalse(HtmlPage.build(diff, "void 0", 0).contains("mdr-user-css"))
         assertFalse(HtmlPage.build(diff, "void 0", 0, userCss = "  ").contains("mdr-user-css"))
+    }
+
+    companion object {
+        private val adocInstance: Asciidoctor by lazy { Asciidoctor.Factory.create() }
     }
 }

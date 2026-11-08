@@ -5,6 +5,7 @@ import pl.mdreview.api.BlockStatus
 import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.ViewMode
+import pl.mdreview.api.DiffOptions as ApiDiffOptions
 import pl.mdreview.engine.asciidoc.AsciiDocBlockSource
 import pl.mdreview.engine.asciidoc.AsciidoctorProvider
 import pl.mdreview.engine.BlockContent
@@ -349,6 +350,151 @@ class AsciiDocFixturesTest {
     }
 
     @Test
+    fun `65 adoc mermaid blocks become one diagram each like Markdown`() {
+        val d = diff("65-adoc-mermaid")
+        val diagrams = d.blocks.filter { (it.right ?: it.left)!!.kind == BlockKind.MERMAID }
+            .map { it.status to (it.right ?: it.left)!!.plainText.lines().first() }
+        assertEquals(
+            listOf(
+                DiffStatus.EQUAL to "sequenceDiagram",
+                DiffStatus.MODIFIED to "flowchart TD",
+                DiffStatus.REMOVED to "pie title Languages",
+                DiffStatus.ADDED to "stateDiagram-v2",
+                DiffStatus.MODIFIED to "flowchart LR",
+                DiffStatus.MODIFIED to "classDiagram",
+            ),
+            diagrams,
+        )
+        val changed = diagrams[1].let { d.blocks.single { b -> (b.right ?: b.left)!!.plainText.startsWith("flowchart TD") } }
+        assertContains(changed.inline.filter { it.status == DiffStatus.ADDED }.joinToString("") { it.text }, "Fix")
+        // The ignored asciidoctor-diagram attribute is a source-only change: both drawings, an empty word diff.
+        val sized = d.blocks.single { (it.right ?: it.left)!!.plainText.startsWith("classDiagram") }
+        assertEquals(DiffStatus.MODIFIED, sized.status)
+        assertTrue(sized.inline.all { it.status == DiffStatus.EQUAL })
+        assertEquals(changed, d.changes.single { (it.right ?: it.left)!!.plainText.startsWith("flowchart TD") })
+    }
+
+    @Test
+    fun `65 adoc mermaid with rendering off is diffed as code`() {
+        val d = DiffEngine(DiffOptions(mermaidDiagrams = false), source)
+            .diff(read("65-adoc-mermaid", "old.adoc"), read("65-adoc-mermaid", "new.adoc"))
+        assertTrue(d.blocks.none { (it.right ?: it.left)!!.kind == BlockKind.MERMAID })
+        assertTrue(d.changes.any { it.status == DiffStatus.MODIFIED && (it.right ?: it.left)!!.kind == BlockKind.CODE_FENCE })
+        assertTrue(d.changes.any { it.status == DiffStatus.MODIFIED && (it.right ?: it.left)!!.kind == BlockKind.CODE_LINE })
+        // The `[mermaid,format=svg]` attribute line is the fence of its code block, so the attribute change is kept.
+        val fence = d.changes.filter { (it.right ?: it.left)!!.kind == BlockKind.CODE_FENCE && it.status == DiffStatus.MODIFIED }
+        assertTrue(fence.any { it.left?.rawText?.contains("format=svg") == true }, fence.toString())
+    }
+
+    @Test
+    fun `66 adoc math formulas are compared as units and AsciiMath stays text`() {
+        val d = diff("66-adoc-math")
+        assertEquals(
+            listOf(
+                "MODIFIED PARAGRAPH",
+                "MODIFIED MATH",
+                "REMOVED MATH",
+                "ADDED PARAGRAPH",
+                "ADDED MATH",
+                "ADDED PARAGRAPH",
+            ),
+            d.changes.map { "${it.status} ${(it.right ?: it.left)!!.kind.name}" },
+        )
+        val formulas = d.blocks.filter { (it.right ?: it.left)!!.kind == BlockKind.MATH }
+        assertEquals(
+            listOf(
+                DiffStatus.EQUAL to "E = mc^2",
+                DiffStatus.MODIFIED to "x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2 a}",
+                DiffStatus.REMOVED to "a^2 + b^2 = c^2",
+                DiffStatus.EQUAL to "x = (-b +- sqrt(b^2 - 4ac)) / (2a)",
+                DiffStatus.ADDED to "e^{i\\pi} + 1 = 0",
+            ),
+            formulas.map { it.status to (it.right ?: it.left)!!.plainText },
+        )
+        // The AsciiMath block is not drawn but is still a MATH block compared as its source.
+        assertEquals("asciimath", formulas[3].right!!.language)
+        // Inline formulas are atoms: the word diff keeps each whole formula.
+        val circle = d.changes[0]
+        assertEquals(listOf("C = 2 \\pi r"), circle.inline.filter { it.status == DiffStatus.REMOVED }.map { it.text })
+        assertEquals(listOf("C = \\tau r"), circle.inline.filter { it.status == DiffStatus.ADDED }.map { it.text })
+        assertEquals(2, circle.right!!.atoms.size)
+        assertEquals(
+            listOf("A = \\pi r^2", "C = \\tau r"),
+            circle.right!!.atoms.map { circle.right!!.plainText.substring(it.first, it.last + 1) },
+        )
+        // The unfinished formula is still one inline formula node; drawing fails in the page.
+        val unfinished = d.changes.last()
+        assertEquals("An unfinished formula: \\frac{1}{.", unfinished.right!!.plainText)
+        assertEquals(1, unfinished.right!!.atoms.size)
+    }
+
+    @Test
+    fun `65 and 66 render the Markdown diagram and formula DOM contract`() {
+        val renderer = CoreMarkdownDiffRenderer(provider)
+        for (mode in ViewMode.entries) {
+            val mermaid = renderer.render(
+                RenderRequest(
+                    read("65-adoc-mermaid", "old.adoc"),
+                    read("65-adoc-mermaid", "new.adoc"),
+                    mode,
+                    ApiDiffOptions(collapseUnchanged = false),
+                    format = DocumentFormat.ASCIIDOC,
+                ),
+            )
+            assertContains(mermaid.bodyHtml, "mdr-block", message = mode.name)
+            assertContains(mermaid.bodyHtml, "mdr-mermaid", message = mode.name)
+            assertContains(mermaid.bodyHtml, "pre class=\"mdr-mermaid-code\"", message = mode.name)
+            assertContains(mermaid.bodyHtml, "mdr-mermaid-row", message = mode.name)
+            assertEquals(3, Regex("<details class=\"mdr-mermaid-source\">").findAll(mermaid.bodyHtml).count(), mode.name)
+            assertContains(mermaid.bodyHtml, "Show source changes", message = mode.name)
+            assertEquals(mermaid.blocks.size, Regex("data-idx=").findAll(mermaid.bodyHtml).count(), mode.name)
+            if (mode == ViewMode.MERGED) {
+                assertContains(mermaid.bodyHtml, "mdr-mermaid-pair", message = mode.name)
+                assertContains(mermaid.bodyHtml, "mdr-mermaid-old", message = mode.name)
+            }
+
+            val math = renderer.render(
+                RenderRequest(
+                    read("66-adoc-math", "old.adoc"),
+                    read("66-adoc-math", "new.adoc"),
+                    mode,
+                    ApiDiffOptions(collapseUnchanged = false),
+                    format = DocumentFormat.ASCIIDOC,
+                ),
+            )
+            assertContains(math.bodyHtml, "class=\"mdr-math mdr-math-inline\"", message = mode.name)
+            assertContains(math.bodyHtml, "class=\"mdr-math mdr-math-display\"", message = mode.name)
+            assertContains(math.bodyHtml, "mdr-math-row", message = mode.name)
+            assertContains(math.bodyHtml, "<details class=\"mdr-math-source\">", message = mode.name)
+            assertContains(math.bodyHtml, "mdr-math-failed", message = mode.name)
+            assertContains(math.bodyHtml, "AsciiMath is not supported", message = mode.name)
+            assertContains(math.bodyHtml, "\\frac{1}{", message = mode.name)
+            assertContains(math.bodyHtml, "e^{i\\pi} + 1 = 0", message = mode.name)
+            assertEquals(math.blocks.size, Regex("data-idx=").findAll(math.bodyHtml).count(), mode.name)
+            if (mode == ViewMode.MERGED) {
+                assertContains(math.bodyHtml, "mdr-math-pair", message = mode.name)
+                assertContains(math.bodyHtml, "mdr-math-old", message = mode.name)
+            }
+        }
+    }
+
+    @Test
+    fun `65 mermaid rendering off through the renderer has no diagram elements`() {
+        val rendered = CoreMarkdownDiffRenderer(provider).render(
+            RenderRequest(
+                read("65-adoc-mermaid", "old.adoc"),
+                read("65-adoc-mermaid", "new.adoc"),
+                ViewMode.SIDE_BY_SIDE,
+                ApiDiffOptions(renderMermaid = false),
+                format = DocumentFormat.ASCIIDOC,
+            ),
+        )
+        assertFalse(rendered.bodyHtml.contains("mdr-mermaid"))
+        assertTrue(rendered.bodyHtml.contains("mdr-fence"))
+        assertTrue(rendered.changes.any { it.status == BlockStatus.MODIFIED })
+    }
+
+    @Test
     fun `the renderer uses the provider for AsciiDoc and keeps the fallback without one`() {
         val request = RenderRequest(
             read("50-adoc-paragraph-edit", "old.adoc"),
@@ -368,7 +514,7 @@ class AsciiDocFixturesTest {
     @Test
     fun `every fixture renders with the AsciiDoc renderer`() {
         val renderer = CoreMarkdownDiffRenderer(provider)
-        val cases = (50..64).map { n ->
+        val cases = (50..66).map { n ->
             File(javaClass.getResource("/fixtures")!!.toURI()).listFiles()!!.first { it.name.startsWith("$n-") }.name
         }
         for (case in cases) {

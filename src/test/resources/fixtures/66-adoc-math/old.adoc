@@ -1,0 +1,28 @@
+= Formulas
+:stem: latexmath
+
+The area of a circle is latexmath:[A = \pi r^2] and its circumference is stem:[C = 2 \pi r].
+
+[latexmath]
+++++
+E = mc^2
+++++
+
+The quadratic formula:
+
+[stem]
+++++
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+++++
+
+[latexmath]
+++++
+a^2 + b^2 = c^2
+++++
+
+An AsciiMath formula, not drawn: asciimath:[sum_(i=1)^n i].
+
+[asciimath]
+++++
+x = (-b +- sqrt(b^2 - 4ac)) / (2a)
+++++

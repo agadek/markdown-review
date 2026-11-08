@@ -5,10 +5,12 @@ import com.intellij.diff.contents.DiffContent
 import com.intellij.diff.contents.DocumentContent
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.diff.util.DiffUserDataKeys
+import com.intellij.ide.plugins.PluginManagerCore
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.command.undo.UndoManager
+import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.vfs.VirtualFile
@@ -18,6 +20,8 @@ import pl.mdreview.api.BlockInfo
 import pl.mdreview.api.RenderedDiff
 import pl.mdreview.api.ViewMode
 import pl.mdreview.engine.BlockExtractor
+import pl.mdreview.ide.asciidoc.PluginAsciidoctorProvider
+import pl.mdreview.render.CoreMarkdownDiffRenderer
 import java.io.File
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -62,7 +66,11 @@ class BlockActionsTest : BasePlatformTestCase() {
 
     private fun file(text: String): VirtualFile = myFixture.addFileToProject("f${fileCount++}.md", text).virtualFile
 
+    private fun adoc(text: String): VirtualFile = myFixture.addFileToProject("f${fileCount++}.adoc", text).virtualFile
+
     private fun content(text: String) = DiffContentFactory.getInstance().create(project, file(text)) as DocumentContent
+
+    private fun adocContent(text: String) = DiffContentFactory.getInstance().create(project, adoc(text)) as DocumentContent
 
     private fun open(left: DiffContent, right: DiffContent, mode: ViewMode = ViewMode.SIDE_BY_SIDE, request: SimpleDiffRequest? = null) {
         view = RecordingView()
@@ -260,6 +268,84 @@ class BlockActionsTest : BasePlatformTestCase() {
         }
         assertEquals(2, clicks)
         assertEquals(leftText, right.document.text)
+    }
+
+    private fun hasAsciiDoc(): Boolean =
+        PluginManagerCore.getPlugin(PluginId.getId("org.asciidoctor.intellij.asciidoc")) != null
+
+    fun `test AsciiDoc revert and apply are one undo step (P4_5)`() {
+        if (!hasAsciiDoc()) return
+        val provider = PluginAsciidoctorProvider()
+        try {
+            AsciiDocSupport.install(provider)
+            CoreMarkdownDiffRenderer.installAsciidoctorProvider(provider)
+            val leftText = "= Title\n\nOld paragraph text here.\n"
+            val rightText = "= Title\n\nNew paragraph text here.\n"
+            val right = adocContent(rightText)
+            open(adocContent(leftText), right)
+            assertTrue(click(BlockAction.REVERT, view.diff.changes.single()))
+            assertEquals(leftText, right.document.text)
+            UndoManager.getInstance(project).undo(null)
+            assertEquals(rightText, right.document.text)
+
+            val left = adocContent(leftText)
+            open(left, adocContent(rightText))
+            assertTrue(click(BlockAction.APPLY, view.diff.changes.single()))
+            assertEquals(rightText, left.document.text)
+            UndoManager.getInstance(project).undo(null)
+            assertEquals(leftText, left.document.text)
+        } finally {
+            provider.dispose()
+        }
+    }
+
+    fun `test AsciiDoc source editor is labelled AsciiDoc (P4_5)`() {
+        if (!hasAsciiDoc()) return
+        val provider = PluginAsciidoctorProvider()
+        try {
+            AsciiDocSupport.install(provider)
+            CoreMarkdownDiffRenderer.installAsciidoctorProvider(provider)
+            val rendered = CoreMarkdownDiffRenderer().render(
+                pl.mdreview.api.RenderRequest(
+                    "= Title\n\nOld text.\n",
+                    "= Title\n\nNew text.\n",
+                    ViewMode.SIDE_BY_SIDE,
+                    format = pl.mdreview.api.DocumentFormat.ASCIIDOC,
+                ),
+            )
+            val js = HtmlPage.actionsJs(rendered, BlockActions(revert = true, apply = true, stamp = "1:1", editLeft = true, editRight = true))
+            assertTrue(js, js.contains("AsciiDoc"))
+        } finally {
+            provider.dispose()
+        }
+    }
+
+    fun `test reverting every change of the moved AsciiDoc fixture gives the left side (P4_5)`() {
+        if (!hasAsciiDoc()) return
+        val provider = PluginAsciidoctorProvider()
+        try {
+            AsciiDocSupport.install(provider)
+            CoreMarkdownDiffRenderer.installAsciidoctorProvider(provider)
+            val leftText = fixture("63-adoc-moved", "old.adoc")
+            val right = adocContent(fixture("63-adoc-moved", "new.adoc"))
+            open(adocContent(leftText), right)
+            val original = right.document.text
+            val first = view.diff.changes.first()
+            assertTrue(click(BlockAction.REVERT, first))
+            assertEquals(8, view.diff.changes.size)
+            UndoManager.getInstance(project).undo(null)
+            assertEquals(original, right.document.text)
+            waitFor { view.diff.changes.size == 10 && view.actions.stamp.endsWith(right.document.modificationStamp.toString()) }
+
+            var clicks = 0
+            while (view.diff.changes.isNotEmpty()) {
+                assertTrue(click(BlockAction.REVERT, view.diff.changes.first()))
+                assertTrue("too many clicks", ++clicks < 10)
+            }
+            assertEquals(leftText, right.document.text)
+        } finally {
+            provider.dispose()
+        }
     }
 
     /** Saves [markdown] as the new source of [block] on [side], as Ctrl/Cmd+Enter in the block's textarea does (P2.6). */

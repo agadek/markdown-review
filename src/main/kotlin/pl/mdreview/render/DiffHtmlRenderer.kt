@@ -16,6 +16,7 @@ import pl.mdreview.engine.DiffStatus
 import pl.mdreview.engine.HtmlFragment
 import pl.mdreview.engine.MarkdownBlockSource
 import pl.mdreview.engine.MarkdownDiff
+import pl.mdreview.engine.asciidoc.AsciiDocMath
 
 data class RenderOptions(
     val mode: ViewMode = ViewMode.SIDE_BY_SIDE,
@@ -850,8 +851,14 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             BlockKind.MERMAID -> "<div class=\"$cls mdr-mermaid\"><pre class=\"mdr-mermaid-code\"><code>" +
                 escape(block.plainText) + "</code></pre></div>"
             // Inert TeX source for the page's math script, which draws it in place; shown as monospace source without it.
-            BlockKind.MATH -> "<div class=\"$cls mdr-math-block\"><div class=\"mdr-math mdr-math-display\">" +
-                escape(block.plainText) + "</div></div>"
+            BlockKind.MATH -> {
+                val asciiMath = block.language.equals(AsciiDocMath.ASCIIMATH, ignoreCase = true)
+                val failed = if (asciiMath) " mdr-math-failed" else ""
+                val title = if (asciiMath) " title=\"" + escape(AsciiDocMath.ASCIIMATH_UNSUPPORTED) + "\"" else ""
+                val error = if (asciiMath) "<div class=\"mdr-math-error\">" + escape(AsciiDocMath.ASCIIMATH_UNSUPPORTED) + "</div>" else ""
+                "<div class=\"$cls mdr-math-block\"><div class=\"mdr-math mdr-math-display$failed\"$title>" +
+                    escape(block.plainText) + "</div>$error</div>"
+            }
             BlockKind.HTML_COMMENT -> commentBlock(block, cls, marks)
             // The raw-text fallback for a format without a front end.
             else -> "<div class=\"$cls${noteClass(note)}\"${noteAttributes(note)}><pre>" + escape(block.plainText) + "</pre></div>"
@@ -907,7 +914,21 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         var offset = 0
         var occurrence = 0
         val html = buildString {
-            for ((index, part) in parts.withIndex()) {
+            var index = 0
+            while (index < parts.size) {
+                val part = parts[index]
+                if (part is HtmlFragment.Markup && isDrawnMathSpan(part)) {
+                    val close = mathSpanClose(parts, index)
+                    if (close != null) {
+                        val inner = parts.subList(index + 1, close).filterIsInstance<HtmlFragment.TextRun>()
+                        val text = inner.joinToString("") { it.text }
+                        val span = part.html + escape(text) + (parts[close] as HtmlFragment.Markup).html
+                        append(writer.atom(offset, text.length, span))
+                        offset += text.length
+                        index = close + 1
+                        continue
+                    }
+                }
                 when (part) {
                     is HtmlFragment.Markup -> {
                         var markup = part.html
@@ -926,9 +947,29 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                         offset += part.text.length
                     }
                 }
+                index++
             }
         }
         return html + writer.rest()
+    }
+
+    /** A drawn inline formula span written by [AsciiDocMath]: a whole atom for the word diff. */
+    private fun isDrawnMathSpan(part: HtmlFragment.Markup): Boolean {
+        if (part.tag != "span" || part.closing) return false
+        val classes = HtmlFragment.attribute(part, "class")?.split(' ').orEmpty()
+        return "mdr-math" in classes && "mdr-math-inline" in classes && "mdr-math-failed" !in classes
+    }
+
+    /** Index of the closing span of an inline formula, when its content is only text as the front end writes it. */
+    private fun mathSpanClose(parts: List<HtmlFragment.Part>, open: Int): Int? {
+        var index = open + 1
+        while (index < parts.size) {
+            val part = parts[index]
+            if (part is HtmlFragment.Markup && part.closing && part.tag == "span") return index
+            if (part !is HtmlFragment.TextRun) return null
+            index++
+        }
+        return null
     }
 
     private fun changedLink(part: HtmlFragment.Markup, url: String, tooltip: (String) -> String): String {

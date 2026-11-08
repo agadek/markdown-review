@@ -40,7 +40,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         val normalized = normalizeLineEndings(text)
         return try {
             val document = provider.asciidoctor().load(normalized, options())
-            Extractor(normalized).extract(document)
+            Extractor(normalized, document.attributes["stem"] as? String, options.mermaidDiagrams).extract(document)
         } catch (_: Exception) {
             fallback(normalized)
         } catch (_: LinkageError) {
@@ -88,7 +88,11 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         return blocks
     }
 
-    private class Extractor(private val text: String) {
+    private class Extractor(
+        private val text: String,
+        private val stem: String?,
+        private val mermaidDiagrams: Boolean,
+    ) {
 
         private val lines = AsciiDocLines(text)
         private val drafts = mutableListOf<Draft>()
@@ -185,6 +189,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                     literalParagraph(node as AstBlock, ctx)
                 }
                 "listing" -> code(node as AstBlock, ctx)
+                "stem" -> mathBlock(node as AstBlock, ctx)
                 "admonition" -> admonition(node, ctx)
                 "example", "sidebar", "open" -> container(node, ctx, node.context)
                 "quote" -> container(node, ctx, if (node.style == "verse") "verse" else "quote")
@@ -206,7 +211,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         private fun heading(node: StructuralNode, title: String, level: Int, ctx: BlockContext) {
             if (title.isBlank()) return
             val start = startOf(node)
-            val parts = HtmlFragment.parse(title, allowRemoteImages = true)
+            val parts = inlineParts(title, headingSource(start))
             drafts += Draft(
                 kind = BlockKind.HEADING,
                 start = start,
@@ -217,12 +222,16 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
             )
         }
 
+        /** The source line of a section title without its `=` markers, for its inline math macros. */
+        private fun headingSource(start: Int): String =
+            lines.sourceLine(start).trimStart().dropWhile { it == '=' }.trimStart()
+
         private fun paragraph(node: StructuralNode, ctx: BlockContext) {
             val start = startOf(node)
             // SECURE mode turns include:: into a paragraph with the include link; the scanner owns that line.
             if (start in lines.includeLines) return
             val html = (node.content as? String) ?: (node as AstBlock).lines.orEmpty().joinToString("\n")
-            val parts = HtmlFragment.parse(html, allowRemoteImages = true)
+            val parts = inlineParts(html, (node as AstBlock).source)
             drafts += Draft(
                 kind = BlockKind.PARAGRAPH,
                 start = start,
@@ -254,7 +263,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 return
             }
             val html = (node.content as? String) ?: (node as AstBlock).lines.orEmpty().joinToString("\n")
-            val parts = HtmlFragment.parse(html, allowRemoteImages = true)
+            val parts = inlineParts(html, (node as AstBlock).source)
             val inner = ctx.copy(containers = ctx.containers + Container("admonition", type))
             drafts += Draft(
                 kind = BlockKind.ALERT,
@@ -299,7 +308,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 )
                 val task = taskKey(item)
                 val html = item.text.orEmpty()
-                val parts = HtmlFragment.parse(html, allowRemoteImages = true)
+                val parts = inlineParts(html, item.source)
                 val firstDraft = drafts.size
                 val itemDraft = Draft(
                     kind = BlockKind.LIST_ITEM,
@@ -340,7 +349,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 val segments = splitDescriptionEntry(lines.sourceLine(termLine))
                 for ((index, term) in entry.terms.withIndex()) {
                     val start = startOf(term)
-                    val parts = HtmlFragment.parse(term.text.orEmpty(), allowRemoteImages = true)
+                    val parts = inlineParts(term.text.orEmpty(), term.source)
                     drafts += Draft(
                         kind = BlockKind.DESCRIPTION_TERM,
                         start = start,
@@ -353,7 +362,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 }
                 val description = entry.description ?: continue
                 val start = startOf(description)
-                val parts = HtmlFragment.parse(description.text.orEmpty(), allowRemoteImages = true)
+                val parts = inlineParts(description.text.orEmpty(), description.source)
                 drafts += Draft(
                     kind = BlockKind.LIST_ITEM,
                     start = start,
@@ -416,13 +425,21 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
             } else {
                 cell.text.orEmpty()
             }
-            return HtmlFragment.parse(html, allowRemoteImages = true)
+            return inlineParts(html, cell.source)
         }
+
+        /** Inline HTML from Asciidoctor with its LaTeX formulas as inert `.mdr-math` spans. */
+        private fun inlineParts(html: String, source: String?): List<HtmlFragment.Part> =
+            AsciiDocMath.parts(html, source, stem)
 
         private fun code(node: AstBlock, ctx: BlockContext) {
             val start = startOf(node)
-            addGroup(BlockGroupKind.CODE, start)
             val style = node.style ?: node.context
+            if (mermaidDiagrams && style.equals(MERMAID, ignoreCase = true)) {
+                mermaid(node, ctx, start, style)
+                return
+            }
+            addGroup(BlockGroupKind.CODE, start)
             val language = (node.attributes["language"] as? String)?.takeIf { it.isNotBlank() }
             val prefix = lines.prefixesBefore(start).lastOrNull { isSourceAttribute(lines.sourceLine(it)) }
             val fenceStart = prefix ?: start
@@ -444,6 +461,90 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 drafts += codeLine(start + 1 + i, line, ctx, language)
             }
         }
+
+        /**
+         * A `[mermaid]` listing or literal block as one [BlockKind.MERMAID] block, as a ` ```mermaid ` fence is for
+         * Markdown. Its source range covers the style line and both delimiters; [Block.lines] holds the fence line and
+         * the diagram lines, for the source diff behind the toggle of a changed diagram.
+         */
+        private fun mermaid(node: AstBlock, ctx: BlockContext, start: Int, style: String) {
+            val group = delimitedGroup(BlockGroupKind.CODE, start)
+            if (group != null) groups += group
+            val declared = declaredStyle(node)
+            val fenceStart = styleLine(start, setOfNotNull(declared, style)) ?: start
+            val end = (group?.endLine ?: lines.lines.size).coerceAtMost(lines.lines.size)
+            val language = (node.attributes["language"] as? String)?.takeIf { it.isNotBlank() }
+            val info = listOfNotNull(style.takeIf { it.isNotBlank() }, language).joinToString(",")
+            val sourceLines = node.lines.orEmpty()
+            val fence = Draft(
+                kind = BlockKind.CODE_FENCE,
+                start = fenceStart,
+                fixedEnd = fenceStart + 1,
+                sourceText = lines.sourceLine(fenceStart).trimEnd(),
+                plainText = info,
+                context = ctx,
+                language = language ?: style,
+                extraKey = "style=$style;language=${language ?: ""}",
+            )
+            val content = sourceLines.mapIndexed { i, line ->
+                codeLine(start + 1 + i, line, ctx, language ?: style)
+            }
+            drafts += Draft(
+                kind = BlockKind.MERMAID,
+                start = fenceStart,
+                fixedEnd = end,
+                sourceText = lines.normalizedSource(fenceStart, end),
+                plainText = sourceLines.joinToString("\n"),
+                context = ctx,
+                language = language ?: style,
+                extraKey = "style=$style;language=${language ?: ""}",
+                lines = listOf(fence) + content,
+            )
+        }
+
+        /**
+         * A `[latexmath]` / `[stem]` block as one [BlockKind.MATH] block. Its source range covers the style line and
+         * the `++++` delimiters; [Block.lines] holds the formula's lines for the source diff. AsciiMath is kept as a
+         * MATH block too, but marked as not drawn by the renderer.
+         */
+        private fun mathBlock(node: AstBlock, ctx: BlockContext) {
+            val start = startOf(node)
+            val group = delimitedGroup(BlockGroupKind.CODE, start)
+            if (group != null) groups += group
+            val resolvedStyle = node.style ?: AsciiDocMath.ASCIIMATH
+            val declared = declaredStyle(node)
+            val fenceStart = styleLine(start, setOfNotNull(declared, resolvedStyle)) ?: start
+            val end = (group?.endLine ?: lines.lines.size).coerceAtMost(lines.lines.size)
+            val sourceLines = node.lines.orEmpty()
+            val language = if (AsciiDocMath.isLatexStyle(resolvedStyle)) AsciiDocMath.LATEX else AsciiDocMath.ASCIIMATH
+            val content = sourceLines.mapIndexed { i, line ->
+                codeLine(start + 1 + i, line, ctx, language)
+            }
+            drafts += Draft(
+                kind = BlockKind.MATH,
+                start = fenceStart,
+                fixedEnd = end,
+                sourceText = lines.normalizedSource(fenceStart, end),
+                plainText = sourceLines.joinToString("\n"),
+                context = ctx,
+                language = language,
+                extraKey = "style=$resolvedStyle",
+                lines = content,
+            )
+        }
+
+        /** The first token of the block's style attribute (`mermaid`, `latexmath`, `stem`, ...), as written. */
+        private fun declaredStyle(node: AstBlock): String? =
+            (node.attributes["1"] as? String)?.takeIf { it.isNotBlank() } ?: node.style
+
+        /** The attribute line that gave the block its style, nearest above its opening delimiter. */
+        private fun styleLine(start: Int, names: Set<String>): Int? =
+            lines.prefixesBefore(start).lastOrNull { line ->
+                val text = lines.sourceLine(line).trim()
+                if (!text.startsWith("[") || !text.endsWith("]")) return@lastOrNull false
+                val name = text.removeSurrounding("[", "]").substringBefore(',').trim()
+                names.any { it.equals(name, ignoreCase = true) }
+            }
 
         private fun codeLine(lineNumber: Int, line: String, ctx: BlockContext, language: String?): Draft =
             Draft(
@@ -543,11 +644,15 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
             return null
         }
 
+        /**
+         * A bracketed style or attribute line directly above a listing or literal block (`[source,java]`,
+         * `[mermaid,format=svg]`, `[plantuml]`). It is the block's fence line for the code diff and its edit region.
+         */
         private fun isSourceAttribute(line: String): Boolean {
             val trimmed = line.trim()
             if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return false
-            val style = trimmed.removeSurrounding("[", "]").substringBefore(',').trim()
-            return style in setOf("source", "listing", "literal")
+            if (trimmed.startsWith("[[")) return false
+            return true
         }
 
         // ---- merge and materialize --------------------------------------------------------------------------
@@ -651,6 +756,9 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 title = draft.title,
                 prefixLines = if (draft.kind == BlockKind.BLOCK_TITLE) emptyList() else lines.editPrefixBefore(draft.start),
                 editGroups = editGroups,
+                lines = draft.lines.map { line ->
+                    materialize(line, line.fixedEnd ?: (line.start + 1), emptyList())
+                },
             )
         }
 
@@ -689,12 +797,15 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         var scanner: Boolean = false,
         var minimumEnd: Int? = null,
         var resolvedEnd: Int = 0,
+        /** The source lines nested in a [BlockKind.MERMAID] or [BlockKind.MATH] block. */
+        var lines: List<Draft> = emptyList(),
     )
 
     /** A list item and every draft its children produced, for the item's edit group. */
     private class ItemGroupDraft(val item: Draft, val members: List<Draft>)
 
     private companion object {
+        const val MERMAID = "mermaid"
         val WHITESPACE = Regex("\\s+")
 
         fun normalizeLineEndings(text: String): String = text.replace("\r\n", "\n").replace('\r', '\n')

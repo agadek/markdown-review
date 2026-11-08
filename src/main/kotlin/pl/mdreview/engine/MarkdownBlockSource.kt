@@ -635,8 +635,23 @@ object MarkdownBlockSource : BlockSource {
     /** Kinds whose [Block.plainText] is the plain text of their [Block.nodes] joined with one character. */
     private val INLINE_KINDS = setOf(BlockKind.PARAGRAPH, BlockKind.HEADING, BlockKind.LIST_ITEM, BlockKind.TABLE_ROW, BlockKind.FOOTNOTE)
 
+    /** AsciiDoc kinds whose sanitized inline HTML can hold an inline math span. */
+    private val HTML_INLINE_KINDS = setOf(
+        BlockKind.PARAGRAPH,
+        BlockKind.HEADING,
+        BlockKind.LIST_ITEM,
+        BlockKind.TABLE_ROW,
+        BlockKind.ALERT,
+        BlockKind.DESCRIPTION_TERM,
+        BlockKind.BLOCK_TITLE,
+        BlockKind.FOOTNOTE,
+    )
+
     /** Ranges of [block]'s plain text that the word diff keeps whole: its inline formulas. */
     fun atoms(block: Block): List<IntRange> {
+        if (block.content is BlockContent.Html) {
+            return if (block.kind in HTML_INLINE_KINDS) htmlAtoms(block) else emptyList()
+        }
         if (block.kind !in INLINE_KINDS) return emptyList()
         val atoms = mutableListOf<IntRange>()
         var base = 0
@@ -655,11 +670,52 @@ object MarkdownBlockSource : BlockSource {
         return atoms.sortedBy { it.first }
     }
 
+    /**
+     * Atoms of AsciiDoc's sanitized inline HTML: every drawn formula span is one range. A failed (AsciiMath) span is
+     * not an atom, so its source is compared as text. The table row's plain text joins cells with `" | "`, which the
+     * cell markup does not contain, so the offsets include that gap.
+     */
+    private fun htmlAtoms(block: Block): List<IntRange> {
+        val parts = (block.content as BlockContent.Html).parts
+        val atoms = mutableListOf<IntRange>()
+        var offset = 0
+        var formulaStart = -1
+        for ((index, part) in parts.withIndex()) {
+            when (part) {
+                is HtmlFragment.TextRun -> offset += part.text.length
+                is HtmlFragment.Markup -> {
+                    if (part.tag == "span") {
+                        val classes = HtmlFragment.attribute(part, "class")?.split(whitespace).orEmpty()
+                        if (!part.closing && "mdr-math" in classes && "mdr-math-inline" in classes &&
+                            "mdr-math-failed" !in classes
+                        ) {
+                            formulaStart = offset
+                        } else if (part.closing && formulaStart >= 0) {
+                            if (offset > formulaStart) atoms += formulaStart until offset
+                            formulaStart = -1
+                        }
+                    }
+                    if (block.kind == BlockKind.TABLE_ROW && part.closing && (part.tag == "td" || part.tag == "th") &&
+                        parts.drop(index + 1).any { next ->
+                            next is HtmlFragment.Markup && !next.closing && (next.tag == "td" || next.tag == "th")
+                        }
+                    ) {
+                        offset += TABLE_CELL_GAP
+                    }
+                }
+            }
+        }
+        return atoms
+    }
+
     private val whitespace = Regex("\\s+")
 
     fun collapse(text: String): String = text.replace(whitespace, " ").trim()
 
     private const val UNCLOSED = -2
+
+    /** " | " between table cells in a row's plain text. */
+    private const val TABLE_CELL_GAP = 3
 
     private val DETAILS_CLOSE = Regex("</details\\s*>", RegexOption.IGNORE_CASE)
 }

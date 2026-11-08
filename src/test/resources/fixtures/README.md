@@ -74,5 +74,5 @@ The files are input for the diff engine tests (M1), the HTML generator (M2) and 
 | 62-adoc-conditionals | `ifdef` around a paragraph, condition changed |
 | 63-adoc-moved | a section moved without changes |
 | 64-adoc-large | ~500 sections, performance |
-| 65-adoc-mermaid | `[mermaid]` listing and literal blocks: unchanged, changed, added, removed, and an unparsable diagram; source diff behind a toggle |
-| 66-adoc-math | inline and block `latexmath`, `stem` with `:stem: latexmath`, an AsciiMath formula (not drawn, marked), changed formulas |
+| 65-adoc-mermaid | `[mermaid]` listing and literal blocks: unchanged, changed, removed, added, an unparsable diagram and an attribute-only change; source diff behind a toggle |
+| 66-adoc-math | inline and block `latexmath` / `stem` formulas (`:stem: latexmath`), AsciiMath not drawn, changed, added, removed and an unparsable formula |

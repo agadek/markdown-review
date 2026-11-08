@@ -7,6 +7,7 @@ import org.commonmark.node.Node
 import org.commonmark.renderer.html.AttributeProvider
 import pl.mdreview.engine.Block
 import pl.mdreview.engine.BlockContent
+import pl.mdreview.engine.BlockKind
 import pl.mdreview.engine.HtmlFragment
 import pl.mdreview.engine.MarkdownBlockSource
 import java.net.URI
@@ -41,6 +42,8 @@ internal object LinkChanges {
         }
     }
 
+    private val MODEL_TARGET_KINDS = setOf(BlockKind.IMAGE, BlockKind.INCLUDE)
+
     private class Target(val node: Node, val label: String, val url: String)
 
     private class HtmlTarget(val occurrence: Int, val label: String, val url: String)
@@ -50,6 +53,13 @@ internal object LinkChanges {
      * link labelled "docs" on the left pairs with the second one labelled "docs" on the right.
      */
     fun between(left: Block, right: Block): Result {
+        // A block image's or include's target is a model field, not an element in its inline parts.
+        if (left.kind == right.kind && left.kind in MODEL_TARGET_KINDS &&
+            left.target != null && right.target != null
+        ) {
+            if (left.target == right.target) return Result.NONE
+            return Result(emptyMap(), emptyMap(), mapOf(0 to right.target), mapOf(0 to left.target))
+        }
         val leftContent = left.content
         val rightContent = right.content
         if (leftContent is BlockContent.Html && rightContent is BlockContent.Html) {

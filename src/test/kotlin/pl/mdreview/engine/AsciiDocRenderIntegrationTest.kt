@@ -40,13 +40,13 @@ class AsciiDocRenderIntegrationTest {
     private fun cases(): List<String> =
         File(javaClass.getResource("/fixtures")!!.toURI()).listFiles()!!
             .map { it.name }
-            .filter { it.matches(Regex("(5[0-9]|6[0-4])-adoc-.*")) }
+            .filter { it.matches(Regex("(5[0-9]|6[0-9])-adoc-.*")) }
             .sorted()
 
     @Test
     fun `every AsciiDoc fixture renders with a mark on every modified block`() {
         val cases = cases()
-        assertTrue(cases.size >= 15, "expected all AsciiDoc fixtures, found $cases")
+        assertTrue(cases.size >= 17, "expected all AsciiDoc fixtures, found $cases")
         for (case in cases) {
             for (mode in ViewMode.entries) {
                 val rendered = renderer.render(
@@ -70,12 +70,12 @@ class AsciiDocRenderIntegrationTest {
     private fun rowSegment(html: String, idx: Int): String {
         val start = Regex("<div class=\"mdr-(?:row|item)[^\"]*\"[^>]*data-idx=\"$idx\"").find(html)?.range?.first
             ?: return ""
-        val next = Regex("<div class=\"mdr-(?:row|item)").find(html, start + 1)?.range?.first ?: html.length
+        val next = Regex("<div class=\"mdr-(?:row|item)[^\"]*\"[^>]*data-idx=").find(html, start + 1)?.range?.first ?: html.length
         return html.substring(start, next)
     }
 
     private companion object {
-        val MARKER = Regex("mdr-del|mdr-ins|mdr-(?:link|img)-changed|data-change-note|mdr-moved")
+        val MARKER = Regex("mdr-del|mdr-ins|mdr-(?:link|img)-changed|data-change-note|mdr-moved|mdr-(?:mermaid|math)-row")
 
         val ASCIIDOC_BLOCK_MARKUP = listOf(
             "class=\"admonitionblock\"",

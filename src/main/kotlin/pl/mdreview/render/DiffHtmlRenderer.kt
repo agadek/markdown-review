@@ -1,20 +1,20 @@
 package pl.mdreview.render
 
-import org.commonmark.ext.footnotes.FootnoteDefinition
 import org.commonmark.ext.footnotes.FootnotesExtension
 import org.commonmark.ext.task.list.items.TaskListItemMarker
 import org.commonmark.node.Node
 import org.commonmark.renderer.html.HtmlRenderer
 import pl.mdreview.api.ViewMode
 import pl.mdreview.engine.Block
+import pl.mdreview.engine.BlockContent
 import pl.mdreview.engine.BlockContext
-import pl.mdreview.engine.BlockExtractor
 import pl.mdreview.engine.BlockKind
 import pl.mdreview.engine.DiffBlock
+import pl.mdreview.engine.DiffEngine
 import pl.mdreview.engine.DiffStatus
 import pl.mdreview.engine.HtmlFragment
+import pl.mdreview.engine.MarkdownBlockSource
 import pl.mdreview.engine.MarkdownDiff
-import pl.mdreview.engine.MarkdownDiffEngine
 
 data class RenderOptions(
     val mode: ViewMode = ViewMode.SIDE_BY_SIDE,
@@ -195,8 +195,8 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             ViewMode.SIDE_BY_SIDE -> {
                 sb.append("<div class=\"mdr-row blk-").append(status).append(moved).append("\"").append(idx).append(hidden(block)).append(">")
                 val links = linkChanges(block)
-                sb.append(side("left", block.left, block.status, leftMarks(block), null, links.left, moveNote))
-                sb.append(side("right", block.right, block.status, rightMarks(block, withRemoved = false), changeNote(block), links.right, moveNote))
+                sb.append(side("left", block.left, block.status, leftMarks(block), null, links, moveNote))
+                sb.append(side("right", block.right, block.status, rightMarks(block, withRemoved = false), changeNote(block), links, moveNote))
                 sb.append("</div>\n")
             }
             ViewMode.MERGED -> {
@@ -208,8 +208,13 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                 sb.append("<div class=\"mdr-item blk-").append(status).append(moved).append("\"").append(idx).append(hidden(block)).append(" data-side=\"").append(side)
                     .append("\" data-line=\"").append(content.source.startLine).append("\">")
                 val note = if (block.status == DiffStatus.MODIFIED) changeNote(block) else null
-                val links = if (side == "right") linkChanges(block).right else emptyMap()
-                sb.append(quote(renderBlock(content, block.status, marks, side, note, links), content.context))
+                val links = if (side == "right") linkChanges(block) else LinkChanges.Result.NONE
+                sb.append(
+                    quote(
+                        renderBlock(content, block.status, marks, side, note, links.nodeLinks(side), links.htmlLinks(side)),
+                        content.context,
+                    ),
+                )
                 sb.append(moveNote)
                 sb.append("</div>\n")
             }
@@ -246,13 +251,13 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         val left = block.left!!
         val right = block.right!!
         val prefix = if (left.kind == BlockKind.MATH) "mdr-math" else "mdr-mermaid"
-        val lines = MarkdownDiffEngine().diff(left.lines, right.lines).blocks
+        val lines = DiffEngine().diff(left.lines, right.lines).blocks
         val source = "<details class=\"$prefix-source\"><summary>" + escape(options.labels.showSourceChanges) +
             "</summary><div class=\"$prefix-lines\">" + lines.joinToString("") { block(it, null) } + "</div></details>"
         return when (options.mode) {
             ViewMode.SIDE_BY_SIDE -> "<div class=\"mdr-row blk-$status $prefix-row\"$idx>" + source +
-                side("left", left, block.status, InlineMarks.NONE, null, emptyMap()) +
-                side("right", right, block.status, InlineMarks.NONE, null, emptyMap()) + "</div>\n"
+                side("left", left, block.status, InlineMarks.NONE, null, LinkChanges.Result.NONE) +
+                side("right", right, block.status, InlineMarks.NONE, null, LinkChanges.Result.NONE) + "</div>\n"
             ViewMode.MERGED -> {
                 val drawings = "<div class=\"$prefix-old\">" + renderBlock(left, DiffStatus.REMOVED, side = "left") + "</div>" +
                     renderBlock(right, DiffStatus.ADDED)
@@ -282,13 +287,13 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         status: DiffStatus,
         marks: InlineMarks,
         note: String?,
-        links: Map<Node, String>,
+        links: LinkChanges.Result,
         /** HTML after the block, inside the side, when the side has content. */
         after: String = "",
     ): String {
         val open = "<div class=\"mdr-side mdr-$side\" data-side=\"$side\""
         if (content == null) return "$open><div class=\"mdr-placeholder\"></div></div>"
-        val inner = renderBlock(content, status, marks, side, note, links)
+        val inner = renderBlock(content, status, marks, side, note, links.nodeLinks(side), links.htmlLinks(side))
         return "$open data-line=\"${content.source.startLine}\">" + quote(inner, content.context) + after + "</div>"
     }
 
@@ -336,7 +341,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
 
     private fun taskLabel(checked: Boolean) = if (checked) options.labels.checked else options.labels.unchecked
 
-    private fun taskState(block: Block): Boolean? = block.renderNodes.firstNotNullOfOrNull { node ->
+    private fun taskState(block: Block): Boolean? = block.nodes.firstNotNullOfOrNull { node ->
         (node as? TaskListItemMarker ?: node.firstChild as? TaskListItemMarker)?.isChecked
     }
 
@@ -354,12 +359,58 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         note: String? = null,
         /** Links and images whose target changed, mapped to the other side's URL. */
         links: Map<Node, String> = emptyMap(),
+        /** HTML links and images whose target changed, by their occurrence in [BlockContent.Html] parts. */
+        htmlLinks: Map<Int, String> = emptyMap(),
     ): String {
         val cls = "mdr-block mdr-" + status.name.lowercase()
+        return when (val content = block.content) {
+            is BlockContent.Html -> renderHtmlBlock(block, content.parts, cls, status, marks, side, note, htmlLinks)
+            BlockContent.Raw -> renderRawBlock(block, cls, status, marks, note)
+            is BlockContent.Commonmark -> renderCommonmarkBlock(block, cls, marks, side, note, links)
+        }
+    }
+
+    /** Today's HTML-block path, generalized to any block whose content is sanitized HTML. */
+    private fun renderHtmlBlock(
+        block: Block,
+        parts: List<HtmlFragment.Part>,
+        cls: String,
+        status: DiffStatus,
+        marks: InlineMarks,
+        side: String,
+        note: String?,
+        htmlLinks: Map<Int, String>,
+    ): String {
+        val rendered = htmlParts(parts, status)
         return when (block.kind) {
+            BlockKind.HTML_COMMENT -> commentBlock(block, cls, marks)
+            BlockKind.DETAILS -> {
+                // The summary row of a `<details>` group: the element itself wraps the group (see renderRange).
+                val title = rendered.filterNot { it is HtmlFragment.Markup && (it.tag == "details" || it.tag == "summary") }
+                val html = if (block.plainText.isBlank()) escape(options.labels.details) else markedHtml(title, marks, htmlLinks, side)
+                "<div class=\"$cls mdr-details-title${noteClass(note)}\"${noteAttributes(note)}>" +
+                    "<span class=\"mdr-details-marker\"></span>$html</div>"
+            }
+            else -> "<div class=\"$cls mdr-html${noteClass(note)}\"${noteAttributes(note)}>" +
+                markedHtml(rendered, marks, htmlLinks, side) + "</div>"
+        }
+    }
+
+    /**
+     * [parts] with the renderer's remote-image policy and, for a changed block, the `open` attribute of a
+     * `<details>` element added, exactly as [HtmlFragment.parse] would produce them.
+     */
+    private fun htmlParts(parts: List<HtmlFragment.Part>, status: DiffStatus): List<HtmlFragment.Part> {
+        var result = if (options.allowRemoteImages) parts else HtmlFragment.withoutRemoteImages(parts)
+        if (status != DiffStatus.EQUAL) result = HtmlFragment.withOpenDetails(result)
+        return result
+    }
+
+    private fun renderRawBlock(block: Block, cls: String, status: DiffStatus, marks: InlineMarks, note: String?): String =
+        when (block.kind) {
             BlockKind.CODE_FENCE -> {
                 val label = when {
-                    block.key == BlockExtractor.FRONT_MATTER_FENCE_KEY -> options.labels.frontMatter
+                    block.key == MarkdownBlockSource.FRONT_MATTER_FENCE_KEY -> options.labels.frontMatter
                     else -> block.plainText.ifEmpty { options.labels.code }
                 }
                 "<div class=\"$cls mdr-fence\">" + escape(label) + "</div>"
@@ -377,52 +428,84 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             // Inert TeX source for the page's math script, which draws it in place; shown as monospace source without it.
             BlockKind.MATH -> "<div class=\"$cls mdr-math-block\"><div class=\"mdr-math mdr-math-display\">" +
                 escape(block.plainText) + "</div></div>"
-            BlockKind.HTML -> {
-                val parts = HtmlFragment.parse(block.rawText, options.allowRemoteImages, openDetails = status != DiffStatus.EQUAL)
-                "<div class=\"$cls mdr-html${noteClass(note)}\"${noteAttributes(note)}>" + markedHtml(parts, marks) + "</div>"
-            }
-            BlockKind.DETAILS -> {
-                // The summary row of a `<details>` group: the element itself wraps the group (see renderRange).
-                val parts = HtmlFragment.parse(block.rawText, options.allowRemoteImages)
-                    .filterNot { it is HtmlFragment.Markup && (it.tag == "details" || it.tag == "summary") }
-                val title = if (block.plainText.isBlank()) escape(options.labels.details) else markedHtml(parts, marks)
-                "<div class=\"$cls mdr-details-title${noteClass(note)}\"${noteAttributes(note)}>" +
-                    "<span class=\"mdr-details-marker\"></span>$title</div>"
-            }
-            BlockKind.HTML_COMMENT -> {
-                val writer = MarkedTextWriter(marks, ::escape)
-                val text = writer.write(0, block.plainText) + writer.rest()
-                "<div class=\"$cls mdr-comment\" title=\"" + escape(options.labels.comment) + "\">" +
-                    "<span class=\"mdr-comment-text\">$text</span></div>"
-            }
-            BlockKind.LIST_ITEM -> listItem(block, cls, marks, side, note, links)
-            BlockKind.ALERT -> {
-                val writer = MarkedTextWriter(marks, ::escape)
-                val title = writer.write(0, block.plainText) + writer.rest()
-                "<p class=\"$cls mdr-alert-title${noteClass(note)}\"${noteAttributes(note)}>$title</p>"
-            }
-            BlockKind.FOOTNOTE -> {
-                val label = (block.node as FootnoteDefinition).label
-                "<div class=\"$cls mdr-footnote\" id=\"${footnoteId(side, label)}\">" +
-                    "<span class=\"mdr-fn-label\">" + escape(label) + "</span>" +
-                    "<div class=\"mdr-fn-body\">" + renderNodes(block.renderNodes, marks, side, links) + "</div></div>"
-            }
-            BlockKind.TABLE_ROW -> {
-                val row = block.node!!
-                val cols = generateSequence(row.firstChild) { it.next }.count()
-                val html = renderNodes(listOf(row), marks, side, links).replaceFirst("<tr>", "<tr class=\"$cls\">")
-                "<table class=\"mdr-trow\" style=\"--cols:$cols\"><tbody>$html</tbody></table>"
-            }
-            else -> "<div class=\"$cls${noteClass(note)}\"${noteAttributes(note)}>" + renderNodes(block.renderNodes, marks, side, links) + "</div>"
+            BlockKind.HTML_COMMENT -> commentBlock(block, cls, marks)
+            // The raw-text fallback for a format without a front end.
+            else -> "<div class=\"$cls${noteClass(note)}\"${noteAttributes(note)}><pre>" + escape(block.plainText) + "</pre></div>"
         }
+
+    private fun renderCommonmarkBlock(
+        block: Block,
+        cls: String,
+        marks: InlineMarks,
+        side: String,
+        note: String?,
+        links: Map<Node, String>,
+    ): String = when (block.kind) {
+        BlockKind.LIST_ITEM -> listItem(block, cls, marks, side, note, links)
+        BlockKind.ALERT -> {
+            val writer = MarkedTextWriter(marks, ::escape)
+            val title = writer.write(0, block.plainText) + writer.rest()
+            "<p class=\"$cls mdr-alert-title${noteClass(note)}\"${noteAttributes(note)}>$title</p>"
+        }
+        BlockKind.FOOTNOTE -> {
+            val label = block.label.orEmpty()
+            "<div class=\"$cls mdr-footnote\" id=\"${footnoteId(side, label)}\">" +
+                "<span class=\"mdr-fn-label\">" + escape(label) + "</span>" +
+                "<div class=\"mdr-fn-body\">" + renderNodes(block.nodes, marks, side, links) + "</div></div>"
+        }
+        BlockKind.TABLE_ROW -> {
+            val row = block.nodes.first()
+            val cols = generateSequence(row.firstChild) { it.next }.count()
+            val html = renderNodes(block.nodes, marks, side, links).replaceFirst("<tr>", "<tr class=\"$cls\">")
+            "<table class=\"mdr-trow\" style=\"--cols:$cols\"><tbody>$html</tbody></table>"
+        }
+        else -> "<div class=\"$cls${noteClass(note)}\"${noteAttributes(note)}>" + renderNodes(block.nodes, marks, side, links) + "</div>"
     }
 
-    /** Sanitized HTML with word marks on its visible text. */
-    private fun markedHtml(parts: List<HtmlFragment.Part>, marks: InlineMarks): String {
+    private fun commentBlock(block: Block, cls: String, marks: InlineMarks): String {
         val writer = MarkedTextWriter(marks, ::escape)
+        val text = writer.write(0, block.plainText) + writer.rest()
+        return "<div class=\"$cls mdr-comment\" title=\"" + escape(options.labels.comment) + "\">" +
+            "<span class=\"mdr-comment-text\">$text</span></div>"
+    }
+
+    /** Sanitized HTML with word marks on its visible text and marks on changed link and image targets. */
+    private fun markedHtml(
+        parts: List<HtmlFragment.Part>,
+        marks: InlineMarks,
+        links: Map<Int, String> = emptyMap(),
+        side: String = "right",
+    ): String {
+        val writer = MarkedTextWriter(marks, ::escape)
+        val tooltip = if (side == "left") options.labels.newUrl else options.labels.previousUrl
         var offset = 0
-        val html = HtmlSanitizer.write(parts) { text -> writer.write(offset, text).also { offset += text.length } }
+        var occurrence = 0
+        val html = buildString {
+            for (part in parts) {
+                when (part) {
+                    is HtmlFragment.Markup -> {
+                        var markup = part.html
+                        if (!part.closing && (part.tag == "a" || part.tag == "img")) {
+                            links[occurrence++]?.let { markup = changedLink(part, it, tooltip) }
+                        }
+                        append(markup)
+                    }
+                    is HtmlFragment.TextRun -> {
+                        append(writer.write(offset, part.text))
+                        offset += part.text.length
+                    }
+                }
+            }
+        }
         return html + writer.rest()
+    }
+
+    private fun changedLink(part: HtmlFragment.Markup, url: String, tooltip: (String) -> String): String {
+        val cls = if (part.tag == "img") "mdr-img-changed" else "mdr-link-changed"
+        val classValue = HtmlFragment.attribute(part, "class").let { if (it.isNullOrEmpty()) cls else "$it $cls" }
+        val noted = HtmlFragment.withAttribute(part, "class", classValue)
+        val title = HtmlFragment.attribute(noted, "title").let { if (it.isNullOrEmpty()) tooltip(url) else "$it\n${tooltip(url)}" }
+        return HtmlFragment.withAttribute(noted, "title", title).html
     }
 
     private fun listItem(block: Block, cls: String, marks: InlineMarks, side: String, note: String?, links: Map<Node, String>): String {
@@ -430,13 +513,13 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         val tag = if (ctx.ordered) "ol" else "ul"
         val start = if (ctx.ordered && ctx.number != null) " start=\"${ctx.number}\"" else ""
         val task = if (hasTaskMarker(block)) " mdr-task" else ""
-        val content = renderNodes(block.renderNodes, marks, side, links)
+        val content = renderNodes(block.nodes, marks, side, links)
         return "<$tag class=\"mdr-li\" style=\"--depth:${ctx.listDepth - 1}\"$start>" +
             "<li class=\"$cls$task${noteClass(note)}\"${noteAttributes(note)}>$content</li></$tag>"
     }
 
     private fun hasTaskMarker(block: Block): Boolean =
-        block.renderNodes.any { node -> node is TaskListItemMarker || node.firstChild is TaskListItemMarker }
+        block.nodes.any { node -> node is TaskListItemMarker || node.firstChild is TaskListItemMarker }
 
     /**
      * Renders [nodes] one after another, with word marks applied. Plain-text offsets continue
@@ -450,7 +533,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         val sb = StringBuilder()
         var base = 0
         for (node in nodes) {
-            val plain = BlockExtractor.plainTextWithOffsets(node)
+            val plain = MarkdownBlockSource.plainTextWithOffsets(node)
             val offsets = plain.offsets.mapValuesTo(java.util.IdentityHashMap()) { it.value + base }
             val renderer = HtmlRenderer.builder()
                 .extensions(renderExtensions)
@@ -480,7 +563,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
          * The parser's extensions minus footnotes: their renderer collects definitions at the end of the
          * document, while here each definition is a block of its own ([FootnoteReferenceRenderer]).
          */
-        private val renderExtensions = BlockExtractor.extensions.filterNot { it is FootnotesExtension }
+        private val renderExtensions = MarkdownBlockSource.extensions.filterNot { it is FootnotesExtension }
 
         /** Anchor of a footnote definition; per side, because both sides of the page define the same labels. */
         fun footnoteId(side: String, label: String): String =

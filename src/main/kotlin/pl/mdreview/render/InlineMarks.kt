@@ -9,7 +9,7 @@ import org.commonmark.node.Node
 import org.commonmark.node.Text
 import org.commonmark.renderer.NodeRenderer
 import org.commonmark.renderer.html.HtmlNodeRendererContext
-import pl.mdreview.engine.BlockExtractor
+import pl.mdreview.engine.MarkdownBlockSource
 import pl.mdreview.engine.DiffStatus
 import pl.mdreview.engine.InlineMath
 import pl.mdreview.engine.MathBlock
@@ -250,8 +250,8 @@ internal class InlineMathRenderer(
 
     override fun render(node: Node) {
         val (html, length) = when (node) {
-            is InlineMath -> html(node.literal, node.display, escape) to BlockExtractor.mathText(node).length
-            is MathBlock -> "<div class=\"mdr-math mdr-math-display\">" + escape(node.literal) + "</div>" to BlockExtractor.mathText(node).length
+            is InlineMath -> html(node.literal, node.display, escape) to MarkdownBlockSource.mathText(node).length
+            is MathBlock -> "<div class=\"mdr-math mdr-math-display\">" + escape(node.literal) + "</div>" to MarkdownBlockSource.mathText(node).length
             else -> return
         }
         val offset = offsets[node]

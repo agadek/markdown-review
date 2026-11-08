@@ -11,7 +11,7 @@ The `pl.mdreview.api` package does not depend on the IntelliJ Platform.
    Without it the IDE uses `FallbackRenderer` (raw text, paragraph diff), so the plugin still runs.
 
 ## Input
-`RenderRequest(left, right, mode, options, leftBaseUri, rightBaseUri)`: texts with `\n` line separators, `null` = the file does not exist;
+`RenderRequest(left, right, mode, options, leftBaseUri, rightBaseUri, format)`: texts with `\n` line separators, `null` = the file does not exist;
 `mode` = `SIDE_BY_SIDE` or `MERGED`; `options.ignoreWhitespace` (FR-7), `options.collapseUnchanged`,
 `options.loadRemoteImages` (NFR-8, default `false`: remote `src` in raw HTML is blanked),
 `options.renderMermaid` (P2.8, default `true`: each ` ```mermaid ` fence is one block; `false` diffs it line by line),
@@ -21,6 +21,12 @@ default `DiffOptions.DEFAULT_PAIRING_THRESHOLD`, halved for a block that is the 
 `leftBaseUri` / `rightBaseUri` (optional): URI of the directory holding each side's file, ending with `/`
 (`file:///home/me/project/docs/`). Relative image paths on that side resolve against it; `null` keeps them as written.
 Absolute URLs, root-relative paths (`/img.png`) and fragments are never rewritten.
+`format` (optional, default `DocumentFormat.MARKDOWN`): the format of both sides, `MARKDOWN` or `ASCIIDOC`. A format
+without a front end in this build falls back to raw text compared paragraph by paragraph; it never throws.
+
+Apart from `format` and the Markdown-specific `renderMermaid` option, the rest of this contract is
+format-independent: blocks, statuses, HTML structure, source lines, edit regions and change navigation have the same
+meaning for every format a front end provides.
 
 The IDE does not call `render()` for a side above `LargeFiles.limit()` (default `SizeLimit.DEFAULT`: 20,000 lines or 2 MB, NFR-4); it shows a notice
 with an **Open Text Viewer** button instead.

@@ -4,7 +4,7 @@ A generated document for the AsciiDoc block-diff benchmark.
 
 == Section 1
 
-Section 1 covers code diff view render paragraph plugin editor heading section model (changed).
+Section 1 covers code diff view render paragraph plugin editor heading section model.
 
 == Section 2
 
@@ -341,7 +341,7 @@ Section 63 covers editor heading section model list document line table block wo
 
 == Section 64
 
-Section 64 covers document line table block word code diff view render paragraph (changed).
+Section 64 covers document line table block word code diff view render paragraph.
 
 == Section 65
 
@@ -696,7 +696,7 @@ Section 127 covers editor heading section model list document line table block w
 
 == Section 128
 
-Section 128 covers document line table block word code diff view render paragraph (changed).
+Section 128 covers document line table block word code diff view render paragraph.
 
 == Section 129
 
@@ -1042,7 +1042,7 @@ Section 191 covers editor heading section model list document line table block w
 
 == Section 192
 
-Section 192 covers document line table block word code diff view render paragraph (changed).
+Section 192 covers document line table block word code diff view render paragraph.
 
 == Section 193
 
@@ -1404,7 +1404,7 @@ Section 255 covers editor heading section model list document line table block w
 
 == Section 256
 
-Section 256 covers document line table block word code diff view render paragraph (changed).
+Section 256 covers document line table block word code diff view render paragraph.
 
 == Section 257
 
@@ -1745,7 +1745,7 @@ Section 319 covers editor heading section model list document line table block w
 
 == Section 320
 
-Section 320 covers document line table block word code diff view render paragraph (changed).
+Section 320 covers document line table block word code diff view render paragraph.
 
 * block heading editor.
 * diff table line.
@@ -2100,7 +2100,7 @@ Section 383 covers editor heading section model list document line table block w
 
 == Section 384
 
-Section 384 covers document line table block word code diff view render paragraph (changed).
+Section 384 covers document line table block word code diff view render paragraph.
 
 == Section 385
 
@@ -2446,7 +2446,7 @@ Section 447 covers editor heading section model list document line table block w
 
 == Section 448
 
-Section 448 covers document line table block word code diff view render paragraph (changed).
+Section 448 covers document line table block word code diff view render paragraph.
 
 == Section 449
 

@@ -16,16 +16,28 @@ import pl.mdreview.engine.DiffOptions
 import pl.mdreview.engine.DiffStatus
 import pl.mdreview.engine.MarkdownBlockSource
 import pl.mdreview.engine.SourceRange
+import pl.mdreview.engine.asciidoc.AsciiDocBlockSource
+import pl.mdreview.engine.asciidoc.AsciidoctorProvider
 
 /**
  * The core's implementation of [MarkdownDiffRenderer], registered in
  * `META-INF/services/pl.mdreview.api.MarkdownDiffRenderer`. Stateless and thread-safe.
+ *
+ * [asciidoctor] is optional: when the IDE supplies the provider of the installed AsciiDoc plugin, `ASCIIDOC`
+ * requests get the AsciiDoc front end; without it they keep the raw-text fallback (NFR-11).
  */
-class CoreMarkdownDiffRenderer : MarkdownDiffRenderer {
+class CoreMarkdownDiffRenderer(private val asciidoctor: AsciidoctorProvider? = null) : MarkdownDiffRenderer {
+
+    /** Created once; the provider returns the session's single thread-safe [org.asciidoctor.Asciidoctor]. */
+    private val asciidocSource: BlockSource? = asciidoctor?.let { AsciiDocBlockSource(it) }
 
     override fun render(request: RenderRequest): RenderedDiff {
         // A format without a front end still gets a usable diff: raw text, compared paragraph by paragraph.
-        val source = SOURCES[request.format] ?: PlainTextBlockSource
+        val source = if (request.format == DocumentFormat.ASCIIDOC && asciidocSource != null) {
+            asciidocSource
+        } else {
+            SOURCES[request.format] ?: PlainTextBlockSource
+        }
         return render(request, source)
     }
 

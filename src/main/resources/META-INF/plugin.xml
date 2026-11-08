@@ -70,6 +70,7 @@
     <!-- Only to recognize the Markdown file type for files without a .md-like extension; rendering uses commonmark. -->
     <depends optional="true" config-file="markdown-review-withMarkdown.xml">org.intellij.plugins.markdown</depends>
     <!-- AsciiDoc support and AsciidoctorJ exist only while the AsciiDoc plugin is enabled (NFR-11, ADR 0003). -->
+
     <depends optional="true" config-file="markdown-review-withAsciiDoc.xml">org.asciidoctor.intellij.asciidoc</depends>
 
     <resource-bundle>messages.MarkdownReviewBundle</resource-bundle>

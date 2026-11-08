@@ -54,6 +54,11 @@ Architecture decisions are recorded as ADRs in [docs/adr/](adr/), and every mile
 | NFR-14 | Markdown is unchanged: every existing fixture and test passes without edits to its expectations, and the Markdown benchmark stays within 5% of 1.3.0. The plugin zip grows by no more than 1 MB. |
 | NFR-15 | The core stays free of IntelliJ Platform APIs (ENGINE_CONTRACT): the AsciiDoc front end depends on AsciidoctorJ only, and is unit-tested with AsciidoctorJ on the test classpath. |
 
+Measured for NFR-12 in P4.1 (Apple Silicon, Oracle JDK 21.0.9, 2 GB heap): the first
+`Asciidoctor.Factory.create()` took 1.57–2.14 s and the first 1,015-line load 236–266 ms, so the first
+render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms and 10,003 lines
+138–295 ms for load plus all inline conversion. The budget holds; NFR-12 stays as written.
+
 ## Architecture decisions
 
 | ADR | Decision |
@@ -69,7 +74,7 @@ Architecture decisions are recorded as ADRs in [docs/adr/](adr/), and every mile
 
 | Milestone | Theme | Depends on | Spec | Status |
 |-----------|-------|------------|------|--------|
-| P4.1 | Spike: AsciidoctorJ from the AsciiDoc plugin | – | [P4.1](specs/phase4/P4.1-asciidoctorj-spike.md) | Not started |
+| P4.1 | Spike: AsciidoctorJ from the AsciiDoc plugin | – | [P4.1](specs/phase4/P4.1-asciidoctorj-spike.md) | Done |
 | P4.2 | Format-neutral engine and API, Markdown unchanged | – | [P4.2](specs/phase4/P4.2-format-neutral-engine.md) | Not started |
 | P4.3 | AsciiDoc block extraction | P4.1, P4.2 | [P4.3](specs/phase4/P4.3-asciidoc-block-extraction.md) | Not started |
 | P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | Not started |
@@ -78,9 +83,10 @@ Architecture decisions are recorded as ADRs in [docs/adr/](adr/), and every mile
 | P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Not started |
 | P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | Not started |
 
-P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1 can
-overturn [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it does, the fallback in that ADR (bundling
-AsciidoctorJ in a companion plugin) replaces it before P4.3 starts. P4.4 and P4.5 are independent once blocks exist.
+P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1
+confirmed [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it had failed, the fallback in that ADR
+(bundling AsciidoctorJ in a companion plugin) would replace it before P4.3 starts. P4.4 and P4.5 are independent once
+blocks exist.
 P4.6 can start on P4.4's output with edit actions disabled, and turns them on when P4.5 lands.
 
 Release: AsciiDoc ships behind no flag, in one minor release once P4.1 to P4.6 are done (tentatively 1.5). P4.7 may
@@ -100,6 +106,16 @@ Scope:
 Done when:
 - The spike's findings are written into [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md) and
   [ADR 0005](adr/0005-asciidoc-block-model.md), and both are accepted or revised.
+
+P4.1 results: go for the optional dependency. Gradle resolves
+`plugin("org.asciidoctor.intellij.asciidoc", "0.44.10")` for IC 2025.1.3; 0.44.10 ships AsciidoctorJ 3.0.0 and
+JRuby 9.4.8.0, while the 2026.1 and 263 verifications resolve 0.45.11 with AsciidoctorJ 3.0.1 and JRuby 9.4.14.0.
+Both versions produce the same block tree and lines. `verifyPlugin` is Compatible on IC 2025.1.3 and IU 2026.1;
+IU 263 has only the eight VCS problems the baseline already has. The source map is present on every node, with the
+conditional-tail, block-title, comment, include, admonition and table-row gaps listed in
+[ADR 0005](adr/0005-asciidoc-block-model.md). `shutdown()`/`close()` stops the Ruby threads but does not release
+the class loader on JDK 21; the IDE unload was not run, and [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md)
+records that as a known limitation for P4.6.
 
 ## P4.2 Format-neutral engine and API
 

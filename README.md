@@ -23,12 +23,12 @@ diff window, so it works wherever the IDE shows a diff of an `.md` or `.adoc` fi
 
 ## What the plugin does
 
-- **Rendered side-by-side diff.** The left and right versions are rendered in two columns, with blocks (headings,
+- **Rendered (side by side).** The left and right versions are rendered in two columns, with blocks (headings,
   paragraphs, list items, table rows, code blocks) aligned in rows. Removed blocks have a red background, added ones
   a green background, and the other side keeps an empty placeholder of the same height. Inside changed blocks,
   individual words are highlighted.
-- **Merged view.** One column: removed parts red and struck through, added parts green. Handy for reading a large
-  change quickly.
+- **Rendered (merged).** One column: removed parts red and struck through, added parts green. Handy for reading a
+  large change quickly.
 - **Mermaid diagrams.** ` ```mermaid ` blocks are drawn as diagrams, offline, in the editor's light or dark theme.
   A changed diagram shows the old and the new drawing side by side, with a "Show source changes" toggle for the line
   diff of its source. A diagram that does not parse shows Mermaid's error and its source.
@@ -60,9 +60,9 @@ the block's lines, for a file under version control.
 
 ![Rendered merged diff in a dark theme](docs/screenshots/merged-dark.png)
 
-Settings | Tools | Markdown Review picks the viewer a Markdown or AsciiDoc diff opens with (rendered side by side,
-rendered merged, or text) and holds the whitespace, collapse, pairing threshold, large-file, remote-image, Mermaid
-and math options. The colors of added, removed and modified blocks and of changed words are set per color scheme in
+Settings | Tools | Markdown Review picks the viewer a Markdown or AsciiDoc diff opens with (**Rendered (side by
+side)**, **Rendered (merged)**, or text) and holds the whitespace, collapse, pairing threshold, large-file,
+remote-image, Mermaid and math options. The colors of added, removed and modified blocks and of changed words are set per color scheme in
 Settings | Editor | Color Scheme | Markdown Review; a color left unset follows the scheme's Diff colors. A custom
 stylesheet (a CSS file on the same settings page) can restyle the rendered view, for example to match a documentation
 site, and the Export button on the viewer's toolbar saves the rendered diff as a standalone HTML file or a PDF.

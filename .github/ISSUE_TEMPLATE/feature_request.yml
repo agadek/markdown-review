@@ -1,5 +1,5 @@
 name: Feature request
-description: Something the rendered diff should do, or a Markdown element it should support.
+description: Something the rendered diff should do, or a Markdown or AsciiDoc element it should support.
 labels: [enhancement, triage]
 body:
   - type: textarea
@@ -13,7 +13,7 @@ body:
     id: idea
     attributes:
       label: What would help
-      description: How it could work. For new syntax, an example of the Markdown and where it is used (GitHub, GitLab, a docs tool).
+      description: How it could work. For new syntax, an example of the Markdown or AsciiDoc and where it is used (GitHub, GitLab, a docs tool).
   - type: input
     id: ide
     attributes:

@@ -1,0 +1,2740 @@
+= Large AsciiDoc Document
+
+A generated document for the AsciiDoc block-diff benchmark.
+
+== Section 1
+
+Section 1 covers code diff view render paragraph plugin editor heading section model (changed).
+
+== Section 2
+
+Section 2 covers plugin editor heading section model list document line table block.
+
+== Section 3
+
+Section 3 covers list document line table block word code diff view render.
+
+== Section 4
+
+Section 4 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 5
+
+Section 5 covers paragraph plugin editor heading section model list document line table.
+
+* table editor plugin.
+* code line document.
+* render view diff.
+* model block heading.
+
+== Section 6
+
+Section 6 covers model list document line table block word code diff view.
+
+== Section 7
+
+Section 7 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 8
+
+Section 8 covers render paragraph plugin editor heading section model list document line.
+
+== Section 9
+
+Section 9 covers section model list document line table block word code diff.
+
+== Section 10
+
+Section 10 covers table block word code diff view render paragraph plugin editor.
+
+* line plugin paragraph.
+* word document list.
+* view diff code.
+* section table editor.
+
+== Section 11
+
+Section 11 covers view render paragraph plugin editor heading section model list document.
+
+== Section 12
+
+Section 12 covers heading section model list document line table block word code.
+
+== Section 13
+
+Section 13 covers line table block word code diff view render paragraph plugin.
+
+== Section 14
+
+Section 14 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 15
+
+Section 15 covers editor heading section model list document line table block word.
+
+* document paragraph render.
+* block list model.
+* diff code word.
+* heading line plugin.
+
+== Section 16
+
+Section 16 covers document line table block word code diff view render paragraph.
+
+== Section 17
+
+Section 17 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 18
+
+Section 18 covers plugin editor heading section model list document line table block.
+
+== Section 19
+
+Section 19 covers list document line table block word code diff view render.
+
+== Section 20
+
+Section 20 covers word code diff view render paragraph plugin editor heading section.
+
+* list render view.
+* table model section.
+* code word block.
+* editor document paragraph.
+
+== Section 21
+
+Section 21 covers paragraph plugin editor heading section model list document line table.
+
+== Section 22
+
+Section 22 covers model list document line table block word code diff view.
+
+== Section 23
+
+Section 23 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 24
+
+Section 24 covers render paragraph plugin editor heading section model list document line.
+
+== Section 25
+
+Section 25 covers section model list document line table block word code diff.
+
+* model view diff.
+* line section heading.
+* word block table.
+* plugin list render.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 25-A | 26 | Generated row A.
+| Item 25-B | 27 | Generated row B.
+| Item 25-C | 28 | Generated row C.
+|===
+
+== Section 26
+
+Section 26 covers table block word code diff view render paragraph plugin editor.
+
+== Section 27
+
+Section 27 covers view render paragraph plugin editor heading section model list document.
+
+== Section 28
+
+Section 28 covers heading section model list document line table block word code.
+
+== Section 29
+
+Section 29 covers line table block word code diff view render paragraph plugin.
+
+== Section 30
+
+Section 30 covers diff view render paragraph plugin editor heading section model list.
+
+* section diff code.
+* document heading editor.
+* block table line.
+* paragraph model view.
+
+== Section 31
+
+Section 31 covers editor heading section model list document line table block word.
+
+== Section 32
+
+Section 32 covers document line table block word code diff view render paragraph.
+
+== Section 33
+
+Section 33 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 34
+
+Section 34 covers plugin editor heading section model list document line table block.
+
+== Section 35
+
+Section 35 covers list document line table block word code diff view render.
+
+* heading code word.
+* list editor plugin.
+* table line document.
+* render section diff.
+
+== Section 36
+
+Section 36 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 37
+
+Section 37 covers paragraph plugin editor heading section model list document line table.
+
+== Section 38
+
+Section 38 covers model list document line table block word code diff view.
+
+== Section 39
+
+Section 39 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 40
+
+Section 40 covers render paragraph plugin editor heading section model list document line.
+
+* editor word block.
+* model plugin paragraph.
+* line document list.
+* view heading code.
+
+== Section 41
+
+Section 41 covers section model list document line table block word code diff.
+
+== Section 42
+
+Section 42 covers table block word code diff view render paragraph plugin editor.
+
+== Section 43
+
+Section 43 covers view render paragraph plugin editor heading section model list document.
+
+== Section 44
+
+Section 44 covers heading section model list document line table block word code.
+
+== Section 45
+
+Section 45 covers line table block word code diff view render paragraph plugin.
+
+* plugin block table.
+* section paragraph render.
+* document list model.
+* diff editor word.
+
+== Section 46
+
+Section 46 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 47
+
+Section 47 covers editor heading section model list document line table block word.
+
+== Section 48
+
+Section 48 covers document line table block word code diff view render paragraph.
+
+== Section 49
+
+Section 49 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 50
+
+Section 50 covers plugin editor heading section model list document line table block.
+
+* paragraph table line.
+* heading render view.
+* list model section.
+* code plugin block.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 50-A | 51 | Generated row A.
+| Item 50-B | 52 | Generated row B.
+| Item 50-C | 53 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 50
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+
+== Section 51
+
+Section 51 covers list document line table block word code diff view render.
+
+== Section 52
+
+Section 52 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 53
+
+Section 53 covers paragraph plugin editor heading section model list document line table.
+
+== Section 54
+
+Section 54 covers model list document line table block word code diff view.
+
+== Section 55
+
+Section 55 covers block word code diff view render paragraph plugin editor heading.
+
+* render line document.
+* editor view diff.
+* model section heading.
+* word paragraph table.
+
+== Section 56
+
+Section 56 covers render paragraph plugin editor heading section model list document line.
+
+== Section 57
+
+Section 57 covers section model list document line table block word code diff.
+
+== Section 58
+
+Section 58 covers table block word code diff view render paragraph plugin editor.
+
+== Section 59
+
+Section 59 covers view render paragraph plugin editor heading section model list document.
+
+== Section 60
+
+Section 60 covers heading section model list document line table block word code.
+
+* view document list.
+* plugin diff code.
+* section heading editor.
+* block render line.
+
+== Section 61
+
+Section 61 covers line table block word code diff view render paragraph plugin.
+
+== Section 62
+
+Section 62 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 63
+
+Section 63 covers editor heading section model list document line table block word.
+
+== Section 64
+
+Section 64 covers document line table block word code diff view render paragraph (changed).
+
+== Section 65
+
+Section 65 covers code diff view render paragraph plugin editor heading section model.
+
+* diff list model.
+* paragraph code word.
+* heading editor plugin.
+* table view document.
+
+== Section 66
+
+Section 66 covers plugin editor heading section model list document line table block.
+
+== Section 67
+
+Section 67 covers list document line table block word code diff view render.
+
+== Section 68
+
+Section 68 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 69
+
+Section 69 covers paragraph plugin editor heading section model list document line table.
+
+== Section 70
+
+Section 70 covers model list document line table block word code diff view.
+
+* code model section.
+* render word block.
+* editor plugin paragraph.
+* line diff list.
+
+== Section 71
+
+Section 71 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 72
+
+Section 72 covers render paragraph plugin editor heading section model list document line.
+
+== Section 73
+
+Section 73 covers section model list document line table block word code diff.
+
+== Section 74
+
+Section 74 covers table block word code diff view render paragraph plugin editor.
+
+== Section 75
+
+Section 75 covers view render paragraph plugin editor heading section model list document.
+
+* word section heading.
+* view block table.
+* plugin paragraph render.
+* document code model.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 75-A | 76 | Generated row A.
+| Item 75-B | 77 | Generated row B.
+| Item 75-C | 78 | Generated row C.
+|===
+
+== Section 76
+
+Section 76 covers heading section model list document line table block word code.
+
+== Section 77
+
+Section 77 covers line table block word code diff view render paragraph plugin.
+
+== Section 78
+
+Section 78 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 79
+
+Section 79 covers editor heading section model list document line table block word.
+
+== Section 80
+
+Section 80 covers document line table block word code diff view render paragraph.
+
+* block heading editor.
+* diff table line.
+* paragraph render view.
+* list word section.
+
+== Section 81
+
+Section 81 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 82
+
+Section 82 covers plugin editor heading section model list document line table block.
+
+== Section 83
+
+Section 83 covers list document line table block word code diff view render.
+
+== Section 84
+
+Section 84 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 85
+
+Section 85 covers paragraph plugin editor heading section model list document line table.
+
+* table editor plugin.
+* code line document.
+* render view diff.
+* model block heading.
+
+== Section 86
+
+Section 86 covers model list document line table block word code diff view.
+
+== Section 87
+
+Section 87 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 88
+
+Section 88 covers render paragraph plugin editor heading section model list document line.
+
+== Section 89
+
+Section 89 covers section model list document line table block word code diff.
+
+== Section 90
+
+Section 90 covers table block word code diff view render paragraph plugin editor.
+
+* line plugin paragraph.
+* word document list.
+* view diff code.
+* section table editor.
+
+== Section 91
+
+Section 91 covers view render paragraph plugin editor heading section model list document.
+
+== Section 92
+
+Section 92 covers heading section model list document line table block word code.
+
+== Section 93
+
+Section 93 covers line table block word code diff view render paragraph plugin.
+
+== Section 94
+
+Section 94 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 95
+
+Section 95 covers editor heading section model list document line table block word.
+
+* document paragraph render.
+* block list model.
+* diff code word.
+* heading line plugin.
+
+== Section 96
+
+Section 96 covers document line table block word code diff view render paragraph.
+
+== Section 97
+
+Section 97 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 98
+
+Section 98 covers plugin editor heading section model list document line table block.
+
+== Section 99
+
+Section 99 covers list document line table block word code diff view render.
+
+== Section 100
+
+Section 100 covers word code diff view render paragraph plugin editor heading section.
+
+* list render view.
+* table model section.
+* code word block.
+* editor document paragraph.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 100-A | 101 | Generated row A.
+| Item 100-B | 102 | Generated row B.
+| Item 100-C | 103 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 100
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+
+== Section 101
+
+Section 101 covers paragraph plugin editor heading section model list document line table.
+
+== Section 102
+
+Section 102 covers model list document line table block word code diff view.
+
+== Section 103
+
+Section 103 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 104
+
+Section 104 covers render paragraph plugin editor heading section model list document line.
+
+== Section 105
+
+Section 105 covers section model list document line table block word code diff.
+
+* model view diff.
+* line section heading.
+* word block table.
+* plugin list render.
+
+== Section 106
+
+Section 106 covers table block word code diff view render paragraph plugin editor.
+
+== Section 107
+
+Section 107 covers view render paragraph plugin editor heading section model list document.
+
+== Section 108
+
+Section 108 covers heading section model list document line table block word code.
+
+== Section 109
+
+Section 109 covers line table block word code diff view render paragraph plugin.
+
+== Section 110
+
+Section 110 covers diff view render paragraph plugin editor heading section model list.
+
+* section diff code.
+* document heading editor.
+* block table line.
+* paragraph model view.
+
+== Section 111
+
+Section 111 covers editor heading section model list document line table block word.
+
+== Section 112
+
+Section 112 covers document line table block word code diff view render paragraph.
+
+== Section 113
+
+Section 113 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 114
+
+Section 114 covers plugin editor heading section model list document line table block.
+
+== Section 115
+
+Section 115 covers list document line table block word code diff view render.
+
+* heading code word.
+* list editor plugin.
+* table line document.
+* render section diff.
+
+== Section 116
+
+Section 116 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 117
+
+Section 117 covers paragraph plugin editor heading section model list document line table.
+
+== Section 118
+
+Section 118 covers model list document line table block word code diff view.
+
+== Section 119
+
+Section 119 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 120
+
+Section 120 covers render paragraph plugin editor heading section model list document line.
+
+* editor word block.
+* model plugin paragraph.
+* line document list.
+* view heading code.
+
+== Section 121
+
+Section 121 covers section model list document line table block word code diff.
+
+== Section 122
+
+Section 122 covers table block word code diff view render paragraph plugin editor.
+
+== Section 123
+
+Section 123 covers view render paragraph plugin editor heading section model list document.
+
+== Section 124
+
+Section 124 covers heading section model list document line table block word code.
+
+== Section 125
+
+Section 125 covers line table block word code diff view render paragraph plugin.
+
+* plugin block table.
+* section paragraph render.
+* document list model.
+* diff editor word.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 125-A | 126 | Generated row A.
+| Item 125-B | 127 | Generated row B.
+| Item 125-C | 128 | Generated row C.
+|===
+
+== Section 126
+
+Section 126 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 127
+
+Section 127 covers editor heading section model list document line table block word.
+
+== Section 128
+
+Section 128 covers document line table block word code diff view render paragraph (changed).
+
+== Section 129
+
+Section 129 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 130
+
+Section 130 covers plugin editor heading section model list document line table block.
+
+* paragraph table line.
+* heading render view.
+* list model section.
+* code plugin block.
+
+== Section 131
+
+Section 131 covers list document line table block word code diff view render.
+
+== Section 132
+
+Section 132 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 133
+
+Section 133 covers paragraph plugin editor heading section model list document line table.
+
+== Section 134
+
+Section 134 covers model list document line table block word code diff view.
+
+== Section 135
+
+Section 135 covers block word code diff view render paragraph plugin editor heading.
+
+* render line document.
+* editor view diff.
+* model section heading.
+* word paragraph table.
+
+== Section 136
+
+Section 136 covers render paragraph plugin editor heading section model list document line.
+
+== Section 137
+
+Section 137 covers section model list document line table block word code diff.
+
+== Section 138
+
+Section 138 covers table block word code diff view render paragraph plugin editor.
+
+== Section 139
+
+Section 139 covers view render paragraph plugin editor heading section model list document.
+
+== Section 140
+
+Section 140 covers heading section model list document line table block word code.
+
+* view document list.
+* plugin diff code.
+* section heading editor.
+* block render line.
+
+== Section 141
+
+Section 141 covers line table block word code diff view render paragraph plugin.
+
+== Section 142
+
+Section 142 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 143
+
+Section 143 covers editor heading section model list document line table block word.
+
+== Section 144
+
+Section 144 covers document line table block word code diff view render paragraph.
+
+== Section 145
+
+Section 145 covers code diff view render paragraph plugin editor heading section model.
+
+* diff list model.
+* paragraph code word.
+* heading editor plugin.
+* table view document.
+
+== Section 146
+
+Section 146 covers plugin editor heading section model list document line table block.
+
+== Section 147
+
+Section 147 covers list document line table block word code diff view render.
+
+== Section 148
+
+Section 148 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 149
+
+Section 149 covers paragraph plugin editor heading section model list document line table.
+
+== Section 150
+
+Section 150 covers model list document line table block word code diff view.
+
+* code model section.
+* render word block.
+* editor plugin paragraph.
+* line diff list.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 150-A | 151 | Generated row A.
+| Item 150-B | 152 | Generated row B.
+| Item 150-C | 153 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 150
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+
+== Section 151
+
+Section 151 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 152
+
+Section 152 covers render paragraph plugin editor heading section model list document line.
+
+== Section 153
+
+Section 153 covers section model list document line table block word code diff.
+
+== Section 154
+
+Section 154 covers table block word code diff view render paragraph plugin editor.
+
+== Section 155
+
+Section 155 covers view render paragraph plugin editor heading section model list document.
+
+* word section heading.
+* view block table.
+* plugin paragraph render.
+* document code model.
+
+== Section 156
+
+Section 156 covers heading section model list document line table block word code.
+
+== Section 157
+
+Section 157 covers line table block word code diff view render paragraph plugin.
+
+== Section 158
+
+Section 158 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 159
+
+Section 159 covers editor heading section model list document line table block word.
+
+== Section 160
+
+Section 160 covers document line table block word code diff view render paragraph.
+
+* block heading editor.
+* diff table line.
+* paragraph render view.
+* list word section.
+
+== Section 161
+
+Section 161 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 162
+
+Section 162 covers plugin editor heading section model list document line table block.
+
+== Section 163
+
+Section 163 covers list document line table block word code diff view render.
+
+== Section 164
+
+Section 164 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 165
+
+Section 165 covers paragraph plugin editor heading section model list document line table.
+
+* table editor plugin.
+* code line document.
+* render view diff.
+* model block heading.
+
+== Section 166
+
+Section 166 covers model list document line table block word code diff view.
+
+== Section 167
+
+Section 167 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 168
+
+Section 168 covers render paragraph plugin editor heading section model list document line.
+
+== Section 169
+
+Section 169 covers section model list document line table block word code diff.
+
+== Section 170
+
+Section 170 covers table block word code diff view render paragraph plugin editor.
+
+* line plugin paragraph.
+* word document list.
+* view diff code.
+* section table editor.
+
+== Section 171
+
+Section 171 covers view render paragraph plugin editor heading section model list document.
+
+== Section 172
+
+Section 172 covers heading section model list document line table block word code.
+
+== Section 173
+
+Section 173 covers line table block word code diff view render paragraph plugin.
+
+== Section 174
+
+Section 174 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 175
+
+Section 175 covers editor heading section model list document line table block word.
+
+* document paragraph render.
+* block list model.
+* diff code word.
+* heading line plugin.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 175-A | 176 | Generated row A.
+| Item 175-B | 177 | Generated row B.
+| Item 175-C | 178 | Generated row C.
+|===
+
+== Section 176
+
+Section 176 covers document line table block word code diff view render paragraph.
+
+== Section 177
+
+Section 177 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 178
+
+Section 178 covers plugin editor heading section model list document line table block.
+
+== Section 179
+
+Section 179 covers list document line table block word code diff view render.
+
+== Section 180
+
+Section 180 covers word code diff view render paragraph plugin editor heading section.
+
+* list render view.
+* table model section.
+* code word block.
+* editor document paragraph.
+
+== Section 181
+
+Section 181 covers paragraph plugin editor heading section model list document line table.
+
+== Section 182
+
+Section 182 covers model list document line table block word code diff view.
+
+== Section 183
+
+Section 183 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 184
+
+Section 184 covers render paragraph plugin editor heading section model list document line.
+
+== Section 185
+
+Section 185 covers section model list document line table block word code diff.
+
+* model view diff.
+* line section heading.
+* word block table.
+* plugin list render.
+
+== Section 186
+
+Section 186 covers table block word code diff view render paragraph plugin editor.
+
+== Section 187
+
+Section 187 covers view render paragraph plugin editor heading section model list document.
+
+== Section 188
+
+Section 188 covers heading section model list document line table block word code.
+
+== Section 189
+
+Section 189 covers line table block word code diff view render paragraph plugin.
+
+== Section 190
+
+Section 190 covers diff view render paragraph plugin editor heading section model list.
+
+* section diff code.
+* document heading editor.
+* block table line.
+* paragraph model view.
+
+== Section 191
+
+Section 191 covers editor heading section model list document line table block word.
+
+== Section 192
+
+Section 192 covers document line table block word code diff view render paragraph (changed).
+
+== Section 193
+
+Section 193 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 194
+
+Section 194 covers plugin editor heading section model list document line table block.
+
+== Section 195
+
+Section 195 covers list document line table block word code diff view render.
+
+* heading code word.
+* list editor plugin.
+* table line document.
+* render section diff.
+
+== Section 196
+
+Section 196 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 197
+
+Section 197 covers paragraph plugin editor heading section model list document line table.
+
+== Section 198
+
+Section 198 covers model list document line table block word code diff view.
+
+== Section 199
+
+Section 199 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 200
+
+Section 200 covers render paragraph plugin editor heading section model list document line.
+
+A new paragraph was added in the large AsciiDoc file.
+
+* editor word block.
+* model plugin paragraph.
+* line document list.
+* view heading code.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 200-A | 201 | Generated row A.
+| Item 200-B | 202 | Generated row B.
+| Item 200-C | 203 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 200
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+
+== Section 201
+
+Section 201 covers section model list document line table block word code diff.
+
+== Section 202
+
+Section 202 covers table block word code diff view render paragraph plugin editor.
+
+== Section 203
+
+Section 203 covers view render paragraph plugin editor heading section model list document.
+
+== Section 204
+
+Section 204 covers heading section model list document line table block word code.
+
+== Section 205
+
+Section 205 covers line table block word code diff view render paragraph plugin.
+
+* plugin block table.
+* section paragraph render.
+* document list model.
+* diff editor word.
+
+== Section 206
+
+Section 206 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 207
+
+Section 207 covers editor heading section model list document line table block word.
+
+== Section 208
+
+Section 208 covers document line table block word code diff view render paragraph.
+
+== Section 209
+
+Section 209 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 210
+
+Section 210 covers plugin editor heading section model list document line table block.
+
+* paragraph table line.
+* heading render view.
+* list model section.
+* code plugin block.
+
+== Section 211
+
+Section 211 covers list document line table block word code diff view render.
+
+== Section 212
+
+Section 212 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 213
+
+Section 213 covers paragraph plugin editor heading section model list document line table.
+
+== Section 214
+
+Section 214 covers model list document line table block word code diff view.
+
+== Section 215
+
+Section 215 covers block word code diff view render paragraph plugin editor heading.
+
+* render line document.
+* editor view diff.
+* model section heading.
+* word paragraph table.
+
+== Section 216
+
+Section 216 covers render paragraph plugin editor heading section model list document line.
+
+== Section 217
+
+Section 217 covers section model list document line table block word code diff.
+
+== Section 218
+
+Section 218 covers table block word code diff view render paragraph plugin editor.
+
+== Section 219
+
+Section 219 covers view render paragraph plugin editor heading section model list document.
+
+== Section 220
+
+Section 220 covers heading section model list document line table block word code.
+
+* view document list.
+* plugin diff code.
+* section heading editor.
+* block render line.
+
+== Section 221
+
+Section 221 covers line table block word code diff view render paragraph plugin.
+
+== Section 222
+
+Section 222 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 223
+
+Section 223 covers editor heading section model list document line table block word.
+
+== Section 224
+
+Section 224 covers document line table block word code diff view render paragraph.
+
+== Section 225
+
+Section 225 covers code diff view render paragraph plugin editor heading section model.
+
+* diff list model.
+* paragraph code word.
+* heading editor plugin.
+* table view document.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 225-A | 226 | Generated row A.
+| Item 225-B | 227 | Generated row B.
+| Item 225-C | 228 | Generated row C.
+|===
+
+== Section 226
+
+Section 226 covers plugin editor heading section model list document line table block.
+
+== Section 227
+
+Section 227 covers list document line table block word code diff view render.
+
+== Section 228
+
+Section 228 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 229
+
+Section 229 covers paragraph plugin editor heading section model list document line table.
+
+== Section 230
+
+Section 230 covers model list document line table block word code diff view.
+
+* code model section.
+* render word block.
+* editor plugin paragraph.
+* line diff list.
+
+== Section 231
+
+Section 231 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 232
+
+Section 232 covers render paragraph plugin editor heading section model list document line.
+
+== Section 233
+
+Section 233 covers section model list document line table block word code diff.
+
+== Section 234
+
+Section 234 covers table block word code diff view render paragraph plugin editor.
+
+== Section 235
+
+Section 235 covers view render paragraph plugin editor heading section model list document.
+
+* word section heading.
+* view block table.
+* plugin paragraph render.
+* document code model.
+
+== Section 236
+
+Section 236 covers heading section model list document line table block word code.
+
+== Section 237
+
+Section 237 covers line table block word code diff view render paragraph plugin.
+
+== Section 238
+
+Section 238 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 239
+
+Section 239 covers editor heading section model list document line table block word.
+
+== Section 240
+
+Section 240 covers document line table block word code diff view render paragraph.
+
+* block heading editor.
+* diff table line.
+* paragraph render view.
+* list word section.
+
+== Section 241
+
+Section 241 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 242
+
+Section 242 covers plugin editor heading section model list document line table block.
+
+== Section 243
+
+Section 243 covers list document line table block word code diff view render.
+
+== Section 244
+
+Section 244 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 245
+
+Section 245 covers paragraph plugin editor heading section model list document line table.
+
+* table editor plugin.
+* code line document.
+* render view diff.
+* model block heading.
+
+== Section 246
+
+Section 246 covers model list document line table block word code diff view.
+
+== Section 247
+
+Section 247 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 248
+
+Section 248 covers render paragraph plugin editor heading section model list document line.
+
+== Section 249
+
+Section 249 covers section model list document line table block word code diff.
+
+== Section 250
+
+Section 250 covers table block word code diff view render paragraph plugin editor.
+
+* line plugin paragraph.
+* word document list.
+* view diff code.
+* section table editor.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 250-A | 251 | Generated row A.
+| Item 250-B | 252 | Generated row B.
+| Item 250-C | 253 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 250
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+
+== Section 251
+
+Section 251 covers view render paragraph plugin editor heading section model list document.
+
+== Section 252
+
+Section 252 covers heading section model list document line table block word code.
+
+== Section 253
+
+Section 253 covers line table block word code diff view render paragraph plugin.
+
+== Section 254
+
+Section 254 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 255
+
+Section 255 covers editor heading section model list document line table block word.
+
+* document paragraph render.
+* block list model.
+* diff code word.
+* heading line plugin.
+
+== Section 256
+
+Section 256 covers document line table block word code diff view render paragraph (changed).
+
+== Section 257
+
+Section 257 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 258
+
+Section 258 covers plugin editor heading section model list document line table block.
+
+== Section 259
+
+Section 259 covers list document line table block word code diff view render.
+
+== Section 260
+
+Section 260 covers word code diff view render paragraph plugin editor heading section.
+
+* list render view.
+* table model section.
+* code word block.
+* editor document paragraph.
+
+== Section 261
+
+Section 261 covers paragraph plugin editor heading section model list document line table.
+
+== Section 262
+
+Section 262 covers model list document line table block word code diff view.
+
+== Section 263
+
+Section 263 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 264
+
+Section 264 covers render paragraph plugin editor heading section model list document line.
+
+== Section 265
+
+Section 265 covers section model list document line table block word code diff.
+
+* model view diff.
+* line section heading.
+* word block table.
+* plugin list render.
+
+== Section 266
+
+Section 266 covers table block word code diff view render paragraph plugin editor.
+
+== Section 267
+
+Section 267 covers view render paragraph plugin editor heading section model list document.
+
+== Section 268
+
+Section 268 covers heading section model list document line table block word code.
+
+== Section 269
+
+Section 269 covers line table block word code diff view render paragraph plugin.
+
+== Section 270
+
+Section 270 covers diff view render paragraph plugin editor heading section model list.
+
+* section diff code.
+* document heading editor.
+* block table line.
+* paragraph model view.
+
+== Section 271
+
+Section 271 covers editor heading section model list document line table block word.
+
+== Section 272
+
+Section 272 covers document line table block word code diff view render paragraph.
+
+== Section 273
+
+Section 273 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 274
+
+Section 274 covers plugin editor heading section model list document line table block.
+
+== Section 276
+
+Section 276 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 277
+
+Section 277 covers paragraph plugin editor heading section model list document line table.
+
+== Section 278
+
+Section 278 covers model list document line table block word code diff view.
+
+== Section 279
+
+Section 279 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 280
+
+Section 280 covers render paragraph plugin editor heading section model list document line.
+
+* editor word block.
+* model plugin paragraph.
+* line document list.
+* view heading code.
+
+== Section 281
+
+Section 281 covers section model list document line table block word code diff.
+
+== Section 282
+
+Section 282 covers table block word code diff view render paragraph plugin editor.
+
+== Section 283
+
+Section 283 covers view render paragraph plugin editor heading section model list document.
+
+== Section 284
+
+Section 284 covers heading section model list document line table block word code.
+
+== Section 285
+
+Section 285 covers line table block word code diff view render paragraph plugin.
+
+* plugin block table.
+* section paragraph render.
+* document list model.
+* diff editor word.
+
+== Section 286
+
+Section 286 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 287
+
+Section 287 covers editor heading section model list document line table block word.
+
+== Section 288
+
+Section 288 covers document line table block word code diff view render paragraph.
+
+== Section 289
+
+Section 289 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 290
+
+Section 290 covers plugin editor heading section model list document line table block.
+
+* paragraph table line.
+* heading render view.
+* list model section.
+* code plugin block.
+
+== Section 291
+
+Section 291 covers list document line table block word code diff view render.
+
+== Section 292
+
+Section 292 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 293
+
+Section 293 covers paragraph plugin editor heading section model list document line table.
+
+== Section 294
+
+Section 294 covers model list document line table block word code diff view.
+
+== Section 295
+
+Section 295 covers block word code diff view render paragraph plugin editor heading.
+
+* render line document.
+* editor view diff.
+* model section heading.
+* word paragraph table.
+
+== Section 296
+
+Section 296 covers render paragraph plugin editor heading section model list document line.
+
+== Section 297
+
+Section 297 covers section model list document line table block word code diff.
+
+== Section 298
+
+Section 298 covers table block word code diff view render paragraph plugin editor.
+
+== Section 299
+
+Section 299 covers view render paragraph plugin editor heading section model list document.
+
+== Section 300
+
+Section 300 covers heading section model list document line table block word code.
+
+* view document list.
+* plugin diff code.
+* section heading editor.
+* block render line.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 300-A | 301 | Generated row A.
+| Item 300-B | 302 | Generated row B.
+| Item 300-C | 303 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 300
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+
+== Section 301
+
+Section 301 covers line table block word code diff view render paragraph plugin.
+
+== Section 302
+
+Section 302 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 303
+
+Section 303 covers editor heading section model list document line table block word.
+
+== Section 304
+
+Section 304 covers document line table block word code diff view render paragraph.
+
+== Section 305
+
+Section 305 covers code diff view render paragraph plugin editor heading section model.
+
+* diff list model.
+* paragraph code word.
+* heading editor plugin.
+* table view document.
+
+== Section 306
+
+Section 306 covers plugin editor heading section model list document line table block.
+
+== Section 307
+
+Section 307 covers list document line table block word code diff view render.
+
+== Section 308
+
+Section 308 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 309
+
+Section 309 covers paragraph plugin editor heading section model list document line table.
+
+== Section 310
+
+Section 310 covers model list document line table block word code diff view.
+
+* code model section.
+* render word block.
+* editor plugin paragraph.
+* line diff list.
+
+== Section 311
+
+Section 311 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 312
+
+Section 312 covers render paragraph plugin editor heading section model list document line.
+
+== Section 313
+
+Section 313 covers section model list document line table block word code diff.
+
+== Section 314
+
+Section 314 covers table block word code diff view render paragraph plugin editor.
+
+== Section 315
+
+Section 315 covers view render paragraph plugin editor heading section model list document.
+
+* word section heading.
+* view block table.
+* plugin paragraph render.
+* document code model.
+
+== Section 316
+
+Section 316 covers heading section model list document line table block word code.
+
+== Section 317
+
+Section 317 covers line table block word code diff view render paragraph plugin.
+
+== Section 318
+
+Section 318 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 319
+
+Section 319 covers editor heading section model list document line table block word.
+
+== Section 320
+
+Section 320 covers document line table block word code diff view render paragraph (changed).
+
+* block heading editor.
+* diff table line.
+* paragraph render view.
+* list word section.
+
+== Section 321
+
+Section 321 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 322
+
+Section 322 covers plugin editor heading section model list document line table block.
+
+== Section 323
+
+Section 323 covers list document line table block word code diff view render.
+
+== Section 324
+
+Section 324 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 325
+
+Section 325 covers paragraph plugin editor heading section model list document line table.
+
+* table editor plugin.
+* code line document.
+* render view diff.
+* model block heading.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 325-A | 326 | Generated row A.
+| Item 325-B | 327 | Generated row B.
+| Item 325-C | 328 | Generated row C.
+|===
+
+== Section 326
+
+Section 326 covers model list document line table block word code diff view.
+
+== Section 327
+
+Section 327 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 328
+
+Section 328 covers render paragraph plugin editor heading section model list document line.
+
+== Section 329
+
+Section 329 covers section model list document line table block word code diff.
+
+== Section 330
+
+Section 330 covers table block word code diff view render paragraph plugin editor.
+
+* line plugin paragraph.
+* word document list.
+* view diff code.
+* section table editor.
+
+== Section 331
+
+Section 331 covers view render paragraph plugin editor heading section model list document.
+
+== Section 332
+
+Section 332 covers heading section model list document line table block word code.
+
+== Section 333
+
+Section 333 covers line table block word code diff view render paragraph plugin.
+
+== Section 334
+
+Section 334 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 335
+
+Section 335 covers editor heading section model list document line table block word.
+
+* document paragraph render.
+* block list model.
+* diff code word.
+* heading line plugin.
+
+== Section 336
+
+Section 336 covers document line table block word code diff view render paragraph.
+
+== Section 337
+
+Section 337 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 338
+
+Section 338 covers plugin editor heading section model list document line table block.
+
+== Section 339
+
+Section 339 covers list document line table block word code diff view render.
+
+== Section 340
+
+Section 340 covers word code diff view render paragraph plugin editor heading section.
+
+* list render view.
+* table model section.
+* code word block.
+* editor document paragraph.
+
+== Section 341
+
+Section 341 covers paragraph plugin editor heading section model list document line table.
+
+== Section 342
+
+Section 342 covers model list document line table block word code diff view.
+
+== Section 343
+
+Section 343 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 344
+
+Section 344 covers render paragraph plugin editor heading section model list document line.
+
+== Section 345
+
+Section 345 covers section model list document line table block word code diff.
+
+* model view diff.
+* line section heading.
+* word block table.
+* plugin list render.
+
+== Section 346
+
+Section 346 covers table block word code diff view render paragraph plugin editor.
+
+== Section 347
+
+Section 347 covers view render paragraph plugin editor heading section model list document.
+
+== Section 348
+
+Section 348 covers heading section model list document line table block word code.
+
+== Section 349
+
+Section 349 covers line table block word code diff view render paragraph plugin.
+
+== Section 350
+
+Section 350 covers diff view render paragraph plugin editor heading section model list.
+
+* section diff code.
+* document heading editor.
+* block table line.
+* paragraph model view.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 350-A | 351 | Generated row A.
+| Item 350-B | 352 | Generated row B.
+| Item 350-C | 353 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 350
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+
+== Section 351
+
+Section 351 covers editor heading section model list document line table block word.
+
+== Section 352
+
+Section 352 covers document line table block word code diff view render paragraph.
+
+== Section 353
+
+Section 353 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 354
+
+Section 354 covers plugin editor heading section model list document line table block.
+
+== Section 355
+
+Section 355 covers list document line table block word code diff view render.
+
+* heading code word.
+* list editor plugin.
+* table line document.
+* render section diff.
+
+== Section 356
+
+Section 356 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 357
+
+Section 357 covers paragraph plugin editor heading section model list document line table.
+
+== Section 358
+
+Section 358 covers model list document line table block word code diff view.
+
+== Section 359
+
+Section 359 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 360
+
+Section 360 covers render paragraph plugin editor heading section model list document line.
+
+* editor word block.
+* model plugin paragraph.
+* line document list.
+* view heading code.
+
+== Section 361
+
+Section 361 covers section model list document line table block word code diff.
+
+== Section 362
+
+Section 362 covers table block word code diff view render paragraph plugin editor.
+
+== Section 363
+
+Section 363 covers view render paragraph plugin editor heading section model list document.
+
+== Section 364
+
+Section 364 covers heading section model list document line table block word code.
+
+== Section 365
+
+Section 365 covers line table block word code diff view render paragraph plugin.
+
+* plugin block table.
+* section paragraph render.
+* document list model.
+* diff editor word.
+
+== Section 366
+
+Section 366 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 367
+
+Section 367 covers editor heading section model list document line table block word.
+
+== Section 368
+
+Section 368 covers document line table block word code diff view render paragraph.
+
+== Section 369
+
+Section 369 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 370
+
+Section 370 covers plugin editor heading section model list document line table block.
+
+* paragraph table line.
+* heading render view.
+* list model section.
+* code plugin block.
+
+== Section 371
+
+Section 371 covers list document line table block word code diff view render.
+
+== Section 372
+
+Section 372 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 373
+
+Section 373 covers paragraph plugin editor heading section model list document line table.
+
+== Section 374
+
+Section 374 covers model list document line table block word code diff view.
+
+== Section 375
+
+Section 375 covers block word code diff view render paragraph plugin editor heading.
+
+* render line document.
+* editor view diff.
+* model section heading.
+* word paragraph table.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 375-A | 376 | Generated row A.
+| Item 375-B | 377 | Generated row B.
+| Item 375-C | 378 | Generated row C.
+|===
+
+== Section 376
+
+Section 376 covers render paragraph plugin editor heading section model list document line.
+
+== Section 377
+
+Section 377 covers section model list document line table block word code diff.
+
+== Section 378
+
+Section 378 covers table block word code diff view render paragraph plugin editor.
+
+== Section 379
+
+Section 379 covers view render paragraph plugin editor heading section model list document.
+
+== Section 380
+
+Section 380 covers heading section model list document line table block word code.
+
+* view document list.
+* plugin diff code.
+* section heading editor.
+* block render line.
+
+== Section 381
+
+Section 381 covers line table block word code diff view render paragraph plugin.
+
+== Section 382
+
+Section 382 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 383
+
+Section 383 covers editor heading section model list document line table block word.
+
+== Section 384
+
+Section 384 covers document line table block word code diff view render paragraph (changed).
+
+== Section 385
+
+Section 385 covers code diff view render paragraph plugin editor heading section model.
+
+* diff list model.
+* paragraph code word.
+* heading editor plugin.
+* table view document.
+
+== Section 386
+
+Section 386 covers plugin editor heading section model list document line table block.
+
+== Section 387
+
+Section 387 covers list document line table block word code diff view render.
+
+== Section 388
+
+Section 388 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 389
+
+Section 389 covers paragraph plugin editor heading section model list document line table.
+
+== Section 390
+
+Section 390 covers model list document line table block word code diff view.
+
+* code model section.
+* render word block.
+* editor plugin paragraph.
+* line diff list.
+
+== Section 391
+
+Section 391 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 392
+
+Section 392 covers render paragraph plugin editor heading section model list document line.
+
+== Section 393
+
+Section 393 covers section model list document line table block word code diff.
+
+== Section 394
+
+Section 394 covers table block word code diff view render paragraph plugin editor.
+
+== Section 395
+
+Section 395 covers view render paragraph plugin editor heading section model list document.
+
+* word section heading.
+* view block table.
+* plugin paragraph render.
+* document code model.
+
+== Section 396
+
+Section 396 covers heading section model list document line table block word code.
+
+== Section 397
+
+Section 397 covers line table block word code diff view render paragraph plugin.
+
+== Section 398
+
+Section 398 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 399
+
+Section 399 covers editor heading section model list document line table block word.
+
+== Section 400
+
+Section 400 covers document line table block word code diff view render paragraph.
+
+A new paragraph was added in the large AsciiDoc file.
+
+* block heading editor.
+* diff table line.
+* paragraph render view.
+* list word section.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 400-A | 401 | Generated row A.
+| Item 400-B | 402 | Generated row B.
+| Item 400-C | 403 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 400
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+
+== Section 401
+
+Section 401 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 402
+
+Section 402 covers plugin editor heading section model list document line table block.
+
+== Section 403
+
+Section 403 covers list document line table block word code diff view render.
+
+== Section 404
+
+Section 404 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 405
+
+Section 405 covers paragraph plugin editor heading section model list document line table.
+
+* table editor plugin.
+* code line document.
+* render view diff.
+* model block heading.
+
+== Section 406
+
+Section 406 covers model list document line table block word code diff view.
+
+== Section 407
+
+Section 407 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 408
+
+Section 408 covers render paragraph plugin editor heading section model list document line.
+
+== Section 409
+
+Section 409 covers section model list document line table block word code diff.
+
+== Section 410
+
+Section 410 covers table block word code diff view render paragraph plugin editor.
+
+* line plugin paragraph.
+* word document list.
+* view diff code.
+* section table editor.
+
+== Section 411
+
+Section 411 covers view render paragraph plugin editor heading section model list document.
+
+== Section 412
+
+Section 412 covers heading section model list document line table block word code.
+
+== Section 413
+
+Section 413 covers line table block word code diff view render paragraph plugin.
+
+== Section 414
+
+Section 414 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 415
+
+Section 415 covers editor heading section model list document line table block word.
+
+* document paragraph render.
+* block list model.
+* diff code word.
+* heading line plugin.
+
+== Section 416
+
+Section 416 covers document line table block word code diff view render paragraph.
+
+== Section 417
+
+Section 417 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 418
+
+Section 418 covers plugin editor heading section model list document line table block.
+
+== Section 419
+
+Section 419 covers list document line table block word code diff view render.
+
+== Section 420
+
+Section 420 covers word code diff view render paragraph plugin editor heading section.
+
+* list render view.
+* table model section.
+* code word block.
+* editor document paragraph.
+
+== Section 421
+
+Section 421 covers paragraph plugin editor heading section model list document line table.
+
+== Section 422
+
+Section 422 covers model list document line table block word code diff view.
+
+== Section 423
+
+Section 423 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 424
+
+Section 424 covers render paragraph plugin editor heading section model list document line.
+
+== Section 425
+
+Section 425 covers section model list document line table block word code diff.
+
+* model view diff.
+* line section heading.
+* word block table.
+* plugin list render.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 425-A | 426 | Generated row A.
+| Item 425-B | 427 | Generated row B.
+| Item 425-C | 428 | Generated row C.
+|===
+
+== Section 426
+
+Section 426 covers table block word code diff view render paragraph plugin editor.
+
+== Section 427
+
+Section 427 covers view render paragraph plugin editor heading section model list document.
+
+== Section 428
+
+Section 428 covers heading section model list document line table block word code.
+
+== Section 429
+
+Section 429 covers line table block word code diff view render paragraph plugin.
+
+== Section 430
+
+Section 430 covers diff view render paragraph plugin editor heading section model list.
+
+* section diff code.
+* document heading editor.
+* block table line.
+* paragraph model view.
+
+== Section 431
+
+Section 431 covers editor heading section model list document line table block word.
+
+== Section 432
+
+Section 432 covers document line table block word code diff view render paragraph.
+
+== Section 433
+
+Section 433 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 434
+
+Section 434 covers plugin editor heading section model list document line table block.
+
+== Section 435
+
+Section 435 covers list document line table block word code diff view render.
+
+* heading code word.
+* list editor plugin.
+* table line document.
+* render section diff.
+
+== Section 436
+
+Section 436 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 437
+
+Section 437 covers paragraph plugin editor heading section model list document line table.
+
+== Section 438
+
+Section 438 covers model list document line table block word code diff view.
+
+== Section 439
+
+Section 439 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 440
+
+Section 440 covers render paragraph plugin editor heading section model list document line.
+
+* editor word block.
+* model plugin paragraph.
+* line document list.
+* view heading code.
+
+== Section 441
+
+Section 441 covers section model list document line table block word code diff.
+
+== Section 442
+
+Section 442 covers table block word code diff view render paragraph plugin editor.
+
+== Section 443
+
+Section 443 covers view render paragraph plugin editor heading section model list document.
+
+== Section 444
+
+Section 444 covers heading section model list document line table block word code.
+
+== Section 445
+
+Section 445 covers line table block word code diff view render paragraph plugin.
+
+* plugin block table.
+* section paragraph render.
+* document list model.
+* diff editor word.
+
+== Section 446
+
+Section 446 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 447
+
+Section 447 covers editor heading section model list document line table block word.
+
+== Section 448
+
+Section 448 covers document line table block word code diff view render paragraph (changed).
+
+== Section 449
+
+Section 449 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 450
+
+Section 450 covers plugin editor heading section model list document line table block.
+
+* paragraph table line.
+* heading render view.
+* list model section.
+* code plugin block.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 450-A | 451 | Generated row A.
+| Item 450-B | 452 | Generated row B.
+| Item 450-C | 453 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 450
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+
+== Section 451
+
+Section 451 covers list document line table block word code diff view render.
+
+== Section 452
+
+Section 452 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 453
+
+Section 453 covers paragraph plugin editor heading section model list document line table.
+
+== Section 454
+
+Section 454 covers model list document line table block word code diff view.
+
+== Section 455
+
+Section 455 covers block word code diff view render paragraph plugin editor heading.
+
+* render line document.
+* editor view diff.
+* model section heading.
+* word paragraph table.
+
+== Section 456
+
+Section 456 covers render paragraph plugin editor heading section model list document line.
+
+== Section 457
+
+Section 457 covers section model list document line table block word code diff.
+
+== Section 458
+
+Section 458 covers table block word code diff view render paragraph plugin editor.
+
+== Section 459
+
+Section 459 covers view render paragraph plugin editor heading section model list document.
+
+== Section 460
+
+Section 460 covers heading section model list document line table block word code.
+
+* view document list.
+* plugin diff code.
+* section heading editor.
+* block render line.
+
+== Section 461
+
+Section 461 covers line table block word code diff view render paragraph plugin.
+
+== Section 462
+
+Section 462 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 463
+
+Section 463 covers editor heading section model list document line table block word.
+
+== Section 464
+
+Section 464 covers document line table block word code diff view render paragraph.
+
+== Section 465
+
+Section 465 covers code diff view render paragraph plugin editor heading section model.
+
+* diff list model.
+* paragraph code word.
+* heading editor plugin.
+* table view document.
+
+== Section 466
+
+Section 466 covers plugin editor heading section model list document line table block.
+
+== Section 467
+
+Section 467 covers list document line table block word code diff view render.
+
+== Section 468
+
+Section 468 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 469
+
+Section 469 covers paragraph plugin editor heading section model list document line table.
+
+== Section 470
+
+Section 470 covers model list document line table block word code diff view.
+
+* code model section.
+* render word block.
+* editor plugin paragraph.
+* line diff list.
+
+== Section 471
+
+Section 471 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 472
+
+Section 472 covers render paragraph plugin editor heading section model list document line.
+
+== Section 473
+
+Section 473 covers section model list document line table block word code diff.
+
+== Section 474
+
+Section 474 covers table block word code diff view render paragraph plugin editor.
+
+== Section 475
+
+Section 475 covers view render paragraph plugin editor heading section model list document.
+
+* word section heading.
+* view block table.
+* plugin paragraph render.
+* document code model.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 475-A | 476 | Generated row A.
+| Item 475-B | 477 | Generated row B.
+| Item 475-C | 478 | Generated row C.
+|===
+
+== Section 476
+
+Section 476 covers heading section model list document line table block word code.
+
+== Section 477
+
+Section 477 covers line table block word code diff view render paragraph plugin.
+
+== Section 478
+
+Section 478 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 479
+
+Section 479 covers editor heading section model list document line table block word.
+
+== Section 480
+
+Section 480 covers document line table block word code diff view render paragraph.
+
+* block heading editor.
+* diff table line.
+* paragraph render view.
+* list word section.
+
+== Section 481
+
+Section 481 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 482
+
+Section 482 covers plugin editor heading section model list document line table block.
+
+== Section 483
+
+Section 483 covers list document line table block word code diff view render.
+
+== Section 484
+
+Section 484 covers word code diff view render paragraph plugin editor heading section.
+
+== Section 485
+
+Section 485 covers paragraph plugin editor heading section model list document line table.
+
+* table editor plugin.
+* code line document.
+* render view diff.
+* model block heading.
+
+== Section 486
+
+Section 486 covers model list document line table block word code diff view.
+
+== Section 487
+
+Section 487 covers block word code diff view render paragraph plugin editor heading.
+
+== Section 488
+
+Section 488 covers render paragraph plugin editor heading section model list document line.
+
+== Section 489
+
+Section 489 covers section model list document line table block word code diff.
+
+== Section 490
+
+Section 490 covers table block word code diff view render paragraph plugin editor.
+
+* line plugin paragraph.
+* word document list.
+* view diff code.
+* section table editor.
+
+== Section 491
+
+Section 491 covers view render paragraph plugin editor heading section model list document.
+
+== Section 492
+
+Section 492 covers heading section model list document line table block word code.
+
+== Section 493
+
+Section 493 covers line table block word code diff view render paragraph plugin.
+
+== Section 494
+
+Section 494 covers diff view render paragraph plugin editor heading section model list.
+
+== Section 495
+
+Section 495 covers editor heading section model list document line table block word.
+
+* document paragraph render.
+* block list model.
+* diff code word.
+* heading line plugin.
+
+== Section 496
+
+Section 496 covers document line table block word code diff view render paragraph.
+
+== Section 497
+
+Section 497 covers code diff view render paragraph plugin editor heading section model.
+
+== Section 498
+
+Section 498 covers plugin editor heading section model list document line table block.
+
+== Section 499
+
+Section 499 covers list document line table block word code diff view render.
+
+== Section 500
+
+Section 500 covers word code diff view render paragraph plugin editor heading section.
+
+* list render view.
+* table model section.
+* code word block.
+* editor document paragraph.
+
+[cols="1,1,2",options="header"]
+|===
+| Item | Value | Notes
+
+| Item 500-A | 501 | Generated row A.
+| Item 500-B | 502 | Generated row B.
+| Item 500-C | 503 | Generated row C.
+|===
+
+[source,kotlin]
+----
+val section = 500
+val blocks = diff("old.adoc", "new.adoc")
+println(blocks.size)
+----
+

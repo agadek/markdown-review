@@ -1,0 +1,20 @@
+= Links and Images
+
+See the https://example.com/docs[user documentation] for details.
+
+Download from the https://example.com/releases[download page].
+
+Read the xref:setup.adoc[installation guide] first.
+
+The settings are described in <<configuration>>.
+
+An inline icon: image:images/icon-dark.png[Icon,24,24].
+
+image::images/screenshot-dark.png[Screenshot of the diff window,640]
+
+[[configuration]]
+== Settings
+
+Settings text.
+
+A plain paragraph without links.

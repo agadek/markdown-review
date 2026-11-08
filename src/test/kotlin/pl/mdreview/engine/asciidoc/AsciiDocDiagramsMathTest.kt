@@ -120,7 +120,7 @@ class AsciiDocDiagramsMathTest {
             Area latexmath:[A = \pi r^2] and stem:[C = 2 \pi r] and asciimath:[a+b].
             """,
         ).single { it.kind == BlockKind.PARAGRAPH }
-        assertEquals("Area A = \\pi r^2 and C = 2 \\pi r and \$a+b\$.", paragraph.plainText)
+        assertEquals("Area A = \\pi r^2 and C = 2 \\pi r and a+b.", paragraph.plainText)
         assertEquals(2, paragraph.atoms.size)
         assertEquals("A = \\pi r^2", paragraph.plainText.substring(paragraph.atoms[0].first, paragraph.atoms[0].last + 1))
         assertEquals("C = 2 \\pi r", paragraph.plainText.substring(paragraph.atoms[1].first, paragraph.atoms[1].last + 1))
@@ -140,7 +140,7 @@ class AsciiDocDiagramsMathTest {
             Inline stem:[a+b] and latexmath:[c+d].
             """,
         ).single { it.kind == BlockKind.PARAGRAPH }
-        assertEquals("Inline \$a+b\$ and c+d.", ascii.plainText)
+        assertEquals("Inline a+b and c+d.", ascii.plainText)
         assertEquals(listOf("c+d"), ascii.atoms.map { ascii.plainText.substring(it.first, it.last + 1) })
 
         val latex = extract(
@@ -151,7 +151,7 @@ class AsciiDocDiagramsMathTest {
             Inline stem:[a+b] and latexmath:[c+d].
             """,
         ).single { it.kind == BlockKind.PARAGRAPH }
-        assertEquals("Inline \$a+b\$ and c+d.", latex.plainText)
+        assertEquals("Inline a+b and c+d.", latex.plainText)
         assertEquals(listOf("c+d"), latex.atoms.map { latex.plainText.substring(it.first, it.last + 1) })
     }
 
@@ -240,6 +240,21 @@ class AsciiDocDiagramsMathTest {
         assertEquals("Area | A = \\pi r^2", row.plainText)
         val atom = row.atoms.single()
         assertEquals("A = \\pi r^2", row.plainText.substring(atom.first, atom.last + 1))
+    }
+
+    @Test
+    fun `formula source is kept as written and is not parsed back from the converted html`() {
+        val paragraph = extract(
+            """
+            = T
+            :stem: latexmath
+
+            Literal characters latexmath:[a < b & c].
+            """,
+        ).single { it.kind == BlockKind.PARAGRAPH }
+        assertEquals("Literal characters a < b & c.", paragraph.plainText)
+        val atom = paragraph.atoms.single()
+        assertEquals("a < b & c", paragraph.plainText.substring(atom.first, atom.last + 1))
     }
 
     private object TestProvider : AsciidoctorProvider {

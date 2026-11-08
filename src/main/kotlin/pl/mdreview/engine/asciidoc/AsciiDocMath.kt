@@ -38,11 +38,10 @@ internal object AsciiDocMath {
             val open = if (macro.latex) "\\(" else "\\$"
             val close = if (macro.latex) "\\)" else "\\$"
             val found = find(parts, open, close, cursor) ?: continue
-            val inner = found.text.substring(found.start + open.length, found.end)
             val replacement = if (macro.latex) {
                 listOf(
                     HtmlFragment.Markup("<span class=\"mdr-math mdr-math-inline\">", "span", false),
-                    HtmlFragment.TextRun(inner),
+                    HtmlFragment.TextRun(macro.tex),
                     HtmlFragment.Markup("</span>", "span", true),
                 )
             } else {
@@ -52,7 +51,7 @@ internal object AsciiDocMath {
                         "span",
                         false,
                     ),
-                    HtmlFragment.TextRun("\$" + inner + "\$"),
+                    HtmlFragment.TextRun(macro.tex),
                     HtmlFragment.Markup("</span>", "span", true),
                 )
             }
@@ -64,12 +63,12 @@ internal object AsciiDocMath {
             inserted += replacement
             if (after.isNotEmpty()) inserted += HtmlFragment.TextRun(after)
             parts.addAll(found.index, inserted)
-            cursor = found.offset + found.start + inner.length + if (macro.latex) 0 else 2
+            cursor = found.offset + found.start + macro.tex.length
         }
         return parts
     }
 
-    /** The types of the inline math macros in [source], in order. */
+    /** The types and sources of the inline math macros in [source], in order. */
     private fun macros(source: String, stem: String?): List<Macro> {
         val result = mutableListOf<Macro>()
         var from = 0
@@ -78,9 +77,12 @@ internal object AsciiDocMath {
             val name = match.groupValues[1]
             var i = match.range.last + 1
             var closed = false
+            val tex = StringBuilder()
             while (i < source.length) {
                 val c = source[i]
                 if (c == '\\' && i + 1 < source.length) {
+                    // `\]` is an escaped bracket in the macro; other backslashes are TeX.
+                    if (source[i + 1] == ']') tex.append(']') else tex.append(c).append(source[i + 1])
                     i += 2
                     continue
                 }
@@ -88,6 +90,7 @@ internal object AsciiDocMath {
                     closed = true
                     break
                 }
+                tex.append(c)
                 i++
             }
             if (!closed) {
@@ -99,13 +102,13 @@ internal object AsciiDocMath {
                 ASCIIMATH -> false
                 else -> isLatexStem(stem)
             }
-            result += Macro(latex)
+            result += Macro(latex, tex.toString())
             from = i + 1
         }
         return result
     }
 
-    private class Macro(val latex: Boolean)
+    private class Macro(val latex: Boolean, val tex: String)
 
     private class Found(
         val index: Int,

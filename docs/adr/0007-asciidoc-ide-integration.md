@@ -1,6 +1,6 @@
 # ADR 0007: The same viewers, settings and actions for both formats
 
-Status: proposed, phase 4.
+Status: accepted, phase 4.
 
 ## Context
 
@@ -41,6 +41,22 @@ order, keyed by tool class name.
   are available and links to the AsciiDoc plugin when they are not.
 - The large-file limits, ignore-whitespace, collapse-unchanged, remote images, pairing threshold, block actions,
   block editing, block menu and error reporter apply to AsciiDoc unchanged.
+
+## Implementation (P4.6)
+
+Implemented as decided. `RenderedSideBySideTool` and `RenderedMergedTool` keep their class names and now show
+"Rendered (side by side)" and "Rendered (merged)". `ReviewFiles.formatOf` recognizes Markdown and AsciiDoc;
+`MarkdownFiles` remains as a deprecated typealias, and a second `DocumentFileTypeRecognizer` extension in
+`markdown-review-withAsciiDoc.xml` recognizes the AsciiDoc plugin's file type (which covers `.asc`). The viewers accept
+only a pair of the same supported format and pass `DocumentFormat` in `RenderRequest`; `RenderedDiff.format` labels the
+block editor.
+
+The optional descriptor registers `PluginAsciidoctorProvider` as an application service plus `AsciiDocIntegrationStartup`,
+rather than the extension point the P4.6 spec sketched: the startup activity installs the provider in `AsciiDocSupport`
+and `CoreMarkdownDiffRenderer`, which is the same hook with less API surface. Until it runs, `canShow` is false for
+AsciiDoc and the text viewer stays. **Compare Markdown Files...** became **Compare Rendered Files...** with the action
+ID unchanged; **Show Rendered Diff** and the export actions accept AsciiDoc changes. The settings page keeps one set
+of options and adds the AsciiDoc availability line with an install link while the plugin is missing.
 
 ## Consequences
 

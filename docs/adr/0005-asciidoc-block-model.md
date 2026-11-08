@@ -148,6 +148,16 @@ and body attribute entries. It produced 76 nodes. The findings:
 - **Document header:** author, revision and header attribute entries are not nodes (document line 1). The scanner
   handles them.
 
+## Implementation (P4.3, P4.5)
+
+Implemented as decided, with the five new kinds (`ATTRIBUTE`, `BLOCK_TITLE`, `DESCRIPTION_TERM`, `IMAGE`, `INCLUDE`)
+and the shared kinds, contexts and keys above. `AsciiDocLines` handles the header, comments, includes, conditionals,
+prefix lines and end lines; `AsciiDocBlockSource` builds the `BlockGroup`s and `prefixLines` that
+`AsciiDocRegionRules` uses. Fixtures 50-64 pass with the intended statuses, word diffs, line ranges and containers;
+no block in them falls back to a parent range. Two changes derived from another edit (an admonition container type
+and an attribute value) have no single-line `edit` region, as recorded for P4.5; reverting the source edit resolves
+them.
+
 ## Consequences
 
 - The diff rows match what a reader sees as one unit, as in Markdown, and the shared pairing, moves and word diff

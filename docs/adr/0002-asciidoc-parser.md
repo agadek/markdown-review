@@ -81,6 +81,14 @@ These are JVM used-heap numbers, not process RSS. The 2,791-line Markdown fixtur
 to AsciiDoc; the 1,015- and 10,003-line generated samples cover the NFR-2 sizes, and no AsciiDoc fixture exists
 before P4.3.
 
+## Implementation (P4.3, P4.6)
+
+Implemented as decided. `AsciiDocBlockSource` calls `load` with `sourcemap: true` and `SECURE`, no base directory and
+no output file; `AsciiDocLines` supplies the header, attribute, comment, include, conditional and end-line data the
+tree lacks. The front end is platform-free and reaches Asciidoctor only through `AsciidoctorProvider`. P4.1 found
+concurrent `load` safe, so calls are not serialized; exceptions and `LinkageError` fall back to raw paragraphs for
+that side. P4.6 wires the provider from the optional AsciiDoc plugin integration.
+
 ## Consequences
 
 - The block structure, attribute substitution and inline conversion match Asciidoctor, so the rendered diff agrees

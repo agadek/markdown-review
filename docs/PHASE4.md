@@ -4,8 +4,8 @@ Phases 1 to 3 built a rendered diff for Markdown. Phase 4 brings the same review
 `.adoc` changes open rendered in IntelliJ's diff window, block by block, with word diffs, navigation, per-block
 revert and apply, block editing, the block menu and export, exactly as Markdown does today.
 
-The specification lists AsciiDoc as out of scope for 1.0, and [PHASE3.md](PHASE3.md) kept it out of phase 3. This
-plan reopens it. The requirements below get the next free IDs (FR-16 onward, NFR-11 onward) and move into
+The 1.0 specification listed AsciiDoc as out of scope, and [PHASE3.md](PHASE3.md) kept it out of phase 3. This plan
+reopened it. The requirements below get the next free IDs (FR-16 onward, NFR-11 onward) and move into
 [SPECIFICATION.md](SPECIFICATION.md) when they ship, like the phase 2 and phase 3 ones did.
 
 Architecture decisions are recorded as ADRs in [docs/adr/](adr/), and every milestone has a spec in
@@ -81,7 +81,7 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 | P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Done |
 | P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | In progress: provider wired and tested headless; runIde/manual check pending |
 | P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Not started |
-| P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | Not started |
+| P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | In progress: documentation done; screenshots and release pending |
 
 P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1
 confirmed [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it had failed, the fallback in that ADR
@@ -89,8 +89,9 @@ confirmed [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it had f
 blocks exist.
 P4.6 can start on P4.4's output with edit actions disabled, and turns them on when P4.5 lands.
 
-Release: AsciiDoc ships behind no flag, in one minor release once P4.1 to P4.6 are done (tentatively 1.5). P4.7 may
-follow in a later minor release; until then Mermaid blocks and formulas show as source, compared line by line.
+Release: AsciiDoc ships behind no flag, in one minor release once P4.1 to P4.7 are done (tentatively 1.5). If P4.7
+slips, it can follow in a later minor release; until then Mermaid blocks and formulas show as source, compared line
+by line.
 
 ## P4.1 Spike: AsciidoctorJ from the AsciiDoc plugin
 

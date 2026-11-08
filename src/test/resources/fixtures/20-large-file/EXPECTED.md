@@ -22,4 +22,4 @@ Large file (performance and stability; generated deterministically, seed 42).
 - `Section 300`: added paragraph `New paragraph added in the large file.` (added).
 - `Section 450` and `Section 451`: whole sections removed.
 - All other blocks equal.
-- Requirement: computing the diff and generating HTML in reasonable time (PLAN.md M5 goal: no EDT freeze; measured in a performance test).
+- Requirement: computing the diff and generating HTML in reasonable time (measured in the performance test).

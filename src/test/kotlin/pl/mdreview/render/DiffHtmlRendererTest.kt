@@ -643,6 +643,16 @@ class DiffHtmlRendererTest {
     }
 
     @Test
+    fun `asciidoc include target cannot inject a javascript link`() {
+        val block = AsciiDocTestData.include("javascript:alert(1)")
+        for (mode in ViewMode.entries) {
+            val html = AsciiDocTestData.render(listOf(block), listOf(block), mode)
+            assertFalse(html.contains("href=\"javascript:"), mode.name)
+            assertContains(html, "javascript:alert(1)", message = mode.name)
+        }
+    }
+
+    @Test
     fun `asciidoc comments are hidden when unchanged and visible when changed`() {
         val same = AsciiDocTestData.comment("keep this")
         for (mode in ViewMode.entries) {

@@ -2,7 +2,10 @@ package pl.mdreview.ide
 
 import pl.mdreview.api.BlockInfo
 import pl.mdreview.api.BlockStatus
+import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.RenderedDiff
+import pl.mdreview.api.ViewMode
+import pl.mdreview.render.CoreMarkdownDiffRenderer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
@@ -36,7 +39,7 @@ class HtmlExportTest {
     fun `the exported page allows no scripts and loads nothing from the network`() {
         val html = finish()
         val csp = Regex("Content-Security-Policy\" content=\"([^\"]+)\"").find(html)!!.groupValues[1]
-        assertEquals("default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:", csp)
+        assertEquals("default-src 'none'; img-src data: file:; style-src 'unsafe-inline'; font-src data:", csp)
         assertFalse(html.contains("<script"))
         assertFalse(html.contains("nonce"))
         assertContains(html, "<style>:root { --md-bg: #2b2b2b; }</style>")
@@ -46,7 +49,7 @@ class HtmlExportTest {
     @Test
     fun `remote images stay allowed only when the IDE allowed them`() {
         val csp = Regex("Content-Security-Policy\" content=\"([^\"]+)\"").find(finish(remoteImages = true))!!.groupValues[1]
-        assertContains(csp, "img-src data: https: http:;")
+        assertContains(csp, "img-src data: file: https: http:;")
     }
 
     @Test
@@ -57,6 +60,15 @@ class HtmlExportTest {
         assertContains(html, "<img src=\"file:///docs/missing.png\">")
         assertContains(html, "<img src=\"file:///docs/notes.txt\">")
         assertContains(html, "<img src=\"https://example.com/x.png\">")
+    }
+
+    @Test
+    fun `large or unknown images stay as file links allowed by the policy`() {
+        val html = HtmlExport.finish(snapshot, "export") { null }
+        val csp = Regex("Content-Security-Policy\" content=\"([^\"]+)\"").find(html)!!.groupValues[1]
+        assertContains(csp, "img-src data: file:;")
+        assertContains(html, "<img src=\"file:///docs/img/logo.png\" alt=\"logo\">")
+        assertContains(html, "<img src=\"file:///docs/notes.txt\">")
     }
 
     @Test
@@ -94,6 +106,26 @@ class HtmlExportTest {
         } finally {
             dir.toFile().deleteRecursively()
         }
+    }
+
+    @Test
+    fun `footnote ids are unique per file`() {
+        val renderer = CoreMarkdownDiffRenderer()
+        fun diff(note: String) = renderer.render(
+            RenderRequest("Text[^1]\n\n[^1]: $note\n", "Text[^1]\n\n[^1]: $note changed\n", ViewMode.SIDE_BY_SIDE),
+        )
+        val page = HtmlExport.combine(
+            "Changes",
+            listOf(
+                HtmlExport.ExportedFile("a.md", "Modified", diff("first")),
+                HtmlExport.ExportedFile("b.md", "Modified", diff("second")),
+            ),
+            "No differences",
+        )
+        assertContains(page.bodyHtml, "id=\"mdr-fn-f1-left-1\"")
+        assertContains(page.bodyHtml, "href=\"#mdr-fn-f1-left-1\"")
+        assertContains(page.bodyHtml, "id=\"mdr-fn-f2-left-1\"")
+        assertContains(page.bodyHtml, "href=\"#mdr-fn-f2-left-1\"")
     }
 
     @Test

@@ -6,6 +6,8 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
+## [1.4.0]
+
 ### Added
 
 - **AsciiDoc support:** `.adoc` and `.asciidoc` changes open in the same rendered side-by-side and merged viewers as
@@ -15,8 +17,8 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 - AsciiDoc blocks: sections, lists, tables, listing and source blocks, admonitions, containers, attribute entries with
   substitution, comments, `include::` directives (shown as rows, not resolved), conditionals, links and
   cross-references, images, block titles, thematic and page breaks, `[mermaid]` diagrams and `latexmath` formulas.
-  Asciidoctor extensions other than Mermaid, AsciiMath and mixed Markdown/AsciiDoc pairs are not supported; such a
-  pair keeps the text diff.
+  Asciidoctor extensions other than Mermaid are not supported; AsciiMath and mixed Markdown/AsciiDoc pairs are not
+  supported either, and such a pair keeps the text diff.
 
 ### Changed
 

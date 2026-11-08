@@ -20,11 +20,12 @@ installed and enabled. This is how `markdown-review-withMarkdown.xml` already us
 
 ## Options considered
 
-- **Optional dependency on the AsciiDoc plugin, reuse its AsciidoctorJ** (chosen): no size cost, no second JRuby in
-  memory next to the AsciiDoc plugin's own, no third-party notices to add. AsciiDoc support exists only while that
-  plugin is enabled (NFR-11), and our code runs against whichever AsciidoctorJ version that plugin ships, so we
-  depend on its packaging and update cadence. We create our own `Asciidoctor` instance from its classes, we do not
-  share its instance or call its internal API.
+- **Optional dependency on the AsciiDoc plugin, reuse its AsciidoctorJ** (chosen): no size cost and no third-party
+  notices to add, though the first AsciiDoc diff starts **our own** JRuby runtime next to the AsciiDoc plugin's: the
+  classes are shared, the runtime is not. AsciiDoc support exists only while that plugin is enabled (NFR-11), and our
+  code runs against whichever AsciidoctorJ version that plugin ships, so we depend on its packaging and update
+  cadence. We create our own `Asciidoctor` instance from its classes, we do not share its instance or call its
+  internal API.
 - **Bundle AsciidoctorJ in Markdown Review**: independent of another plugin, one AsciidoctorJ version we test
   against. Every user downloads and installs tens of megabytes for a feature most never use, the plugin's
   third-party notices grow (Asciidoctor MIT, AsciidoctorJ Apache-2.0, JRuby EPL/GPL/LGPL), and users with the

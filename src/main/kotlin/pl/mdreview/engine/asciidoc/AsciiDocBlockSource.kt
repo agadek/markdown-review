@@ -503,9 +503,9 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         }
 
         /**
-         * A `[latexmath]` / `[stem]` block as one [BlockKind.MATH] block. Its source range covers the style line and
-         * the `++++` delimiters; [Block.lines] holds the formula's lines for the source diff. AsciiMath is kept as a
-         * MATH block too, but marked as not drawn by the renderer.
+         * A `[latexmath]` / `[asciimath]` / `[stem]` block as one [BlockKind.MATH] block. Its source range covers the
+         * style line and the `++++` delimiters; [Block.lines] holds the formula's lines for the source diff.
+         * AsciiMath is converted with [AsciiMathToTex] for KaTeX while [Block.plainText] keeps the source.
          */
         private fun mathBlock(node: AstBlock, ctx: BlockContext) {
             val start = startOf(node)
@@ -530,6 +530,11 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 language = language,
                 extraKey = "style=$resolvedStyle",
                 lines = content,
+                mathTex = if (language == AsciiDocMath.ASCIIMATH) {
+                    AsciiMathToTex.convert(sourceLines.joinToString("\n"))
+                } else {
+                    null
+                },
             )
         }
 
@@ -759,6 +764,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 lines = draft.lines.map { line ->
                     materialize(line, line.fixedEnd ?: (line.start + 1), emptyList())
                 },
+                mathTex = draft.mathTex,
             )
         }
 
@@ -799,6 +805,8 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         var resolvedEnd: Int = 0,
         /** The source lines nested in a [BlockKind.MERMAID] or [BlockKind.MATH] block. */
         var lines: List<Draft> = emptyList(),
+        /** For an AsciiMath [BlockKind.MATH] block: the converted LaTeX, or null when it cannot be converted. */
+        var mathTex: String? = null,
     )
 
     /** A list item and every draft its children produced, for the item's edit group. */

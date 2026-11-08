@@ -568,6 +568,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             block.kind in ASCIIDOC_ONLY_KINDS -> true
             block.kind in ASCIIDOC_HTML_KINDS && content is BlockContent.Html -> true
             block.kind == BlockKind.THEMATIC_BREAK && content is BlockContent.Raw -> true
+            block.kind == BlockKind.MATH && block.language == AsciiDocMath.ASCIIMATH -> true
             else -> false
         }
         if (asciiDocLayout) {
@@ -633,6 +634,7 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                     "<span class=\"mdr-fn-label\">" + escape(label) + "</span>" +
                     "<div class=\"mdr-fn-body\">$inline</div></div>"
             }
+            BlockKind.MATH -> asciiDocMathBlock(block, cls, note)
             BlockKind.THEMATIC_BREAK -> asciiDocBreak(block, cls, note)
             else -> {
                 val inline = markedHtml(parts, marks, htmlLinks, side)
@@ -747,6 +749,24 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
         return "<div class=\"$cls mdr-include${noteClass(note)}\"${noteAttributes(note)}>$html</div>"
     }
 
+    private fun asciiDocMathBlock(block: Block, cls: String, note: String?): String {
+        val tex = block.mathTex
+        val failed = if (tex == null) " mdr-math-failed" else ""
+        val attributes = if (tex == null) {
+            " title=\"" + escape(AsciiDocMath.ASCIIMATH_CONVERSION_FAILED) + "\""
+        } else {
+            " data-tex=\"" + escape(tex) + "\" data-source=\"" + escape(block.plainText) + "\""
+        }
+        val error = if (tex == null) {
+            "<div class=\"mdr-math-error\">" + escape(AsciiDocMath.ASCIIMATH_CONVERSION_FAILED) + "</div>"
+        } else {
+            ""
+        }
+        return "<div class=\"$cls mdr-math-block${noteClass(note)}\"${noteAttributes(note)}>" +
+            "<div class=\"mdr-math mdr-math-display$failed\"$attributes>" +
+            escape(block.plainText) + "</div>$error</div>"
+    }
+
     private fun asciiDocBreak(block: Block, cls: String, note: String?): String {
         val page = block.rawText.trim() == "<<<"
         val hr = if (page) "<hr class=\"mdr-page-break\" />" else "<hr />"
@@ -853,13 +873,11 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             BlockKind.MERMAID -> "<div class=\"$cls mdr-mermaid\"><pre class=\"mdr-mermaid-code\"><code>" +
                 escape(block.plainText) + "</code></pre></div>"
             // Inert TeX source for the page's math script, which draws it in place; shown as monospace source without it.
-            BlockKind.MATH -> {
-                val asciiMath = block.language.equals(AsciiDocMath.ASCIIMATH, ignoreCase = true)
-                val failed = if (asciiMath) " mdr-math-failed" else ""
-                val title = if (asciiMath) " title=\"" + escape(AsciiDocMath.ASCIIMATH_UNSUPPORTED) + "\"" else ""
-                val error = if (asciiMath) "<div class=\"mdr-math-error\">" + escape(AsciiDocMath.ASCIIMATH_UNSUPPORTED) + "</div>" else ""
-                "<div class=\"$cls mdr-math-block\"><div class=\"mdr-math mdr-math-display$failed\"$title>" +
-                    escape(block.plainText) + "</div>$error</div>"
+            BlockKind.MATH -> if (block.language.equals(AsciiDocMath.ASCIIMATH, ignoreCase = true)) {
+                asciiDocMathBlock(block, cls, note)
+            } else {
+                "<div class=\"$cls mdr-math-block\"><div class=\"mdr-math mdr-math-display\">" +
+                    escape(block.plainText) + "</div></div>"
             }
             BlockKind.HTML_COMMENT -> commentBlock(block, cls, marks)
             // The raw-text fallback for a format without a front end.

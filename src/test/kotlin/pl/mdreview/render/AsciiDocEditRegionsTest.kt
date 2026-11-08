@@ -299,7 +299,7 @@ class AsciiDocEditRegionsTest {
     @Test
     fun `every AsciiDoc fixture applies to the right side and reverts to the left`() {
         val cases = cases()
-        assertEquals(17, cases.size)
+        assertEquals(18, cases.size)
         for (case in cases) {
             val left = fixture(case, "old.adoc")
             val right = fixture(case, "new.adoc")

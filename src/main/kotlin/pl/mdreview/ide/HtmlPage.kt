@@ -233,13 +233,14 @@ object HtmlPage {
           var all = Array.prototype.slice.call(document.querySelectorAll('.mdr-math:not(.mdr-math-failed)'));
           var n = 0;
           function draw(el) {
-            var tex = el.textContent;
+            var tex = el.getAttribute('data-tex') || el.textContent;
+            var source = el.getAttribute('data-source');
             var display = el.classList.contains('mdr-math-display');
             try {
               katex.render(tex, el, {displayMode: display, throwOnError: true, trust: false, strict: 'ignore'});
               el.classList.add('mdr-math-drawn');
             } catch (err) {
-              el.textContent = tex;
+              el.textContent = source || tex;
               var text = String((err && err.message) || err);
               el.classList.add('mdr-math-failed');
               el.title = text;

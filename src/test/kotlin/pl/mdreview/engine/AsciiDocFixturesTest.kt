@@ -387,13 +387,14 @@ class AsciiDocFixturesTest {
     }
 
     @Test
-    fun `66 adoc math formulas are compared as units and AsciiMath stays text`() {
+    fun `66 adoc math formulas are compared as units and AsciiMath uses its source`() {
         val d = diff("66-adoc-math")
         assertEquals(
             listOf(
                 "MODIFIED PARAGRAPH",
                 "MODIFIED MATH",
                 "REMOVED MATH",
+                "MODIFIED PARAGRAPH",
                 "ADDED PARAGRAPH",
                 "ADDED MATH",
                 "ADDED PARAGRAPH",
@@ -411,8 +412,20 @@ class AsciiDocFixturesTest {
             ),
             formulas.map { it.status to (it.right ?: it.left)!!.plainText },
         )
-        // The AsciiMath block is not drawn but is still a MATH block compared as its source.
+        // The AsciiMath block is a MATH block compared as its source and converted for KaTeX.
         assertEquals("asciimath", formulas[3].right!!.language)
+        assertNotNull(formulas[3].right!!.mathTex)
+        val ascii = d.changes[3]
+        assertEquals(
+            listOf("sum_(i=1)^n i", "a/b"),
+            ascii.left!!.atoms.map { ascii.left!!.plainText.substring(it.first, it.last + 1) },
+        )
+        assertEquals(
+            listOf("sum_(i=1)^n i", "frac(a)(b)"),
+            ascii.right!!.atoms.map { ascii.right!!.plainText.substring(it.first, it.last + 1) },
+        )
+        assertEquals(listOf("a/b"), ascii.inline.filter { it.status == DiffStatus.REMOVED }.map { it.text })
+        assertEquals(listOf("frac(a)(b)"), ascii.inline.filter { it.status == DiffStatus.ADDED }.map { it.text })
         // Inline formulas are atoms: the word diff keeps each whole formula.
         val circle = d.changes[0]
         assertEquals(listOf("C = 2 \\pi r"), circle.inline.filter { it.status == DiffStatus.REMOVED }.map { it.text })
@@ -426,6 +439,31 @@ class AsciiDocFixturesTest {
         val unfinished = d.changes.last()
         assertEquals("An unfinished formula: \\frac{1}{.", unfinished.right!!.plainText)
         assertEquals(1, unfinished.right!!.atoms.size)
+    }
+
+    @Test
+    fun `67 adoc asciimath is converted to latex and remains keyed by its source`() {
+        val d = diff("67-adoc-asciimath")
+        assertEquals(
+            listOf("MODIFIED PARAGRAPH", "MODIFIED MATH"),
+            d.changes.map { "${it.status} ${(it.right ?: it.left)!!.kind.name}" },
+        )
+        val paragraph = d.changes[0]
+        assertEquals(
+            listOf("frac(a)(b)", "sqrt(x)", "x^2"),
+            paragraph.right!!.atoms.map { paragraph.right!!.plainText.substring(it.first, it.last + 1) },
+        )
+        assertEquals(listOf("a/b"), paragraph.inline.filter { it.status == DiffStatus.REMOVED }.map { it.text })
+        assertEquals(listOf("frac(a)(b)"), paragraph.inline.filter { it.status == DiffStatus.ADDED }.map { it.text })
+
+        val matrices = d.blocks.mapNotNull { it.right ?: it.left }.filter { it.kind == BlockKind.MATH }
+        assertEquals(3, matrices.size)
+        assertTrue(matrices.all { it.language == "asciimath" })
+        assertTrue(matrices.all { it.mathTex != null })
+        assertContains(matrices[0].mathTex!!, "\\begin{bmatrix}")
+        assertContains(matrices[2].mathTex!!, "\\begin{pmatrix}")
+        val rejected = d.blocks.mapNotNull { it.right ?: it.left }.single { it.plainText.contains("a + (b") }
+        assertTrue(rejected.atoms.isEmpty())
     }
 
     @Test
@@ -466,8 +504,14 @@ class AsciiDocFixturesTest {
             assertContains(math.bodyHtml, "class=\"mdr-math mdr-math-display\"", message = mode.name)
             assertContains(math.bodyHtml, "mdr-math-row", message = mode.name)
             assertContains(math.bodyHtml, "<details class=\"mdr-math-source\">", message = mode.name)
-            assertContains(math.bodyHtml, "mdr-math-failed", message = mode.name)
-            assertContains(math.bodyHtml, "AsciiMath is not supported", message = mode.name)
+            assertContains(math.bodyHtml, "data-source=\"sum_(i=1)^n i\"", message = mode.name)
+            assertContains(math.bodyHtml, "data-tex=\"\\sum_{i = 1}^{n} i\"", message = mode.name)
+            assertContains(
+                math.bodyHtml,
+                "class=\"mdr-block mdr-equal mdr-math-block\"><div class=\"mdr-math mdr-math-display\" data-tex=",
+                message = mode.name,
+            )
+            assertFalse(math.bodyHtml.contains("AsciiMath is not supported"), mode.name)
             assertContains(math.bodyHtml, "\\frac{1}{", message = mode.name)
             assertContains(math.bodyHtml, "e^{i\\pi} + 1 = 0", message = mode.name)
             assertEquals(math.blocks.size, Regex("data-idx=").findAll(math.bodyHtml).count(), mode.name)

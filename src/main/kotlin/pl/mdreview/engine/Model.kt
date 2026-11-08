@@ -159,6 +159,11 @@ class Block(
     val prefixLines: List<Int> = emptyList(),
     /** Delimited or attached groups this block is part of, outermost first. */
     val editGroups: List<BlockGroup> = emptyList(),
+    /**
+     * For an AsciiMath [BlockKind.MATH] block: the LaTeX `AsciiMathToTex` produced for KaTeX. `null` when the
+     * converter rejected the source, which the renderer shows as source.
+     */
+    val mathTex: String? = null,
 ) {
     /** The commonmark nodes to render, or an empty list when the content is not [BlockContent.Commonmark]. */
     val nodes: List<Node>

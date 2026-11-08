@@ -8,9 +8,11 @@ Inline (`latexmath:[...]`, `stem:[...]` with `:stem: latexmath`) and block (`[la
 - Block formula `E = mc^2`: equal, a `MATH` block.
 - Block formula of the quadratic formula: modified (`2a` became `2 a`). Its source is the whole formula, and the
   changed formula has a "Show source changes" toggle, like a changed Mermaid diagram.
-- Paragraph "An AsciiMath formula, not drawn": equal. The inline AsciiMath is not an atom and is not drawn.
-- AsciiMath block: equal, a `MATH` block that the renderer marks `mdr-math-failed` with the note "AsciiMath is not
-  supported"; it stays monospace source and is compared as text.
+- Paragraph "An AsciiMath formula": modified. `sum_(i=1)^n i` is equal; `a/b` became `frac(a)(b)`, so the word diff
+  shows the whole AsciiMath formula removed and added, even though both convert to the same LaTeX. The unchanged
+  formula and the changed one are each one atom.
+- AsciiMath block: equal, a `MATH` block drawn by KaTeX from its converted LaTeX. Its `mdr-math` element keeps the
+  AsciiMath in `data-source` and the converted LaTeX in `data-tex`.
 - Paragraph "Euler's identity:" and the block formula `e^{i\pi} + 1 = 0`: added.
 - The Pythagorean block formula `a^2 + b^2 = c^2`: removed.
 - Paragraph "An unfinished formula": added. `latexmath:[\frac{1}{]` is one inline formula; KaTeX cannot parse it, so

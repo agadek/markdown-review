@@ -1,0 +1,21 @@
+= AsciiMath
+:stem:
+
+Inline stem:[a/b], asciimath:[sqrt(x)] and latexmath:[x^2].
+
+[stem]
+++++
+[[a,b],[c,d]]
+++++
+
+[asciimath]
+++++
+sum_(i=1)^n i
+++++
+
+[stem]
+++++
+((1),(2))
+++++
+
+A formula the converter cannot read: asciimath:[a + (b].

@@ -20,7 +20,7 @@ x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
 a^2 + b^2 = c^2
 ++++
 
-An AsciiMath formula, not drawn: asciimath:[sum_(i=1)^n i].
+An AsciiMath formula: asciimath:[sum_(i=1)^n i] and a fraction asciimath:[a/b].
 
 [asciimath]
 ++++

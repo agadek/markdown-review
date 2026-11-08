@@ -124,12 +124,24 @@ class HtmlPageTest : BasePlatformTestCase() {
         assertTrue(html.contains("mdrDrawMath("))
         assertTrue(html.contains("katex.render("))
         assertTrue(html.contains("mdr-math-source"))
-        // AsciiMath elements are not drawn: the script only takes the drawn math elements.
+        // AsciiMath is converted to LaTeX for KaTeX; the element keeps the source for a failed draw.
         val ascii = adocPage(
             "$adocFormula\n\nAn AsciiMath formula: asciimath:[a+b].\n",
             "$adocFormula\n\nAn AsciiMath formula: asciimath:[a+b].\n",
         )
         assertTrue(ascii.contains(".mdr-math:not(.mdr-math-failed)"))
+        assertTrue(ascii.contains("data-tex=\"a + b\""))
+        assertTrue(ascii.contains("data-source=\"a+b\""))
+        assertTrue(ascii.contains("mdrDrawMath("))
+    }
+
+    fun `test a page whose only formula is AsciiMath still inlines KaTeX`() {
+        val text = "= T\n\nOnly asciimath:[a+b].\n"
+        val html = adocPage(text, text)
+        assertTrue(html.contains("mdrDrawMath("))
+        assertTrue(html.contains("katex.render("))
+        assertTrue(html.contains("data-tex=\"a + b\""))
+        assertTrue(html.contains("data-source=\"a+b\""))
     }
 
     fun `test with math rendering off AsciiDoc formulas stay source and KaTeX is not loaded (P4_7)`() {

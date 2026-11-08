@@ -10,14 +10,16 @@ import pl.mdreview.engine.HtmlFragment
  * the source of the block is scanned first for the macros in order; the matching converted math is then replaced by
  * an inert `.mdr-math` element for the page script, as for Markdown formulas.
  *
- * LaTeX is drawn by KaTeX. AsciiMath stays source, marked `.mdr-math-failed` with [ASCIIMATH_UNSUPPORTED], and is not
- * an atom of the block's plain text, so the word diff compares it as text.
+ * LaTeX is drawn by KaTeX directly. AsciiMath is converted to LaTeX by [AsciiMathToTex] (P4.9): the element carries
+ * the converted LaTeX in `data-tex` and the original AsciiMath in `data-source`, while its text and the block's plain
+ * text stay the AsciiMath source so the word diff and keys compare what was written. Input the converter rejects stays
+ * source, marked `.mdr-math-failed` with [ASCIIMATH_CONVERSION_FAILED].
  */
 internal object AsciiDocMath {
 
     const val LATEX = "latexmath"
     const val ASCIIMATH = "asciimath"
-    const val ASCIIMATH_UNSUPPORTED = "AsciiMath is not supported"
+    const val ASCIIMATH_CONVERSION_FAILED = "AsciiMath formula could not be converted"
 
     /** Block style drawn by KaTeX: `[latexmath]`, or `[stem]` when the document's `stem` is `latexmath`. */
     fun isLatexStyle(style: String?): Boolean = style?.equals(LATEX, ignoreCase = true) == true
@@ -35,23 +37,33 @@ internal object AsciiDocMath {
         if (macros.isEmpty()) return parts
         var cursor = 0
         for (macro in macros) {
-            val open = if (macro.latex) "\\(" else "\\$"
-            val close = if (macro.latex) "\\)" else "\\$"
+            val latex = macro.notation == Notation.LATEX
+            val open = if (latex) "\\(" else "\\$"
+            val close = if (latex) "\\)" else "\\$"
             val found = find(parts, open, close, cursor) ?: continue
-            val replacement = if (macro.latex) {
-                listOf(
+            val replacement = when {
+                latex -> listOf(
                     HtmlFragment.Markup("<span class=\"mdr-math mdr-math-inline\">", "span", false),
-                    HtmlFragment.TextRun(macro.tex),
+                    HtmlFragment.TextRun(macro.source),
                     HtmlFragment.Markup("</span>", "span", true),
                 )
-            } else {
-                listOf(
+                macro.tex != null -> listOf(
                     HtmlFragment.Markup(
-                        "<span class=\"mdr-math mdr-math-inline mdr-math-failed\" title=\"$ASCIIMATH_UNSUPPORTED\">",
+                        "<span class=\"mdr-math mdr-math-inline\" data-tex=\"" + attribute(macro.tex) +
+                            "\" data-source=\"" + attribute(macro.source) + "\">",
                         "span",
                         false,
                     ),
-                    HtmlFragment.TextRun(macro.tex),
+                    HtmlFragment.TextRun(macro.source),
+                    HtmlFragment.Markup("</span>", "span", true),
+                )
+                else -> listOf(
+                    HtmlFragment.Markup(
+                        "<span class=\"mdr-math mdr-math-inline mdr-math-failed\" title=\"$ASCIIMATH_CONVERSION_FAILED\">",
+                        "span",
+                        false,
+                    ),
+                    HtmlFragment.TextRun(macro.source),
                     HtmlFragment.Markup("</span>", "span", true),
                 )
             }
@@ -63,7 +75,7 @@ internal object AsciiDocMath {
             inserted += replacement
             if (after.isNotEmpty()) inserted += HtmlFragment.TextRun(after)
             parts.addAll(found.index, inserted)
-            cursor = found.offset + found.start + macro.tex.length
+            cursor = found.offset + found.start + macro.source.length
         }
         return parts
     }
@@ -97,18 +109,21 @@ internal object AsciiDocMath {
                 from = match.range.last + 1
                 continue
             }
-            val latex = when (name) {
-                LATEX -> true
-                ASCIIMATH -> false
-                else -> isLatexStem(stem)
+            val notation = when (name) {
+                LATEX -> Notation.LATEX
+                ASCIIMATH -> Notation.ASCIIMATH
+                else -> if (isLatexStem(stem)) Notation.LATEX else Notation.ASCIIMATH
             }
-            result += Macro(latex, tex.toString())
+            val source = tex.toString()
+            result += Macro(notation, source, if (notation == Notation.ASCIIMATH) AsciiMathToTex.convert(source) else source)
             from = i + 1
         }
         return result
     }
 
-    private class Macro(val latex: Boolean, val tex: String)
+    private enum class Notation { LATEX, ASCIIMATH }
+
+    private class Macro(val notation: Notation, val source: String, val tex: String?)
 
     private class Found(
         val index: Int,
@@ -136,6 +151,17 @@ internal object AsciiDocMath {
             offset += part.text.length
         }
         return null
+    }
+
+    private fun attribute(value: String): String = buildString {
+        for (c in value) {
+            when (c) {
+                '&' -> append("&amp;")
+                '"' -> append("&quot;")
+                '<' -> append("&lt;")
+                else -> append(c)
+            }
+        }
     }
 
     private val MACRO = Regex("""(?<!\\)(latexmath|asciimath|stem):\[""")

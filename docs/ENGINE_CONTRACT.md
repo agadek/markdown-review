@@ -78,6 +78,13 @@ with an **Open Text Viewer** button instead.
   A fenced code block, front matter or table added or removed as a whole is one region for all its blocks, closing
   fence or delimiter row included. `null` for equal blocks and for changes no line edit can undo, such as a block
   that changed only through a link reference definition.
+- AsciiDoc edit regions (P4.5): a modified block's region starts at its prefix lines (a style attribute, anchor,
+  block title or `+` continuation) and ends at its own last line. A delimited code block, table, container or the
+  document header added or removed as a whole is one region with both delimiters; a list item with continuations
+  brings its attached blocks. A change inside an existing group stays inside its opening and closing delimiters.
+  A table header row whose `[options="header"]` changed exchanges the table's attribute line too, and a block title
+  added or removed is inserted on its own line where the titled block starts. An equal block may carry a region when
+  only an anchor or attribute above it changed, so the source line can be reverted against the unchanged block.
 - `movedFrom` / `movedTo` (P2.7, FR-15, additive): a removed and an added block with equal keys are one move. The
   statuses stay `REMOVED` and `ADDED`; the added end's `movedFrom` and the removed end's `movedTo` name the other end's
   `idx`. In `bodyHtml` both ends' block elements carry `mdr-moved` and `data-moved-from` / `data-moved-to`, and end

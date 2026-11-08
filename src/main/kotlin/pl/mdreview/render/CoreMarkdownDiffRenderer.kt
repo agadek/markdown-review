@@ -33,8 +33,8 @@ class CoreMarkdownDiffRenderer(private val asciidoctor: AsciidoctorProvider? = n
 
     override fun render(request: RenderRequest): RenderedDiff {
         // A format without a front end still gets a usable diff: raw text, compared paragraph by paragraph.
-        val source = if (request.format == DocumentFormat.ASCIIDOC && asciidocSource != null) {
-            asciidocSource
+        val source = if (request.format == DocumentFormat.ASCIIDOC) {
+            asciidocSource ?: installedAsciidocSource ?: PlainTextBlockSource
         } else {
             SOURCES[request.format] ?: PlainTextBlockSource
         }
@@ -62,11 +62,12 @@ class CoreMarkdownDiffRenderer(private val asciidoctor: AsciidoctorProvider? = n
                 rightBaseUri = request.rightBaseUri,
             ),
         )
-        val edits = EditRegions(diff, left, right).compute()
+        val rules = if (request.format == DocumentFormat.ASCIIDOC) AsciiDocRegionRules else MarkdownRegionRules
+        val edits = EditRegions(diff, left, right, rules).compute()
         val blocks = diff.blocks.mapIndexed { i, b ->
             BlockInfo(i, status(b.status), b.left?.source?.let(::lines), b.right?.source?.let(::lines), edits[i], b.movedFrom, b.movedTo)
         }
-        return RenderedDiff(renderer.renderBody(diff), renderer.css(), blocks)
+        return RenderedDiff(renderer.renderBody(diff), renderer.css(), blocks, request.format)
     }
 
     private fun lines(range: SourceRange) = LineRange(range.startLine, range.endLine)
@@ -78,9 +79,25 @@ class CoreMarkdownDiffRenderer(private val asciidoctor: AsciidoctorProvider? = n
         DiffStatus.ADDED -> BlockStatus.ADDED
     }
 
-    private companion object {
+    companion object {
+        /** The front end installed by the optional AsciiDoc integration, used by the ServiceLoader instance. */
+        @Volatile
+        private var installedAsciidocSource: BlockSource? = null
+
+        /**
+         * Installs the AsciiDoc front end for renderers created through [java.util.ServiceLoader]. Called by the
+         * IDE layer when the optional AsciiDoc plugin is enabled; [uninstallAsciidoctorProvider] when it unloads.
+         */
+        fun installAsciidoctorProvider(provider: AsciidoctorProvider?) {
+            installedAsciidocSource = provider?.let { AsciiDocBlockSource(it) }
+        }
+
+        fun uninstallAsciidoctorProvider() {
+            installedAsciidocSource = null
+        }
+
         /** Front ends by format. P4.3 adds [DocumentFormat.ASCIIDOC] here. */
-        val SOURCES: Map<DocumentFormat, BlockSource> = mapOf(DocumentFormat.MARKDOWN to MarkdownBlockSource)
+        private val SOURCES: Map<DocumentFormat, BlockSource> = mapOf(DocumentFormat.MARKDOWN to MarkdownBlockSource)
 
         /**
          * Raw text, split into blank-line separated paragraphs. Used for a format that has no front end yet; the

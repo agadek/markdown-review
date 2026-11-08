@@ -239,6 +239,7 @@ class DiffEngine(
         private const val MIN_SCORE = 0.01
         private val UNMOVABLE_KINDS = setOf(
             BlockKind.CODE_LINE, BlockKind.CODE_FENCE, BlockKind.FRONT_MATTER, BlockKind.THEMATIC_BREAK, BlockKind.HTML_COMMENT,
+            BlockKind.ATTRIBUTE, BlockKind.INCLUDE, BlockKind.BLOCK_TITLE,
         )
         private val CONTINUING_KINDS = setOf(BlockKind.CODE_LINE, BlockKind.FRONT_MATTER, BlockKind.LIST_ITEM, BlockKind.TABLE_ROW)
     }

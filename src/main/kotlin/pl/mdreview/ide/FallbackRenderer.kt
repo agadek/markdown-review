@@ -43,6 +43,7 @@ class FallbackRenderer : MarkdownDiffRenderer {
             bodyHtml = body.toString(),
             css = CSS,
             blocks = blocks.mapIndexed { i, (status, l, r) -> BlockInfo(i, status, l?.range, r?.range) },
+            format = request.format,
         )
     }
 

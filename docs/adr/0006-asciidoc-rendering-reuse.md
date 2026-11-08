@@ -1,6 +1,6 @@
 # ADR 0006: Reuse the page, styles and export for AsciiDoc
 
-Status: proposed, phase 4.
+Status: accepted, phase 4.
 
 ## Context
 
@@ -42,6 +42,18 @@ and its stylesheet sets its own fonts and colors.
   highlighting stays out, as for Markdown code blocks.
 - Relative image targets resolve against the side's base URI, with `imagesdir` from the document's attributes
   applied first, the same way relative Markdown images do.
+
+## Implementation (P4.4, P4.7)
+
+Implemented as decided. `DiffHtmlRenderer` has an AsciiDoc branch that writes the block markup and wraps consecutive
+rows in `mdr-container` frames built from `BlockContext.containers`; admonition blocks use the GitHub alert classes,
+admonition paragraphs use `ALERT` with `mdr-alert-body`, and block images render through the Markdown image path as
+`figure.mdr-image`. `HtmlFragment` sanitizes Asciidoctor's converted inline HTML; `mark`, `menuseq`/`menuref` and
+footnote references got the styles listed in `CLASSES.md`. Asciidoctor's stylesheet, icons and block HTML are not
+used, and export needed no separate path.
+
+P4.7 reuses the same page, `.mdr-mermaid*` / `.mdr-math*` markup and drawing scripts for `[mermaid]` blocks and
+`latexmath` formulas; only the front end labels those blocks `MERMAID` and `MATH`.
 
 ## Consequences
 

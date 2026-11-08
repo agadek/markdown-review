@@ -1,6 +1,6 @@
 # ADR 0004: One format-neutral engine for Markdown and AsciiDoc
 
-Status: proposed, phase 4.
+Status: accepted, phase 4.
 
 ## Context
 
@@ -55,6 +55,19 @@ the texts are.
   like the commonmark variant does with `Link` / `Image` nodes, and produces the same `mdr-link-changed` /
   `mdr-img-changed` marks.
 - The commonmark parser stays out of the AsciiDoc path and AsciidoctorJ out of the Markdown path.
+
+## Implementation (P4.2–P4.6)
+
+Implemented as decided. `DocumentFormat` and `RenderRequest.format` (default `MARKDOWN`) landed in P4.2;
+`BlockExtractor` became `MarkdownBlockSource`, `MarkdownDiffEngine` became `DiffEngine(options, source)`, and
+`Block.content` is `BlockContent.Commonmark`, `BlockContent.Html` or `BlockContent.Raw`. The HTML variant of
+`LinkChanges`, `BlockContext.containers` and `RenderedDiff.format` (so the block editor can say "Markdown" or
+"AsciiDoc") are in use. P4.3 added `AsciiDocBlockSource` and P4.6 registers it through the optional
+`AsciidoctorProvider` integration.
+
+The P4.2 gate held: every Markdown fixture and test passed with unchanged expectations, and the benchmark reported
+8 ms / 6 ms for 1,000 lines and 90 ms / 79 ms for 10,000 lines (side by side / merged). The P4.6 plugin zip stayed at
+2.2 MB and contains no AsciidoctorJ or Ruby classes; `verifyPlugin` is compatible on IC 2025.1.3 and IU 2026.1.
 
 ## Consequences
 

@@ -59,6 +59,44 @@ data class SourceRange(val startLine: Int, val endLine: Int, val startOffset: In
 /** A delimited container a block sits in, independent of the document format. */
 data class Container(val kind: String, val type: String? = null, val title: String? = null)
 
+/** What kind of source range an [BlockGroup] covers. */
+enum class BlockGroupKind {
+    /** A delimited code or literal block, `++++` passthrough, or a future Mermaid or stem block. */
+    CODE,
+
+    /** A `|===` table. */
+    TABLE,
+
+    /** A delimited example, sidebar, quote, verse, open or admonition container. */
+    CONTAINER,
+
+    /** A list item together with the blocks attached to it (nested lists and `+` continuations). */
+    LIST_ITEM,
+
+    /** The document header: the title and the author, revision and attribute lines that follow it. */
+    HEADER,
+}
+
+/**
+ * A source range that one edit exchanges as a whole when every block in it is added or removed: a delimited
+ * code block, table or container with its open and close delimiters, a list item with its attached blocks, or
+ * the document header. [startLine] includes the group's own prefix lines (attributes, anchors and a block title);
+ * [openLine] and [closeLine] are the delimiter lines, so a change inside an existing group can stay inside them.
+ */
+data class BlockGroup(
+    val kind: BlockGroupKind,
+    /** First source line of the group, including its prefix lines. */
+    val startLine: Int,
+    /** End-exclusive line after the closing delimiter or the last attached block. */
+    val endLine: Int,
+    /** The opening delimiter line, or the first content line for a header or list item. */
+    val openLine: Int = startLine,
+    /** The closing delimiter line, or `null` when the group has no delimiter. */
+    val closeLine: Int? = null,
+    /** Metadata lines above the opening delimiter that belong to the group. */
+    val prefixLines: List<Int> = emptyList(),
+)
+
 /** Where a block sits: inside how many quotes, and for list items the list it belongs to. */
 data class BlockContext(
     val quoteDepth: Int = 0,
@@ -114,6 +152,13 @@ class Block(
     val target: String? = null,
     /** Optional title, for example a block image's caption (`.Title` is a [BlockKind.BLOCK_TITLE] of its own). */
     val title: String? = null,
+    /**
+     * Source lines directly above [source] that belong to this block's edit region: style attributes, anchors, a
+     * block title and a `+` continuation marker. Sorted, zero-based; empty when the block has none.
+     */
+    val prefixLines: List<Int> = emptyList(),
+    /** Delimited or attached groups this block is part of, outermost first. */
+    val editGroups: List<BlockGroup> = emptyList(),
 ) {
     /** The commonmark nodes to render, or an empty list when the content is not [BlockContent.Commonmark]. */
     val nodes: List<Node>

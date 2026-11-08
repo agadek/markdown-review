@@ -16,6 +16,8 @@ import org.asciidoctor.ast.Table
 import pl.mdreview.engine.Block
 import pl.mdreview.engine.BlockContent
 import pl.mdreview.engine.BlockContext
+import pl.mdreview.engine.BlockGroup
+import pl.mdreview.engine.BlockGroupKind
 import pl.mdreview.engine.BlockKind
 import pl.mdreview.engine.BlockSource
 import pl.mdreview.engine.Container
@@ -90,12 +92,43 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
 
         private val lines = AsciiDocLines(text)
         private val drafts = mutableListOf<Draft>()
+        private val groups = mutableListOf<BlockGroup>()
+        private val itemGroups = mutableListOf<ItemGroupDraft>()
         private var lastStart = 0
 
         fun extract(document: Document): List<Block> {
             lines.rows.forEach(::addScannerRow)
+            addHeaderGroup()
             visitDocument(document)
             return finish()
+        }
+
+        // ---- edit groups ------------------------------------------------------------------------------------
+
+        /** The source range of a delimited group opening at [openLine], or null when it is not delimited. */
+        private fun delimitedGroup(kind: BlockGroupKind, openLine: Int): BlockGroup? {
+            val delimiter = lines.openingDelimiter(openLine) ?: return null
+            val close = (delimiter.closeLine ?: (lines.lines.size - 1)).coerceAtMost(lines.lines.size - 1)
+            val prefix = lines.editPrefixBefore(openLine)
+            return BlockGroup(
+                kind = kind,
+                startLine = (prefix + openLine).minOrNull() ?: openLine,
+                endLine = close + 1,
+                openLine = openLine,
+                closeLine = close,
+                prefixLines = prefix,
+            )
+        }
+
+        private fun addGroup(kind: BlockGroupKind, openLine: Int) {
+            delimitedGroup(kind, openLine)?.let(groups::add)
+        }
+
+        /** The document header is one region when added or removed: title through the last header line. */
+        private fun addHeaderGroup() {
+            val title = lines.titleLine ?: return
+            val end = lines.headerEnd.coerceAtLeast(title + 1)
+            groups += BlockGroup(BlockGroupKind.HEADER, startLine = title, endLine = end, openLine = title)
         }
 
         // ---- scanner rows -----------------------------------------------------------------------------------
@@ -215,6 +248,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
             val type = (node.style ?: "NOTE").uppercase()
             val start = startOf(node)
             if (node.context == "admonition" && node.blocks.isNotEmpty()) {
+                addGroup(BlockGroupKind.CONTAINER, start)
                 val inner = ctx.copy(containers = ctx.containers + Container("admonition", type))
                 node.blocks.forEach { visit(it, inner) }
                 return
@@ -234,7 +268,8 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         }
 
         private fun container(node: StructuralNode, ctx: BlockContext, kind: String) {
-            startOf(node)
+            val start = startOf(node)
+            addGroup(BlockGroupKind.CONTAINER, start)
             val type = when (kind) {
                 "admonition" -> (node.style ?: "NOTE").uppercase()
                 else -> null
@@ -265,7 +300,8 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 val task = taskKey(item)
                 val html = item.text.orEmpty()
                 val parts = HtmlFragment.parse(html, allowRemoteImages = true)
-                drafts += Draft(
+                val firstDraft = drafts.size
+                val itemDraft = Draft(
                     kind = BlockKind.LIST_ITEM,
                     start = start,
                     plainText = HtmlFragment.visibleText(parts),
@@ -273,9 +309,13 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                     content = BlockContent.Html(parts),
                     extraKey = task,
                 )
+                drafts += itemDraft
                 val childCtx = itemCtx.copy(listDepth = depth + 1, ordered = false, number = null)
                 for (child in item.blocks) {
                     if (child is AstList) visitList(child, itemCtx, depth + 1) else visit(child, childCtx, depth + 1)
+                }
+                if (drafts.size > firstDraft + 1) {
+                    itemGroups += ItemGroupDraft(itemDraft, drafts.subList(firstDraft, drafts.size).toList())
                 }
                 number++
             }
@@ -336,7 +376,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         }
 
         private fun visitTable(table: Table, ctx: BlockContext) {
-            startOf(table)
+            addGroup(BlockGroupKind.TABLE, startOf(table))
             visitRows(table.header, header = true, ctx = ctx)
             visitRows(table.body, header = false, ctx = ctx)
             visitRows(table.footer, header = false, ctx = ctx)
@@ -381,6 +421,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
 
         private fun code(node: AstBlock, ctx: BlockContext) {
             val start = startOf(node)
+            addGroup(BlockGroupKind.CODE, start)
             val style = node.style ?: node.context
             val language = (node.attributes["language"] as? String)?.takeIf { it.isNotBlank() }
             val prefix = lines.prefixesBefore(start).lastOrNull { isSourceAttribute(lines.sourceLine(it)) }
@@ -452,6 +493,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
 
         private fun pass(node: AstBlock, ctx: BlockContext) {
             val start = startOf(node)
+            addGroup(BlockGroupKind.CODE, start)
             val html = node.lines.orEmpty().joinToString("\n")
             val parts = HtmlFragment.parse(html, allowRemoteImages = true)
             drafts += Draft(
@@ -513,16 +555,44 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         private fun finish(): List<Block> {
             val sorted = drafts.sortedBy { it.start }
             resolveTitleContexts(sorted)
-            val blocks = ArrayList<Block>(sorted.size)
             for (i in sorted.indices) {
                 val draft = sorted[i]
                 val limit = sorted.getOrNull(i + 1)?.start ?: lines.lines.size
                 var end = draft.fixedEnd ?: endLine(draft.start, limit, draft.minimumEnd)
                 if (end > lines.lines.size) end = lines.lines.size
                 if (end <= draft.start) end = draft.start + 1
-                blocks += materialize(draft, end)
+                draft.resolvedEnd = end
+            }
+            val allGroups = groups + listItemGroups()
+            val orderedGroups = allGroups.sortedWith(
+                compareBy<BlockGroup> { it.startLine }.thenByDescending { it.endLine },
+            )
+            val blocks = ArrayList<Block>(sorted.size)
+            for (draft in sorted) {
+                val own = orderedGroups.filter { draft.start >= it.startLine && draft.start < it.endLine }
+                blocks += materialize(draft, draft.resolvedEnd, own)
             }
             return blocks
+        }
+
+        /**
+         * The range of every list item with attached blocks: from the item's prefix lines through the last block
+         * of its nested list or `+` continuation, including the closing delimiter of an attached code block.
+         */
+        private fun listItemGroups(): List<BlockGroup> = itemGroups.mapNotNull { item ->
+            val itemDraft = item.item
+            val members = item.members
+            val first = lines.editPrefixBefore(itemDraft.start).firstOrNull() ?: itemDraft.start
+            val end = members.maxOf { member ->
+                groups.filter { member.start >= it.startLine && member.start < it.endLine }
+                    .maxOfOrNull { it.endLine } ?: member.resolvedEnd
+            }
+            if (end <= first) null else BlockGroup(
+                kind = BlockGroupKind.LIST_ITEM,
+                startLine = first,
+                endLine = end,
+                openLine = itemDraft.start,
+            )
         }
 
         /**
@@ -560,7 +630,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
             return text.isBlank() || line in lines.delimiterLines || line in lines.prefixLines || text.trim() == "+"
         }
 
-        private fun materialize(draft: Draft, end: Int): Block {
+        private fun materialize(draft: Draft, end: Int, editGroups: List<BlockGroup>): Block {
             val sourceText = draft.sourceText ?: lines.normalizedSource(draft.start, end)
             val key = buildString {
                 if (draft.tableHeader) append("th:") else if (draft.kind == BlockKind.TABLE_ROW) append("td:")
@@ -579,6 +649,8 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 level = draft.level,
                 target = draft.target,
                 title = draft.title,
+                prefixLines = if (draft.kind == BlockKind.BLOCK_TITLE) emptyList() else lines.editPrefixBefore(draft.start),
+                editGroups = editGroups,
             )
         }
 
@@ -616,7 +688,11 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         var tableHeader: Boolean = false,
         var scanner: Boolean = false,
         var minimumEnd: Int? = null,
+        var resolvedEnd: Int = 0,
     )
+
+    /** A list item and every draft its children produced, for the item's edit group. */
+    private class ItemGroupDraft(val item: Draft, val members: List<Draft>)
 
     private companion object {
         val WHITESPACE = Regex("\\s+")

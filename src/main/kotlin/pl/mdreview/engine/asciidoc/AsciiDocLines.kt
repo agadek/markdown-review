@@ -98,6 +98,27 @@ internal class AsciiDocLines(private val text: String) {
     /** Prefix lines directly above [line], for example `[source,java]` before a listing's `----`. */
     fun prefixesBefore(line: Int): List<Int> = prefixBefore[line].orEmpty()
 
+    /**
+     * Lines directly above [line] that belong to the block starting there for editing: its attribute and anchor
+     * lines, a `+` continuation marker, and block titles. A block title is a row of its own, but it belongs to
+     * the region of the block it titles, so reverting that block also reverts the title.
+     */
+    fun editPrefixBefore(line: Int): List<Int> {
+        val result = ArrayDeque<Int>()
+        var i = line - 1
+        while (i >= 0) {
+            val text = lines[i]
+            if (text.isBlank()) break
+            if (i in prefixLines || isBlockTitle(text)) {
+                result.addFirst(i)
+                i--
+            } else {
+                break
+            }
+        }
+        return result.toList()
+    }
+
     fun openingDelimiter(line: Int): Delimiter? = delimitersByStart[line]
 
     fun closingDelimiter(line: Int): Delimiter? = delimitersByClose[line]

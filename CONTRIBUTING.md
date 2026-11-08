@@ -1,7 +1,7 @@
 # Contributing to Markdown Review
 
-Thanks for helping. Bug reports with a small pair of Markdown files are as valuable as code, so if you are not sure
-where to start, [open an issue](https://github.com/agadek/markdown-review/issues/new/choose) first. Issues labeled
+Thanks for helping. Bug reports with a small pair of Markdown or AsciiDoc files are as valuable as code, so if you
+are not sure where to start, [open an issue](https://github.com/agadek/markdown-review/issues/new/choose) first. Issues labeled
 [`good first issue`](https://github.com/agadek/markdown-review/labels/good%20first%20issue) are small and
 self-contained.
 
@@ -23,26 +23,33 @@ You need JDK 21; Gradle comes with the wrapper.
 ```
 
 CI runs `./gradlew test buildPlugin verifyPlugin` on every pull request, and a pull request needs it green. To try a
-change, run `runIde`, open a project with a Markdown file under Git, change the file and open the diff from the Commit
-window (Ctrl+D), or use **Compare Markdown Files...** from the project view's context menu.
+change, run `runIde`, open a project with a Markdown or AsciiDoc file under Git, change the file and open the diff from
+the Commit window (Ctrl+D), or use **Compare Rendered Files...** from the project view's context menu. AsciiDoc diffs
+need the AsciiDoc plugin enabled in the sandbox IDE; Markdown tests and AsciiDoc engine tests do not.
 
 ## Where things are
 
-- `pl.mdreview.engine`: the diff engine (blocks, word diff, moved blocks). It has no IntelliJ dependency and is
-  tested with plain unit tests and fixtures.
+- `pl.mdreview.engine`: the diff engine (blocks, word diff, moved blocks) and the Markdown front end. It has no
+  IntelliJ dependency and is tested with plain unit tests and fixtures.
+- `pl.mdreview.engine.asciidoc`: the AsciiDoc front end. It depends on AsciidoctorJ (test and compile classpath) but
+  not on the IntelliJ Platform; every class that imports `org.asciidoctor.*` lives here or in
+  `pl.mdreview.ide.asciidoc`.
 - `pl.mdreview.render`: turns the engine's result into HTML and CSS.
-- `pl.mdreview.ide`: the diff viewers, settings and actions on the IntelliJ Platform.
+- `pl.mdreview.ide`: the diff viewers, settings and actions on the IntelliJ Platform. The optional AsciiDoc
+  integration (provider, file type recognizer, startup) is in `pl.mdreview.ide.asciidoc`.
 - [docs/ENGINE_CONTRACT.md](docs/ENGINE_CONTRACT.md) describes the contract between the engine and the IDE layer,
-  [docs/SPECIFICATION.md](docs/SPECIFICATION.md) what the plugin does, and [docs/PHASE3.md](docs/PHASE3.md) what comes
-  next.
+  [docs/SPECIFICATION.md](docs/SPECIFICATION.md) what the plugin does, and [docs/PHASE3.md](docs/PHASE3.md) and
+  [docs/PHASE4.md](docs/PHASE4.md) what comes next.
 
 ## Fixtures
 
 A fixture is a directory in `src/test/resources/fixtures/` with `old.md`, `new.md` and `EXPECTED.md`, the expected
-block-level changes and word diff. `FixturesTest` runs every directory. Every confirmed rendering or diff bug gets a
-fixture before it is fixed, cut down to the smallest pair that still shows the problem. The format and the list of
-cases are in [src/test/resources/fixtures/README.md](src/test/resources/fixtures/README.md); add your case to its
-table.
+block-level changes and word diff. An AsciiDoc fixture follows the same rule with `old.adoc` and `new.adoc`; the
+extension selects the front end. `FixturesTest` runs every directory, and `AsciiDocFixturesTest` runs the AsciiDoc
+round trips against AsciidoctorJ on the test classpath, so no IDE or AsciiDoc plugin is needed. Every confirmed
+rendering or diff bug gets a fixture before it is fixed, cut down to the smallest pair that still shows the problem.
+The format and the list of cases are in
+[src/test/resources/fixtures/README.md](src/test/resources/fixtures/README.md); add your case to its table.
 
 ## Pull requests
 

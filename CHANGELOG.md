@@ -6,6 +6,23 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
+### Added
+
+- **AsciiDoc support:** `.adoc` and `.asciidoc` changes open in the same rendered side-by-side and merged viewers as
+  Markdown, with block alignment, word diffs, per-block revert and apply, block source editing, moved blocks,
+  navigation, HTML/PDF export and the block menu. AsciiDoc diffs need the free AsciiDoc plugin installed and enabled;
+  Markdown Review does not bundle AsciidoctorJ, and Markdown diffs are unaffected.
+- AsciiDoc blocks: sections, lists, tables, listing and source blocks, admonitions, containers, attribute entries with
+  substitution, comments, `include::` directives (shown as rows, not resolved), conditionals, links and
+  cross-references, images, block titles, thematic and page breaks, `[mermaid]` diagrams and `latexmath` formulas.
+  Asciidoctor extensions other than Mermaid, AsciiMath and mixed Markdown/AsciiDoc pairs are not supported; such a
+  pair keeps the text diff.
+
+### Changed
+
+- The rendered viewers are now **Rendered (side by side)** and **Rendered (merged)**, and **Compare Markdown Files...**
+  is now **Compare Rendered Files...**, accepting Markdown or AsciiDoc files.
+
 ## [1.3.0] - 2026-10-28
 
 ### Added

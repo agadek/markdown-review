@@ -124,6 +124,15 @@ keep our plugin loader out of the captured `ProtectionDomain`. If the platform's
 leak and that is unacceptable, the companion-plugin fallback below replaces this decision; it still has to stay
 loaded to avoid the same JRuby leak in its own loader.
 
+## Implementation (P4.6)
+
+Implemented as decided. `plugin.xml` declares the optional dependency and `markdown-review-withAsciiDoc.xml`
+registers `PluginAsciidoctorProvider` as an application service plus the startup activity that installs it in
+`AsciiDocSupport` and `CoreMarkdownDiffRenderer`. The provider creates one instance lazily with
+`Asciidoctor::class.java.classLoader` as the thread context class loader and calls `shutdown()`/`close()` in
+`dispose()`. The plugin zip stays at 2.2 MB with no AsciidoctorJ or Ruby classes, and `verifyPlugin` reports no
+AsciiDoc-related problem. The known class-loader retention on dynamic unload remains as recorded above.
+
 ## Consequences
 
 - Markdown Review's download does not grow (NFR-14), and Markdown users load nothing new.

@@ -169,6 +169,8 @@ These are normal `mdr-block` elements with the usual status class and `data-bloc
 | `mdr-callout` | `ol` (together with `mdr-li`, and `start` from `BlockContext.number`) | Callout list. Its `li` items are blocks; the marker draws `<1>`, `<2>` from the list item counter, and `start` keeps the number when each row has its own `ol`. |
 | `mdr-include` | `div.mdr-block` | `include::target[]` row; the target is a link resolved against the side's base URI. Monospace and muted, like a front matter line. |
 | `mdr-attribute` | `div.mdr-block` | Attribute entry (header or body), `:name: value`; monospace, muted and whitespace-preserving. |
+| `mdr-image` | `figure.mdr-block` | Block image (`image::`), through the Markdown image path; a block title renders as `figcaption`. |
+| `mdr-alert-body` | `div` inside an `ALERT` block | Body of an admonition paragraph (`NOTE: ...`); the type title is the `.mdr-alert-title` above it. |
 | `mdr-page-break` | `hr` inside `div.mdr-block` | Page break (`<<<`); a dashed rule. A thematic break stays a plain `hr`. |
 
 ### Asciidoctor inline markup

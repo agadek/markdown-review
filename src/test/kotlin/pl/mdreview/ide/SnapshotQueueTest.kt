@@ -33,4 +33,17 @@ class SnapshotQueueTest {
         assertFalse(queue.complete("only").next)
         assertTrue(queue.enqueue { _ -> })
     }
+
+    @Test
+    fun `cancelAll answers every waiting request and the next one starts immediately`() {
+        val queue = SnapshotQueue<String?>()
+        val answers = mutableListOf<String?>()
+        assertTrue(queue.enqueue { answers += it })
+        assertFalse(queue.enqueue { answers += it })
+        assertFalse(queue.enqueue { answers += it })
+
+        queue.cancelAll(null)
+        assertEquals(listOf<String?>(null, null, null), answers)
+        assertTrue(queue.enqueue { answers += it })
+    }
 }

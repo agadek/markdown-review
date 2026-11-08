@@ -146,6 +146,8 @@ class MarkdownDiffPanel(parent: Disposable, private val onSourceClick: (side: St
         }
         current = diff
         currentActions = actions
+        // No export| answer will arrive for the page being replaced.
+        snapshots.cancelAll(null)
         val settings = MarkdownReviewSettings.getInstance()
         browser.loadHTML(
             HtmlPage.build(

@@ -6,7 +6,7 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
-## [1.4.0] - 2026-11-08
+## [1.4.0]
 
 ### Added
 

@@ -12,7 +12,9 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor
 class AsciiDocPluginListener : DynamicPluginListener {
 
     override fun pluginLoaded(pluginDescriptor: IdeaPluginDescriptor) {
-        if (pluginDescriptor.pluginId.idString == AsciiDocIntegration.PLUGIN_ID) AsciiDocIntegration.enable()
+        if (pluginDescriptor.pluginId.idString == AsciiDocIntegration.PLUGIN_ID) {
+            AsciiDocIntegration.enable(notifyOnFailure = true)
+        }
     }
 
     override fun beforePluginUnload(pluginDescriptor: IdeaPluginDescriptor, isUpdate: Boolean) {

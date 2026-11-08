@@ -3,8 +3,8 @@
     <name>Markdown Review</name>
     <vendor url="https://github.com/agadek/markdown-review">agadek</vendor>
     <description><![CDATA[
-        Review changes to Markdown files in <b>rendered</b> form, right inside IntelliJ's own diff window,
-        instead of reading raw markup.
+        Review changes to Markdown and AsciiDoc files in <b>rendered</b> form, right inside IntelliJ's own diff
+        window, instead of reading raw markup.
         <br/><br/>
         A text diff of Markdown shows syntax, not content: a rewritten paragraph turns into scattered red and green
         lines, a table edit becomes shifted <code>|</code> characters, and re-indenting a list looks like everything
@@ -25,7 +25,7 @@
           <li><b>Block source editing:</b> double-click a block to edit its raw Markdown in place; saved as one Undo
               step.</li>
           <li><b>Show Rendered Diff</b> in the context menu of the Git log's changed files, of file history and of the
-              Commit window opens a Markdown change rendered, whichever viewer diffs open with by default.</li>
+              Commit window opens a Markdown or AsciiDoc change rendered, whichever viewer diffs open with by default.</li>
           <li><b>Export</b> the rendered diff as a standalone HTML file (no scripts, images inlined) or a PDF, to attach
               to a review or a ticket.</li>
           <li><b>Custom stylesheet:</b> a CSS file of your own on top of the rendered view, for example to match your
@@ -37,8 +37,13 @@
           <li>GitHub Flavored Markdown: tables, task lists, strikethrough, autolinks, footnotes and alerts, plus HTML
               blocks, <code>&lt;details&gt;</code>, HTML comments, hard line breaks, emoji shortcodes, wiki links and YAML
               front matter.</li>
-          <li>Settings | Tools | Markdown Review picks the viewer a Markdown diff opens with and how readily a
-              rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
+          <li><b>AsciiDoc:</b> sections, lists, tables, source blocks, admonitions, containers, attributes, comments,
+              includes (shown, not resolved), conditionals, links and cross-references, images, block titles,
+              thematic and page breaks, Mermaid diagrams and <code>latexmath</code> formulas, with the same viewers
+              and actions as Markdown. AsciiDoc diffs need the free AsciiDoc plugin installed and enabled; mixed
+              Markdown/AsciiDoc pairs keep the text diff.</li>
+          <li>Settings | Tools | Markdown Review picks the viewer a Markdown or AsciiDoc diff opens with and how
+              readily a rewritten block is paired with its old version, and holds the whitespace, collapse-unchanged,
               large-file, remote-image, Mermaid and math options. The diff colors are set per color scheme in
               Settings | Editor | Color Scheme | Markdown Review.</li>
         </ul>
@@ -47,7 +52,9 @@
         <a href="https://ko-fi.com/gadek">&#9749; Ko-fi</a>.
         <br/><br/>
         Requires an IntelliJ-based IDE 2025.1 or newer with JCEF (the default in JetBrains Runtime); without JCEF the
-        text diff stays in place.
+        text diff stays in place. AsciiDoc diffs also need the free AsciiDoc plugin
+        (<code>org.asciidoctor.intellij.asciidoc</code>) installed and enabled; AsciidoctorJ is not bundled, and
+        without the AsciiDoc plugin AsciiDoc diffs keep the text viewer.
         <br/><br/>
         Free for noncommercial use under the
         <a href="https://polyformproject.org/licenses/noncommercial/1.0.0">PolyForm Noncommercial License 1.0.0</a>.

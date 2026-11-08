@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Markdown Review: rendered Markdown diffs for JetBrains IDEs</title>
-<meta name="description" content="An IntelliJ IDEA plugin for reviewing changes to Markdown files in rendered form instead of as raw text.">
+<title>Markdown Review: rendered Markdown and AsciiDoc diffs for JetBrains IDEs</title>
+<meta name="description" content="An IntelliJ IDEA plugin for reviewing changes to Markdown and AsciiDoc files in rendered form instead of as raw text.">
 <link rel="icon" href="icon.png">
 <style>
   :root {
@@ -68,8 +68,8 @@
     <img src="icon.png" alt="Markdown Review icon">
     <div>
       <h1>Markdown Review</h1>
-      <p class="lead">Review changes to Markdown files the way they look once rendered, right inside the diff window of
-        IntelliJ IDEA and other JetBrains IDEs.</p>
+      <p class="lead">Review changes to Markdown and AsciiDoc files the way they look once rendered, right inside the
+        diff window of IntelliJ IDEA and other JetBrains IDEs.</p>
       <div class="buttons">
         <a class="button primary" href="https://plugins.jetbrains.com/plugin/35246-markdown-review">Get it on JetBrains Marketplace</a>
         <a class="button" href="https://github.com/agadek/markdown-review">Source on GitHub</a>
@@ -84,17 +84,19 @@
     <a href="#install">Install</a>
     <a href="#features">Features</a>
     <a href="#markdown">Supported Markdown</a>
+    <a href="#asciidoc">Supported AsciiDoc</a>
     <a href="#settings">Settings</a>
     <a href="#license">License and commercial use</a>
     <a href="#help">Help</a>
   </nav>
 
   <section>
-    <p>A text diff of Markdown shows syntax instead of content: a rewritten paragraph becomes a few red and green lines,
-      a change in a table becomes shifted <code>|</code> characters, and re-indenting a list looks like everything
-      changed. Markdown Review shows the same comparison the way the document looks once rendered, so the reviewer
-      judges the content, not the markup. It does not open a window of its own: it adds viewers to the IDE's regular
-      diff window, so it works wherever the IDE shows a diff of an <code>.md</code> file.</p>
+    <p>A text diff of Markdown or AsciiDoc shows syntax instead of content: a rewritten paragraph becomes a few red and
+      green lines, a change in a table becomes shifted <code>|</code> characters, and re-indenting a list looks like
+      everything changed. Markdown Review shows the same comparison the way the document looks once rendered, so the
+      reviewer judges the content, not the markup. It does not open a window of its own: it adds viewers to the IDE's
+      regular diff window, so it works wherever the IDE shows a diff of an <code>.md</code> or <code>.adoc</code>
+      file.</p>
     <figure>
       <picture>
         <source srcset="screenshots/side-by-side-dark.png" media="(prefers-color-scheme: dark)">
@@ -109,12 +111,15 @@
     <ol>
       <li>In the IDE, open <b>Settings | Plugins | Marketplace</b>.</li>
       <li>Search for <b>Markdown Review</b> and click <b>Install</b>.</li>
-      <li>Open the diff of any Markdown file, for example from the Commit window (<kbd>Ctrl+D</kbd>). It opens in the
-        rendered side-by-side viewer.</li>
+      <li>Open the diff of any Markdown or AsciiDoc file, for example from the Commit window (<kbd>Ctrl+D</kbd>). It
+        opens in the rendered side-by-side viewer.</li>
     </ol>
     <p>Requires IntelliJ IDEA (Community or Ultimate) or another IntelliJ-based IDE, version 2025.1 or newer, with JCEF
       (the default in JetBrains Runtime). Without JCEF the plugin stays out of the way and the diff window keeps the
       text viewer.</p>
+    <p>AsciiDoc diffs also need the free <b>AsciiDoc</b> plugin
+      (<code>org.asciidoctor.intellij.asciidoc</code>) installed and enabled. Markdown Review takes AsciidoctorJ from
+      that plugin instead of bundling it; without it, AsciiDoc diffs keep the text viewer.</p>
     <p>A build from GitHub installs with <b>Settings | Plugins | &#9881; | Install Plugin from Disk...</b>; such an
       install does not update itself.</p>
   </section>
@@ -130,12 +135,15 @@
         with a toggle for the line diff of its source.</li>
       <li><b>Math</b> <code>$...$</code> and <code>$$...$$</code> formulas drawn offline with KaTeX; a changed formula
         is highlighted as a whole.</li>
+      <li><b>AsciiDoc</b> Sections, lists, tables, source blocks, admonitions, containers, attributes, includes,
+        links, images and block titles with the same rendered viewers and actions as Markdown, plus Mermaid and
+        <code>latexmath</code>. Needs the free AsciiDoc plugin.</li>
       <li><b>Moved blocks</b> Labeled at both ends with a link to the other end, instead of a deletion and an
         addition. Reverting moves the block back.</li>
       <li><b>Per-block revert and apply</b> Buttons on a changed block copy it to the other side, one Undo step each,
         on sides that can be edited.</li>
-      <li><b>Block source editing</b> Double-click a block to edit its raw Markdown in place; <kbd>Ctrl/Cmd+Enter</kbd>
-        saves, <kbd>Esc</kbd> cancels.</li>
+      <li><b>Block source editing</b> Double-click a block to edit its raw Markdown or AsciiDoc in place;
+        <kbd>Ctrl/Cmd+Enter</kbd> saves, <kbd>Esc</kbd> cancels.</li>
       <li><b>Block menu</b> Right-click a block for Go to Source, Open in Text Diff Here (where pull request windows
         take review comments) and Show History for This Block.</li>
       <li><b>Show Rendered Diff</b> From the Git log, file history and the Commit window, even when diffs open with the
@@ -146,7 +154,7 @@
       <li><b>Text diff</b> The IDE's built-in diff is always one click away in the viewer switcher.</li>
     </ul>
     <p>The viewers work in the Commit window, file history, branch comparison and pull request windows. Compare any two
-      files with <b>Compare Markdown Files...</b> from the project view's context menu or the Tools menu.
+      files with <b>Compare Rendered Files...</b> from the project view's context menu or the Tools menu.
       <kbd>F7</kbd> and <kbd>Shift+F7</kbd> move between changes; <kbd>Ctrl/Cmd</kbd>+click on a block opens its source
       in the editor.</p>
     <figure>
@@ -167,13 +175,33 @@
       enabled. The user interface is in English.</p>
   </section>
 
+  <section id="asciidoc">
+    <h2>Supported AsciiDoc</h2>
+    <p>AsciiDoc diffs use the same viewers, settings and actions as Markdown, with sections, paragraphs, unordered,
+      ordered, checklist, description and callout lists, tables, listing and source blocks, admonitions, example,
+      sidebar, quote, verse and open containers, attribute entries, comments, conditional directives, links and
+      cross-references, block images and block titles. <code>include::</code> directives are shown as rows and are
+      not resolved. Mermaid diagrams and <code>latexmath</code> formulas are drawn like their Markdown counterparts.</p>
+    <p>AsciiDoc support needs the free <b>AsciiDoc</b> plugin installed and enabled; AsciidoctorJ is not bundled.
+      Asciidoctor extensions other than Mermaid, AsciiMath, Antora cross-component links and Asciidoctor PDF themes
+      are not supported. A Markdown/AsciiDoc pair, such as a rename from <code>README.md</code> to
+      <code>README.adoc</code>, keeps the text diff.</p>
+    <figure>
+      <picture>
+        <source srcset="screenshots/side-by-side-asciidoc-dark.png" media="(prefers-color-scheme: dark)">
+        <img src="screenshots/side-by-side-asciidoc-light.png" alt="Rendered side-by-side diff of an AsciiDoc file">
+      </picture>
+      <figcaption>The same rendered diff for AsciiDoc: containers, tables, code, admonitions, Mermaid and math.</figcaption>
+    </figure>
+  </section>
+
   <section id="settings">
     <h2>Settings</h2>
     <p>In <b>Settings | Tools | Markdown Review</b>:</p>
     <table>
-      <tr><th>Default viewer for Markdown diffs</th><td>Rendered side by side, rendered merged, or the IDE's text
-        viewer. Switching the viewer in a diff window is remembered for that kind of window until this setting
-        changes.</td></tr>
+      <tr><th>Default viewer for Markdown and AsciiDoc diffs</th><td>Rendered side by side, rendered merged, or the
+        IDE's text viewer. Switching the viewer in a diff window is remembered for that kind of window until this
+        setting changes.</td></tr>
       <tr><th>Ignore whitespace and line wrapping</th><td>Changes that only re-wrap or re-indent text do not show as
         changes.</td></tr>
       <tr><th>Collapse unchanged blocks</th><td>Long runs of unchanged blocks fold away.</td></tr>
@@ -213,9 +241,11 @@
   <section id="help">
     <h2>Help</h2>
     <p><a href="https://github.com/agadek/markdown-review/issues/new/choose">Open an issue</a> with the bug report
-      template. The most useful part is a small pair of Markdown files (old and new) that shows the problem. When the
-      plugin throws an exception, the IDE's error dialog offers <b>Report to Markdown Review on GitHub</b>, which opens
-      a prefilled issue; nothing is sent until you submit it.</p>
+      template. The most useful part is a small pair of Markdown or AsciiDoc files (old and new; <code>old.md</code> /
+      <code>new.md</code> or <code>old.adoc</code> / <code>new.adoc</code>) that shows the problem. For an AsciiDoc
+      diff, also say which AsciiDoc plugin version is installed. When the plugin throws an exception, the IDE's error
+      dialog offers <b>Report to Markdown Review on GitHub</b>, which opens a prefilled issue; nothing is sent until
+      you submit it.</p>
     <p>Contributions are welcome: see
       <a href="https://github.com/agadek/markdown-review/blob/main/CONTRIBUTING.md">CONTRIBUTING.md</a>, and
       <a href="https://github.com/agadek/markdown-review/blob/main/CHANGELOG.md">CHANGELOG.md</a> for what changed in

@@ -783,7 +783,9 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
             if (part !is HtmlFragment.Markup) return@map part
             when {
                 part.tag == "sup" && !part.closing -> {
-                    inFootnote = HtmlFragment.attribute(part, "class")?.split(' ')?.contains("footnote") == true
+                    inFootnote = HtmlFragment.attribute(part, "class")?.split(' ')?.let { classes ->
+                        "footnote" in classes || "footnoteref" in classes
+                    } == true
                     part
                 }
                 part.tag == "sup" && part.closing -> {
@@ -793,7 +795,8 @@ class DiffHtmlRenderer(private val options: RenderOptions = RenderOptions()) {
                 inFootnote && part.tag == "a" && !part.closing -> {
                     val href = HtmlFragment.attribute(part, "href") ?: return@map part
                     if (!href.startsWith("#")) return@map part
-                    val label = footnoteLabel(href.removePrefix("#"))
+                    val label = HtmlFragment.attribute(part, "data-footnote-label")
+                        ?: footnoteLabel(href.removePrefix("#"))
                     HtmlFragment.withAttribute(part, "href", "#" + footnoteId(side, label))
                 }
                 else -> part

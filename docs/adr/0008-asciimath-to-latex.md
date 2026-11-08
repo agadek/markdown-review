@@ -1,6 +1,6 @@
 # ADR 0008: Draw AsciiMath by converting it to LaTeX for KaTeX
 
-Status: proposed, phase 4 (P4.9).
+Status: accepted, phase 4 (P4.9).
 
 ## Context
 
@@ -47,6 +47,13 @@ KaTeX reads only LaTeX. Whatever draws AsciiMath has to:
 - A formula the converter rejects keeps today's behavior: monospace source, `mdr-math-failed`, with the note
   "AsciiMath formula could not be converted" instead of "AsciiMath is not supported".
 - Markdown `$...$` formulas never go through the converter.
+
+## Implementation (P4.9)
+
+Implemented as decided. `AsciiMathToTex` covers the reference subset and returns `null` for unparseable input;
+`AsciiDocMath` and `AsciiDocBlockSource` carry the converted LaTeX in `data-tex` and the original source in
+`data-source`, with `Block.mathTex` for display blocks. Fixtures 66 and 67 cover the drawn, changed, spelling-only
+and rejected cases. The plugin zip stays at 2.2 MB with no new bundled library.
 
 ## Consequences
 

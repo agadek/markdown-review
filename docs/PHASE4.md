@@ -80,11 +80,11 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 | P4.1 | Spike: AsciidoctorJ from the AsciiDoc plugin | – | [P4.1](specs/phase4/P4.1-asciidoctorj-spike.md) | Done |
 | P4.2 | Format-neutral engine and API, Markdown unchanged | – | [P4.2](specs/phase4/P4.2-format-neutral-engine.md) | Done |
 | P4.3 | AsciiDoc block extraction | P4.1, P4.2 | [P4.3](specs/phase4/P4.3-asciidoc-block-extraction.md) | Done |
-| P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | Done in tests; manual light/dark and runIde review pending |
+| P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | Done |
 | P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Done |
-| P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | In progress: provider wired and tested headless; runIde/manual check pending |
+| P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | Done |
 | P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Done |
-| P4.8 | Fixtures, documentation and release | P4.4–P4.7, P4.9 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | In progress: docs and screenshots done; manual runIde and release pending |
+| P4.8 | Fixtures, documentation and release | P4.4–P4.7, P4.9 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | Done: release PR prepared; Marketplace publication pending |
 | P4.9 | AsciiMath in AsciiDoc | P4.7 | [P4.9](specs/phase4/P4.9-asciidoc-asciimath.md) | Done |
 
 P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1
@@ -93,8 +93,8 @@ confirmed [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it had f
 blocks exist.
 P4.6 can start on P4.4's output with edit actions disabled, and turns them on when P4.5 lands.
 
-Release: AsciiDoc ships behind no flag in 1.4.0, in one minor release once P4.1 to P4.7 are done. If P4.7 slips,
-it can follow in a later minor release; until then Mermaid blocks and formulas show as source, compared line by line.
+Release: AsciiDoc ships behind no flag in 1.4.0, in one minor release once P4.1 to P4.9 are done. Mermaid blocks and
+formulas show as source when the corresponding setting is off.
 
 ## P4.1 Spike: AsciidoctorJ from the AsciiDoc plugin
 
@@ -226,6 +226,12 @@ Scope:
 
 Done when:
 - The release is on Marketplace, and the docs describe what is and is not supported.
+
+P4.8 results: FR-16 to FR-25 and NFR-11 to NFR-15 are in SPECIFICATION.md as shipped for 1.4.0; ENGINE_CONTRACT,
+README, plugin description, site, CHANGELOG, CONTRIBUTING and the issue templates describe the released scope;
+fixtures 50-68 and their README are current; the AsciiDoc screenshots are in `docs/screenshots/`. A release PR from
+`release-1.4.0` to `main` is prepared with `pluginVersion=1.4.0`. Marketplace publication, the tag and the manual
+`runIde` checks remain with the maintainer.
 
 ## P4.9 AsciiMath in AsciiDoc
 

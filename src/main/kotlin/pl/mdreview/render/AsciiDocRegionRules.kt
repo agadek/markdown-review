@@ -27,6 +27,8 @@ internal object AsciiDocRegionRules : RegionRules {
         right: EditRegions.Side,
     ): EditRegion? {
         val block = blocks[k]
+        // A footnote definition is derived from a macro inside its paragraph; the paragraph's region reverts it.
+        if (block.left?.kind == BlockKind.FOOTNOTE || block.right?.kind == BlockKind.FOOTNOTE) return null
         return when (block.status) {
             DiffStatus.EQUAL -> null
             DiffStatus.MODIFIED -> modified(k, blocks, left, right)

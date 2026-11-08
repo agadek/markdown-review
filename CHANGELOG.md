@@ -6,7 +6,7 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
-## [1.4.0]
+## [1.4.0] - 2026-11-08
 
 ### Added
 
@@ -16,8 +16,8 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
   Markdown Review does not bundle AsciidoctorJ, and Markdown diffs are unaffected.
 - AsciiDoc blocks: sections, lists, tables, listing and source blocks, admonitions, containers, attribute entries with
   substitution, comments, `include::` directives (shown as rows, not resolved), conditionals, links and
-  cross-references, images, block titles, thematic and page breaks, `[mermaid]` diagrams and `latexmath` /
-  AsciiMath formulas. AsciiMath is converted to LaTeX for the bundled KaTeX, and the original formula is shown if it
+  cross-references, images, block titles, footnotes, thematic and page breaks, `[mermaid]` diagrams and
+  `latexmath` / AsciiMath formulas. AsciiMath is converted to LaTeX for the bundled KaTeX, and the original formula is shown if it
   cannot be converted. Asciidoctor extensions other than Mermaid and mixed Markdown/AsciiDoc pairs are not supported;
   such a pair keeps the text diff.
 

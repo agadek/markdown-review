@@ -31,8 +31,14 @@ internal object AsciiDocMath {
      * [html] with each formula found in [source] replaced by a `.mdr-math` element. Formulas that Asciidoctor did not
      * convert (an escaped or verbatim macro) stay as they are: no converted match is found for them.
      */
-    fun parts(html: String, source: String?, stem: String?): List<HtmlFragment.Part> {
-        val parts = HtmlFragment.parse(html, allowRemoteImages = true).toMutableList()
+    fun parts(
+        html: String,
+        source: String?,
+        stem: String?,
+        footnoteLabels: Map<Int, String> = emptyMap(),
+    ): List<HtmlFragment.Part> {
+        val parsed = HtmlFragment.parse(html, allowRemoteImages = true)
+        val parts = if (footnoteLabels.isEmpty()) parsed.toMutableList() else withFootnoteLabels(parsed, footnoteLabels).toMutableList()
         val macros = macros(source.orEmpty(), stem)
         if (macros.isEmpty()) return parts
         var cursor = 0
@@ -153,6 +159,20 @@ internal object AsciiDocMath {
         return null
     }
 
+    /**
+     * A footnote reference still carries Asciidoctor's numeric href. Put the stable label chosen by the front end on
+     * the link so the renderer can point it at the matching FOOTNOTE block after renumbering.
+     */
+    fun withFootnoteLabels(parts: List<HtmlFragment.Part>, labels: Map<Int, String>): List<HtmlFragment.Part> {
+        if (labels.isEmpty()) return parts
+        return parts.mapIndexed { i, part ->
+            if (part !is HtmlFragment.Markup || part.closing || part.tag != "a") return@mapIndexed part
+            val href = HtmlFragment.attribute(part, "href") ?: return@mapIndexed part
+            val index = FOOTNOTE_DEF.find(href)?.groupValues?.get(1)?.toIntOrNull() ?: return@mapIndexed part
+            labels[index]?.let { HtmlFragment.withAttribute(part, "data-footnote-label", it) } ?: part
+        }
+    }
+
     private fun attribute(value: String): String = buildString {
         for (c in value) {
             when (c) {
@@ -165,4 +185,5 @@ internal object AsciiDocMath {
     }
 
     private val MACRO = Regex("""(?<!\\)(latexmath|asciimath|stem):\[""")
+    private val FOOTNOTE_DEF = Regex("""#_footnotedef_(\d+)""")
 }

@@ -87,8 +87,8 @@ text viewer.
 Supported: sections and the document title, paragraphs, unordered, ordered, checklist, description and callout lists
 with continuations, tables, listing and source blocks, admonitions, example, sidebar, quote, verse and open
 containers, attribute entries and their substitution, line and block comments, conditional directives, links and
-cross-references, block images, block titles, thematic and page breaks, Mermaid diagrams and `latexmath` / AsciiMath
-formulas. `include::` directives are shown as their own rows and are not resolved. Asciidoctor extensions other than
+cross-references, block images, block titles, footnotes, thematic and page breaks, Mermaid diagrams and `latexmath` /
+AsciiMath formulas. `include::` directives are shown as their own rows and are not resolved. Asciidoctor extensions other than
 Mermaid, Antora cross-component links and Asciidoctor PDF themes are not supported. Comparing a Markdown file with an
 AsciiDoc file (for example after a rename) keeps the text diff.
 

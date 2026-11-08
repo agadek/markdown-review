@@ -153,7 +153,7 @@ without the AsciiDoc plugin none of those classes loads and Markdown is unaffect
 
 AsciiDoc reuses the Markdown kinds where the meaning is the same and adds five kinds. The unchanged kinds are:
 `HEADING`, `PARAGRAPH`, `LIST_ITEM`, `TABLE_ROW`, `CODE_FENCE`, `CODE_LINE`, `THEMATIC_BREAK`, `HTML`, `ALERT`,
-`HTML_COMMENT`, `MERMAID` and `MATH`.
+`HTML_COMMENT`, `FOOTNOTE`, `MERMAID` and `MATH`.
 
 | Kind | AsciiDoc block |
 |---|---|
@@ -171,11 +171,12 @@ AsciiDoc reuses the Markdown kinds where the meaning is the same and adds five k
 | `BLOCK_TITLE` | a block title (`.Title`), its own block directly before the block it titles. |
 | `IMAGE` | a block image (`image::target[alt]`); `Block.target` holds the target and `Block.plainText` the alt text, so a changed target is a change. Block images render as `figure.mdr-image`, with `figcaption` from a title. |
 | `INCLUDE` | an `include::target[]` directive; `Block.target` is the target, never resolved. |
+| `FOOTNOTE` | an AsciiDoc footnote definition (`footnote:[text]` or `footnote:id[text]`), emitted after the document's other blocks from Asciidoctor's footnote catalog. `Block.label` is the explicit id when there is one, otherwise the footnote text (with an occurrence suffix for duplicates); references carry that label and resolve to the definition on the same side. A footnote definition has `edit = null`; the paragraph containing its macro carries the edit. |
 | `MERMAID` | a `[mermaid]` listing or literal block when `options.renderMermaid` is on (P4.7); `Block.lines` holds the fence and code lines for the source diff. |
-| `MATH` | a `[latexmath]` block, or a `[stem]` block when `stem` is `latexmath` (P4.7); `Block.plainText` is the TeX source and `Block.lines` its source lines. |
+| `MATH` | a `[latexmath]` / `[asciimath]` block, or a `[stem]` block when `stem` is `latexmath` or AsciiMath (P4.7, P4.9); `Block.plainText` is the source and `Block.lines` its source lines. AsciiMath conversions are in `Block.mathTex`. |
 
-`FRONT_MATTER`, `FOOTNOTE` and `DETAILS` are Markdown-only; the AsciiDoc front end does not produce them. AsciiDoc
-footnotes arrive as converted inline HTML and are sanitized like the rest of the inline content.
+`FRONT_MATTER` and `DETAILS` are Markdown-only; the AsciiDoc front end does not produce them. AsciiDoc footnotes and
+inline HTML are sanitized like the rest of the inline content.
 
 ### Contexts, keys and edit metadata
 
@@ -197,9 +198,9 @@ footnotes arrive as converted inline HTML and are sanitized like the rest of the
   first. A `BlockGroup` has a kind (`CODE`, `TABLE`, `CONTAINER`, `LIST_ITEM`, `HEADER`), a start and end line, the
   opening and closing delimiter lines and its own `prefixLines`. `AsciiDocRegionRules` uses them to keep a revert or
   apply inside existing delimiters and to exchange a whole group when every block in it was added or removed.
-- A change derived from another edit (an admonition container's style line, an attribute value) can have
-  `BlockInfo.edit = null`; reverting the source edit resolves it. A block whose lines cannot be determined is
-  displayed but has no edit region.
+- A change derived from another edit (an admonition container's style line, an attribute value, a footnote macro)
+  can have `BlockInfo.edit = null`; reverting the source edit resolves it. A block whose lines cannot be determined
+  is displayed but has no edit region.
 - `include::` is never resolved. Conditional content hidden by `ifdef` is not shown on either side; the directive
   line itself is a hidden-unless-changed `HTML_COMMENT` row, so a changed condition is reviewable.
 

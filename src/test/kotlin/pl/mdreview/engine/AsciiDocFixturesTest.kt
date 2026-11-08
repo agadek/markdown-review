@@ -467,6 +467,46 @@ class AsciiDocFixturesTest {
     }
 
     @Test
+    fun `68 adoc footnotes stay equal across renumbering and their links resolve`() {
+        val d = diff("68-adoc-footnotes")
+        val footnotes = d.blocks.mapNotNull { it.right ?: it.left }.filter { it.kind == BlockKind.FOOTNOTE }
+        assertEquals(
+            listOf("added note", "stable note", "changed", "removed note", "shared", "last note"),
+            footnotes.map { it.label },
+        )
+        assertEquals(
+            listOf(
+                DiffStatus.ADDED,
+                DiffStatus.EQUAL,
+                DiffStatus.MODIFIED,
+                DiffStatus.REMOVED,
+                DiffStatus.EQUAL,
+                DiffStatus.EQUAL,
+            ),
+            d.blocks.filter { (it.right ?: it.left)?.kind == BlockKind.FOOTNOTE }.map { it.status },
+        )
+
+        for (mode in ViewMode.entries) {
+            val rendered = CoreMarkdownDiffRenderer(provider).render(
+                RenderRequest(
+                    read("68-adoc-footnotes", "old.adoc"),
+                    read("68-adoc-footnotes", "new.adoc"),
+                    mode,
+                    ApiDiffOptions(collapseUnchanged = false),
+                    format = DocumentFormat.ASCIIDOC,
+                ),
+            )
+            for (side in listOf("left", "right")) {
+                val ids = Regex("id=\"(mdr-fn-$side-[^\"]+)\"").findAll(rendered.bodyHtml)
+                    .map { it.groupValues[1] }.toSet()
+                val refs = Regex("href=\"#(mdr-fn-$side-[^\"]+)\"").findAll(rendered.bodyHtml)
+                    .map { it.groupValues[1] }.toSet()
+                assertTrue(refs.all { it in ids }, "$mode $side references without a definition: ${refs - ids}")
+            }
+        }
+    }
+
+    @Test
     fun `65 and 66 render the Markdown diagram and formula DOM contract`() {
         val renderer = CoreMarkdownDiffRenderer(provider)
         for (mode in ViewMode.entries) {

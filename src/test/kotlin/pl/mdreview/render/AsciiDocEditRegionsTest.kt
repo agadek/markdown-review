@@ -299,7 +299,7 @@ class AsciiDocEditRegionsTest {
     @Test
     fun `every AsciiDoc fixture applies to the right side and reverts to the left`() {
         val cases = cases()
-        assertEquals(18, cases.size)
+        assertEquals(19, cases.size)
         for (case in cases) {
             val left = fixture(case, "old.adoc")
             val right = fixture(case, "new.adoc")
@@ -308,8 +308,14 @@ class AsciiDocEditRegionsTest {
             assertEquals(tree(right), tree(applyAll(left, right)), "$case applied tree")
             assertEquals(tree(left), tree(revertAll(left, right)), "$case reverted tree")
             // A changed block whose lines differ must be editable; two fixtures also have a derived text-only
-            // change (an attribute reference and a container type) that no single line edit can undo.
-            val unresolved = render(left, right).changes.filter { it.edit == null && it.left != it.right }
+            // change (an attribute reference and a container type) that no single line edit can undo. A footnote
+            // definition is derived from the macro in its paragraph, which carries the edit region.
+            val d = diff(left, right)
+            val unresolved = render(left, right).changes.filter { change ->
+                val block = d.blocks[change.idx]
+                change.edit == null && change.left != change.right &&
+                    block.left?.kind != BlockKind.FOOTNOTE && block.right?.kind != BlockKind.FOOTNOTE
+            }
             assertEquals(emptyList(), unresolved, "$case changed blocks without a region")
         }
     }

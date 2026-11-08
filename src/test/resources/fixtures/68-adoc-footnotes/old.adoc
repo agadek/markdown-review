@@ -1,0 +1,9 @@
+= Footnotes
+
+A paragraph with an unchanged footnote:[stable note] and a changed one footnote:changed[old text].
+
+Another paragraph with a footnote:[removed note] to remove.
+
+The same id is reused: footnote:shared[shared note] and again footnote:shared[].
+
+Closing paragraph with a stable footnote:[last note].

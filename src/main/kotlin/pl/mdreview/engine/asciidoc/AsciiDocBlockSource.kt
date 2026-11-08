@@ -7,6 +7,7 @@ import org.asciidoctor.ast.Block as AstBlock
 import org.asciidoctor.ast.Cell
 import org.asciidoctor.ast.DescriptionList
 import org.asciidoctor.ast.Document
+import org.asciidoctor.ast.Footnote
 import org.asciidoctor.ast.List as AstList
 import org.asciidoctor.ast.ListItem
 import org.asciidoctor.ast.Row
@@ -100,11 +101,21 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         private val itemGroups = mutableListOf<ItemGroupDraft>()
         private var lastStart = 0
 
+        /** Stable labels for the document footnotes by Asciidoctor's numeric index. */
+        private var footnoteLabels: Map<Int, String> = emptyMap()
+
         fun extract(document: Document): List<Block> {
             lines.rows.forEach(::addScannerRow)
             addHeaderGroup()
+            // getContent() registers each paragraph's footnotes in the catalog with the indices its references use.
             visitDocument(document)
-            return finish()
+            val footnotes = document.catalog.footnotes.toList()
+            footnoteLabels = assignFootnoteLabels(footnotes)
+            labelFootnoteReferences()
+            // Conversion fills in the footnote bodies; it also appends duplicate catalog entries, so the snapshot
+            // above (and not the catalog after this call) defines the FOOTNOTE blocks and their labels.
+            val converted = document.convert()
+            return finish() + footnoteBlocks(footnotes, converted)
         }
 
         // ---- edit groups ------------------------------------------------------------------------------------
@@ -430,7 +441,7 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
 
         /** Inline HTML from Asciidoctor with its LaTeX formulas as inert `.mdr-math` spans. */
         private fun inlineParts(html: String, source: String?): List<HtmlFragment.Part> =
-            AsciiDocMath.parts(html, source, stem)
+            AsciiDocMath.parts(html, source, stem, footnoteLabels)
 
         private fun code(node: AstBlock, ctx: BlockContext) {
             val start = startOf(node)
@@ -658,6 +669,67 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
             if (!trimmed.startsWith("[") || !trimmed.endsWith("]")) return false
             if (trimmed.startsWith("[[")) return false
             return true
+        }
+
+        // ---- footnotes --------------------------------------------------------------------------------------
+
+        /**
+         * Use an explicit footnote id when there is one, otherwise the footnote text. Asciidoctor numbers footnotes
+         * in document order, so the numeric index is not stable when a footnote is inserted before another; these
+         * labels are. Duplicate labels get an occurrence suffix.
+         */
+        private fun assignFootnoteLabels(footnotes: List<Footnote>): Map<Int, String> {
+            val used = mutableMapOf<String, Int>()
+            return footnotes.associate { footnote ->
+                val base = footnote.id?.takeIf { it.isNotBlank() }
+                    ?: footnote.text.trim().ifBlank { "footnote-${footnote.index}" }
+                val occurrence = (used[base] ?: 0) + 1
+                used[base] = occurrence
+                footnote.index.toInt() to if (occurrence == 1) base else "$base-$occurrence"
+            }
+        }
+
+        /** Put the stable labels on footnote references after the catalog is known. */
+        private fun labelFootnoteReferences() {
+            if (footnoteLabels.isEmpty()) return
+            for (draft in drafts) {
+                val content = draft.content
+                if (content is BlockContent.Html) {
+                    draft.content = BlockContent.Html(AsciiDocMath.withFootnoteLabels(content.parts, footnoteLabels))
+                }
+            }
+        }
+
+        /** One FOOTNOTE block per definition, after the document's other blocks, like Markdown definitions. */
+        private fun footnoteBlocks(footnotes: List<Footnote>, converted: String?): List<Block> {
+            if (footnotes.isEmpty()) return emptyList()
+            val line = lines.lines.indexOfLast { it.isNotBlank() }.coerceAtLeast(0)
+            val source = lines.range(line, (line + 1).coerceAtMost(lines.lines.size))
+            return footnotes.map { footnote ->
+                val label = footnoteLabels[footnote.index.toInt()] ?: footnote.text
+                val html = footnoteHtml(converted, footnote.index, footnote.text)
+                val parts = HtmlFragment.parse(html, allowRemoteImages = true)
+                val plainText = HtmlFragment.visibleText(parts)
+                Block(
+                    kind = BlockKind.FOOTNOTE,
+                    key = "FOOTNOTE:" + label + ":" + normalizeSource(plainText),
+                    plainText = plainText,
+                    rawText = "footnote:[${footnote.text}]",
+                    source = source,
+                    content = BlockContent.Html(parts),
+                    label = label,
+                )
+            }
+        }
+
+        /** The converted footnote text without Asciidoctor's leading backlink and its full stop. */
+        private fun footnoteHtml(converted: String?, index: Long, fallback: String): String {
+            if (converted == null) return fallback
+            val div = Regex(
+                """<div class="footnote" id="_footnotedef_${index}">(.*?)</div>""",
+                RegexOption.DOT_MATCHES_ALL,
+            ).find(converted)?.groupValues?.get(1) ?: return fallback
+            return div.replace(Regex("""^\s*<a\b[^>]*>.*?</a>\.\s*""", RegexOption.DOT_MATCHES_ALL), "")
         }
 
         // ---- merge and materialize --------------------------------------------------------------------------

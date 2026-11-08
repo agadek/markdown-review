@@ -230,7 +230,7 @@ object HtmlPage {
           ['wheel', 'keydown', 'mousedown', 'touchstart'].forEach(function(t) {
             window.addEventListener(t, function() { moved = true; }, {once: true, passive: true});
           });
-          var all = Array.prototype.slice.call(document.querySelectorAll('.mdr-math'));
+          var all = Array.prototype.slice.call(document.querySelectorAll('.mdr-math:not(.mdr-math-failed)'));
           var n = 0;
           function draw(el) {
             var tex = el.textContent;

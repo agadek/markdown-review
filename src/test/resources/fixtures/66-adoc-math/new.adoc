@@ -1,0 +1,32 @@
+= Formulas
+:stem: latexmath
+
+The area of a circle is latexmath:[A = \pi r^2] and its circumference is stem:[C = \tau r].
+
+[latexmath]
+++++
+E = mc^2
+++++
+
+The quadratic formula:
+
+[stem]
+++++
+x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2 a}
+++++
+
+An AsciiMath formula, not drawn: asciimath:[sum_(i=1)^n i].
+
+[asciimath]
+++++
+x = (-b +- sqrt(b^2 - 4ac)) / (2a)
+++++
+
+Euler's identity:
+
+[latexmath]
+++++
+e^{i\pi} + 1 = 0
+++++
+
+An unfinished formula: latexmath:[\frac{1}{].

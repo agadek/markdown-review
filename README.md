@@ -78,6 +78,10 @@ AsciiDoc diffs use the same viewers and actions as Markdown. They need the free 
 nothing AsciiDoc is bundled and Markdown diffs do not depend on it. Without the plugin an `.adoc` diff stays in the
 text viewer.
 
+![Rendered side-by-side AsciiDoc diff](docs/screenshots/side-by-side-asciidoc-light.png)
+
+![Rendered merged AsciiDoc diff in a dark theme](docs/screenshots/merged-asciidoc-dark.png)
+
 Supported: sections and the document title, paragraphs, unordered, ordered, checklist, description and callout lists
 with continuations, tables, listing and source blocks, admonitions, example, sidebar, quote, verse and open
 containers, attribute entries and their substitution, line and block comments, conditional directives, links and

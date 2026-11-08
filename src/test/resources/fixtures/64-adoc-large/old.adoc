@@ -2751,4 +2751,3 @@ val section = 500
 val blocks = diff("old.adoc", "new.adoc")
 println(blocks.size)
 ----
-

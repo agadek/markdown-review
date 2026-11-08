@@ -80,8 +80,8 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 | P4.4 | AsciiDoc HTML rendering and change marks | P4.3 | [P4.4](specs/phase4/P4.4-asciidoc-rendering.md) | Done in tests; manual light/dark and runIde review pending |
 | P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Done |
 | P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | In progress: provider wired and tested headless; runIde/manual check pending |
-| P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Not started |
-| P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | In progress: documentation done; screenshots and release pending |
+| P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Done |
+| P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | In progress: docs and screenshots done; manual runIde and release pending |
 
 P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1
 confirmed [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it had failed, the fallback in that ADR
@@ -208,6 +208,11 @@ Scope:
 
 Done when:
 - An AsciiDoc fixture with changed diagrams and formulas renders like fixtures 28 and 40.
+
+P4.7 results: `[mermaid]` listing and literal blocks are one `MERMAID` block with the same drawing, changed-diagram
+and source-diff behavior as Markdown; `latexmath` / `stem` inline and block formulas are `MATH` atoms and blocks,
+drawn with the shared KaTeX. Fixtures `65-adoc-mermaid` and `66-adoc-math` cover unchanged, changed, added, removed,
+unparsable and attribute-only cases. AsciiMath and other asciidoctor-diagram styles stay source.
 
 ## P4.8 Fixtures, documentation and release
 

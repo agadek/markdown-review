@@ -91,7 +91,7 @@ AsciiDoc through AsciidoctorJ, taken from the JetBrains AsciiDoc plugin and not 
   `<<id>>`) and Asciidoctor's menu and keyboard macros are converted by Asciidoctor and sanitized like Markdown HTML.
 - Lists: unordered, ordered (including `start`), checklists and their state, description lists, callout lists, nested
   lists and blocks attached with `+` continuations.
-- Tables with header rows, column spans and `a|` cells; an `a|` cell is compared by its text, not block by block.
+- Tables with header rows and `a|` cells; an `a|` cell is compared by its text, not block by block.
 - Listing, source and literal blocks (`----`, `....`), with the source language, callouts and one diff row per line.
 - Admonitions in both forms: `NOTE:` paragraphs and `[NOTE]` / `====` blocks. A changed type is marked.
 - Delimited containers: example (`====`), sidebar (`****`), quote and verse (`____`) and open (`--`) blocks, nested,

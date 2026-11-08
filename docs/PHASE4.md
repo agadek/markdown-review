@@ -81,7 +81,7 @@ render is about 1.8–2.4 s. Steady state, median of 10: 1,015 lines 60–65 ms 
 | P4.5 | Edit regions, revert, apply, block editing and moves | P4.3 | [P4.5](specs/phase4/P4.5-asciidoc-edit-regions.md) | Done |
 | P4.6 | IDE integration | P4.1, P4.4 | [P4.6](specs/phase4/P4.6-asciidoc-ide-integration.md) | In progress: provider wired and tested headless; runIde/manual check pending |
 | P4.7 | Diagrams and math in AsciiDoc | P4.4 | [P4.7](specs/phase4/P4.7-asciidoc-diagrams-math.md) | Not started |
-| P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | Not started |
+| P4.8 | Fixtures, documentation and release | P4.4–P4.7 | [P4.8](specs/phase4/P4.8-asciidoc-docs-release.md) | In progress: documentation and fixtures done; screenshots and release pending |
 
 P4.1 and P4.2 run in parallel: the spike needs no engine change, and the refactoring needs no AsciiDoc. P4.1
 confirmed [ADR 0003](adr/0003-asciidoctorj-from-asciidoc-plugin.md); if it had failed, the fallback in that ADR

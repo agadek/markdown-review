@@ -86,15 +86,13 @@ cross-references, block images, block titles, thematic and page breaks, Mermaid 
 AsciiMath, Antora cross-component links and Asciidoctor PDF themes are not supported. Comparing a Markdown file with
 an AsciiDoc file (for example after a rename) keeps the text diff.
 
-![Rendered AsciiDoc diff](docs/screenshots/side-by-side-asciidoc-light.png)
-
 Status: 1.3, with AsciiDoc support in the next release. What the plugin does and does not do is described in
 [docs/SPECIFICATION.md](docs/SPECIFICATION.md), what comes next in [docs/PHASE3.md](docs/PHASE3.md) and
 [docs/PHASE4.md](docs/PHASE4.md), and releases in [docs/RELEASING.md](docs/RELEASING.md). The contract between the
 diff engine and the IDE layer is described in [docs/ENGINE_CONTRACT.md](docs/ENGINE_CONTRACT.md). The screenshots are
 rendered from [docs/screenshots/sample-old.md](docs/screenshots/sample-old.md) and
-[sample-new.md](docs/screenshots/sample-new.md), and from [sample-old.adoc](docs/screenshots/sample-old.adoc) and
-[sample-new.adoc](docs/screenshots/sample-new.adoc).
+[sample-new.md](docs/screenshots/sample-new.md); the AsciiDoc sample is
+[sample-old.adoc](docs/screenshots/sample-old.adoc) / [sample-new.adoc](docs/screenshots/sample-new.adoc).
 
 ## Requirements
 

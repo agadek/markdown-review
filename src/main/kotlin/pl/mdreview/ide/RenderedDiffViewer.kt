@@ -102,6 +102,8 @@ class RenderedDiffViewer(
         { !settings.collapseUnchanged },
     ) { wholeFile ->
         settings.collapseUnchanged = !wholeFile
+        // The setting is application-wide; let other open diff windows render the new choice too.
+        ApplicationManager.getApplication().messageBus.syncPublisher(MarkdownReviewSettings.TOPIC).settingsChanged()
     }
 
     private val browserPanel = viewFactory(disposable) { side, line ->

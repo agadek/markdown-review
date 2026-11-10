@@ -10,9 +10,11 @@ import com.intellij.diff.contents.DocumentContent
 import com.intellij.diff.contents.EmptyContent
 import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.ToggleAction
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.TestActionEvent
@@ -238,11 +240,35 @@ class RenderedDiffViewerTest : BasePlatformTestCase() {
         val viewer = RenderedDiffViewer(TestDiffContext(project), request, ViewMode.SIDE_BY_SIDE) { _, _ -> RecordingView() }
         Disposer.register(testRootDisposable, Disposable { viewer.dispose() })
         val toolbar = viewer.init()
-        assertEquals(listOf<AnAction>(viewer.exportGroup), toolbar.toolbarActions)
+        assertEquals(listOf<AnAction>(viewer.showWholeFileAction, viewer.exportGroup), toolbar.toolbarActions)
+        assertEquals("Show Whole File", viewer.showWholeFileAction.templatePresentation.text)
         assertTrue(viewer.exportGroup.isPopup)
         assertNotNull(viewer.exportGroup.templatePresentation.icon)
         assertEquals(listOf("Export as HTML...", "Export as PDF..."), names(viewer.exportActions))
         assertEquals(viewer.exportActions, viewer.exportGroup.childActionsOrStubs.toList())
+    }
+
+    fun `test show whole file persists and notifies other windows`() {
+        val request = SimpleDiffRequest("test", content("w1.md", "# A\n\nold\n"), content("w2.md", "# A\n\nnew\n"), "w1", "w2")
+        val (viewer, _) = open(request, ViewMode.SIDE_BY_SIDE)
+        val settings = MarkdownReviewSettings.getInstance()
+        val previous = settings.collapseUnchanged
+        var notifications = 0
+        val connection = ApplicationManager.getApplication().messageBus.connect(testRootDisposable)
+        connection.subscribe(MarkdownReviewSettings.TOPIC, MarkdownReviewSettingsListener { notifications++ })
+        try {
+            settings.collapseUnchanged = true
+            val action = viewer.showWholeFileAction as ToggleAction
+            val event = TestActionEvent.createTestEvent(action)
+            action.setSelected(event, true)
+            assertFalse(settings.collapseUnchanged)
+            assertEquals(1, notifications)
+            action.setSelected(event, false)
+            assertTrue(settings.collapseUnchanged)
+            assertEquals(2, notifications)
+        } finally {
+            settings.collapseUnchanged = previous
+        }
     }
 
     fun `test open in text diff reopens the window once in the text viewer at the block's line (P3_4)`() {

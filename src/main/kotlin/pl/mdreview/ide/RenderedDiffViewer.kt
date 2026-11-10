@@ -95,6 +95,17 @@ class RenderedDiffViewer(
     private val alarm = Alarm(Alarm.ThreadToUse.SWING_THREAD, disposable)
     private val statusLabel = JBLabel(MarkdownReviewBundle.message("status.loading"))
     private val settings = MarkdownReviewSettings.getInstance()
+
+    /** Toolbar toggle: selected means unchanged blocks stay visible, not folded. */
+    internal val showWholeFileAction: AnAction = OptionToggle(
+        "toggle.show.whole.file",
+        { !settings.collapseUnchanged },
+    ) { wholeFile ->
+        settings.collapseUnchanged = !wholeFile
+        // The setting is application-wide; let other open diff windows render the new choice too.
+        ApplicationManager.getApplication().messageBus.syncPublisher(MarkdownReviewSettings.TOPIC).settingsChanged()
+    }
+
     private val browserPanel = viewFactory(disposable) { side, line ->
         ApplicationManager.getApplication().invokeLater({ navigateToSource(side, line) }, ModalityState.any())
     }
@@ -147,9 +158,10 @@ class RenderedDiffViewer(
                 OptionToggle("toggle.collapse.unchanged", { settings.collapseUnchanged }) {
                     settings.collapseUnchanged = it
                 },
+                showWholeFileAction,
             )
             // On the toolbar itself: since 2026.2 the diff window shows no gear menu for popupActions.
-            toolbarActions = listOf<AnAction>(exportGroup)
+            toolbarActions = listOf<AnAction>(showWholeFileAction, exportGroup)
             statusPanel = statusLabel.apply { border = JBUI.Borders.empty(0, 8) }
         }
     }

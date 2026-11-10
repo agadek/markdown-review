@@ -93,7 +93,7 @@ AsciiMath formulas. `include::` directives are shown as their own rows and are n
 Mermaid, Antora cross-component links and Asciidoctor PDF themes are not supported. Comparing a Markdown file with an
 AsciiDoc file (for example after a rename) keeps the text diff.
 
-Status: 1.4.0. What the plugin does and does not do is described in
+Status: 1.4.1. What the plugin does and does not do is described in
 [docs/SPECIFICATION.md](docs/SPECIFICATION.md), what comes next in [docs/PHASE3.md](docs/PHASE3.md) and
 [docs/PHASE4.md](docs/PHASE4.md), and releases in [docs/RELEASING.md](docs/RELEASING.md). The contract between the
 diff engine and the IDE layer is described in [docs/ENGINE_CONTRACT.md](docs/ENGINE_CONTRACT.md). The screenshots are

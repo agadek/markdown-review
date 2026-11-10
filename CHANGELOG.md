@@ -6,6 +6,8 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-10
+
 ### Added
 
 - **Show rendered diffs for Markdown / AsciiDoc:** a new pair of checkboxes in Settings | Tools | Markdown Review

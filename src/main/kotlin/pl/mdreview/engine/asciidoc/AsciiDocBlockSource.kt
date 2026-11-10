@@ -704,10 +704,11 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
         /** One FOOTNOTE block per definition, after the document's other blocks, like Markdown definitions. */
         private fun footnoteBlocks(footnotes: List<Footnote>, converted: String?): List<Block> {
             if (footnotes.isEmpty()) return emptyList()
-            val line = lines.lines.indexOfLast { it.isNotBlank() }.coerceAtLeast(0)
-            val source = lines.range(line, (line + 1).coerceAtMost(lines.lines.size))
+            val fallbackLine = lines.lines.indexOfLast { it.isNotBlank() }.coerceAtLeast(0)
             return footnotes.map { footnote ->
                 val label = footnoteLabels[footnote.index.toInt()] ?: footnote.text
+                val line = footnoteReferenceLine(label) ?: fallbackLine
+                val source = lines.range(line, (line + 1).coerceAtMost(lines.lines.size))
                 val html = footnoteHtml(converted, footnote.index, footnote.text)
                 val parts = HtmlFragment.parse(html, allowRemoteImages = true)
                 val plainText = HtmlFragment.visibleText(parts)
@@ -722,6 +723,16 @@ class AsciiDocBlockSource(private val provider: AsciidoctorProvider) : BlockSour
                 )
             }
         }
+
+        /** The line of the paragraph holding the first reference to [label], for source navigation. */
+        private fun footnoteReferenceLine(label: String): Int? =
+            drafts.firstOrNull { draft ->
+                val content = draft.content as? BlockContent.Html ?: return@firstOrNull false
+                content.parts.any { part ->
+                    part is HtmlFragment.Markup && part.tag == "a" && !part.closing &&
+                        HtmlFragment.attribute(part, "data-footnote-label") == label
+                }
+            }?.start
 
         /** The converted footnote text without Asciidoctor's leading backlink and its full stop. */
         private fun footnoteHtml(converted: String?, index: Long, fallback: String): String {

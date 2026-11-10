@@ -485,6 +485,15 @@ class AsciiDocFixturesTest {
             ),
             d.blocks.filter { (it.right ?: it.left)?.kind == BlockKind.FOOTNOTE }.map { it.status },
         )
+        val byLabel = d.blocks.mapNotNull { block -> (block.right ?: block.left)?.let { it.label to block } }.toMap()
+        assertEquals(2, byLabel.getValue("added note").right!!.source.startLine)
+        assertEquals(2, byLabel.getValue("stable note").right!!.source.startLine)
+        assertEquals(2, byLabel.getValue("changed").right!!.source.startLine)
+        assertEquals(4, byLabel.getValue("removed note").left!!.source.startLine)
+        assertEquals(6, byLabel.getValue("shared").left!!.source.startLine)
+        assertEquals(4, byLabel.getValue("shared").right!!.source.startLine)
+        assertEquals(8, byLabel.getValue("last note").left!!.source.startLine)
+        assertEquals(6, byLabel.getValue("last note").right!!.source.startLine)
 
         for (mode in ViewMode.entries) {
             val rendered = CoreMarkdownDiffRenderer(provider).render(

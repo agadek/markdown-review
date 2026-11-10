@@ -12,6 +12,11 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
   turns the rendered diff off for one format, so its diffs open in IntelliJ's text viewer and Show Rendered Diff,
   Export Rendered Diff and Compare Rendered Files skip it. Both formats stay on by default.
 
+### Fixed
+
+- **AsciiDoc footnote source navigation:** Ctrl/Cmd+click on a footnote now opens the paragraph that contains its
+  `footnote:[...]` macro, instead of jumping to the end of the file.
+
 ## [1.4.0] - 2026-11-08
 
 ### Added

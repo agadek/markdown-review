@@ -13,4 +13,5 @@ blocks, with the same rendering and diff behavior as Markdown footnote definitio
   them because their labels are the explicit id or the footnote text, not Asciidoctor's numeric index.
 - Every `href="#mdr-fn-<side>-..."` in the rendered page matches an existing `id` on the same side, in both views.
 - A footnote definition has `edit = null`; reverting the paragraph that contains its `footnote:[...]` macro reverts
-  the footnote as part of that one edit.
+  the footnote as part of that one edit. Its source line is the paragraph of the first reference, so Ctrl/Cmd+click
+  lands on the footnote macro rather than at the end of the file.

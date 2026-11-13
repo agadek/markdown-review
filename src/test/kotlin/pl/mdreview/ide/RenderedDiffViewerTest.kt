@@ -240,8 +240,18 @@ class RenderedDiffViewerTest : BasePlatformTestCase() {
         val viewer = RenderedDiffViewer(TestDiffContext(project), request, ViewMode.SIDE_BY_SIDE) { _, _ -> RecordingView() }
         Disposer.register(testRootDisposable, Disposable { viewer.dispose() })
         val toolbar = viewer.init()
-        assertEquals(listOf<AnAction>(viewer.showWholeFileAction, viewer.exportGroup), toolbar.toolbarActions)
+        assertEquals(
+            listOf<AnAction>(viewer.showWholeFileAction, viewer.exportGroup, viewer.settingsAction),
+            toolbar.toolbarActions,
+        )
         assertEquals("Show Whole File", viewer.showWholeFileAction.templatePresentation.text)
+        assertEquals("Settings", viewer.settingsAction.templatePresentation.text)
+        assertEquals(
+            "Open Settings | Tools | Markdown Review",
+            viewer.settingsAction.templatePresentation.description,
+        )
+        assertNotNull(viewer.settingsAction.templatePresentation.icon)
+        assertTrue(toolbar.popupActions.orEmpty().contains(viewer.settingsAction))
         assertTrue(viewer.exportGroup.isPopup)
         assertNotNull(viewer.exportGroup.templatePresentation.icon)
         assertEquals(listOf("Export as HTML...", "Export as PDF..."), names(viewer.exportActions))

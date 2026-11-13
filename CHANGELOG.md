@@ -6,6 +6,11 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
+### Added
+
+- **Settings on the diff toolbar:** a gear button in the rendered diff window opens Settings | Tools | Markdown Review
+  directly, so the viewer options no longer require the IDE settings dialog to be opened by hand.
+
 ## [1.4.1] - 2026-11-10
 
 ### Added

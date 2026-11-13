@@ -27,6 +27,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vfs.VirtualFile
@@ -159,9 +160,10 @@ class RenderedDiffViewer(
                     settings.collapseUnchanged = it
                 },
                 showWholeFileAction,
+                settingsAction,
             )
             // On the toolbar itself: since 2026.2 the diff window shows no gear menu for popupActions.
-            toolbarActions = listOf<AnAction>(showWholeFileAction, exportGroup)
+            toolbarActions = listOf<AnAction>(showWholeFileAction, exportGroup, settingsAction)
             statusPanel = statusLabel.apply { border = JBUI.Borders.empty(0, 8) }
         }
     }
@@ -566,6 +568,18 @@ class RenderedDiffViewer(
             templatePresentation.icon = AllIcons.ToolbarDecorator.Export
             templatePresentation.description = MarkdownReviewBundle.message("action.export.group.description")
         }
+
+    /** The toolbar's Settings button: opens the plugin's page in the IDE settings dialog. */
+    internal val settingsAction: AnAction = object : DumbAwareAction(
+        MarkdownReviewBundle.message("action.settings"),
+        MarkdownReviewBundle.message("action.settings.description"),
+        AllIcons.General.Settings,
+    ) {
+        override fun getActionUpdateThread() = ActionUpdateThread.BGT
+        override fun actionPerformed(e: AnActionEvent) {
+            ShowSettingsUtil.getInstance().showSettingsDialog(context.project, MarkdownReviewConfigurable::class.java)
+        }
+    }
 
     private inner class ExportAction(private val pdf: Boolean) :
         DumbAwareAction(MarkdownReviewBundle.message(if (pdf) "action.export.pdf" else "action.export.html")) {

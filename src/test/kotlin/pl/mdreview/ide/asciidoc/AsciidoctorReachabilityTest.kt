@@ -2,9 +2,11 @@ package pl.mdreview.ide.asciidoc
 
 import pl.mdreview.render.CoreMarkdownDiffRenderer
 import java.io.File
+import java.net.URI
 import java.util.zip.ZipFile
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -41,13 +43,19 @@ class AsciidoctorReachabilityTest {
 
     /** Compiled main classes by internal name (`pl/mdreview/...`), from a directory or a jar. */
     private fun mainClasses(): Map<String, ByteArray> {
-        val location = File(CoreMarkdownDiffRenderer::class.java.protectionDomain.codeSource.location.toURI())
-        return if (location.isDirectory) {
-            location.walkTopDown()
+        // The IDE test class loader gives no code source, so find the output from the class file's own URL.
+        val anchor = CoreMarkdownDiffRenderer::class.java.name.replace('.', '/') + ".class"
+        val url = assertNotNull(CoreMarkdownDiffRenderer::class.java.classLoader.getResource(anchor), "no $anchor")
+        return if (url.protocol == "file") {
+            val path = File(url.toURI()).invariantSeparatorsPath
+            val root = File(path.removeSuffix(anchor))
+            root.walkTopDown()
                 .filter { it.isFile && it.name.endsWith(".class") }
-                .associate { it.relativeTo(location).invariantSeparatorsPath.removeSuffix(".class") to it.readBytes() }
+                .associate { it.relativeTo(root).invariantSeparatorsPath.removeSuffix(".class") to it.readBytes() }
         } else {
-            ZipFile(location).use { zip ->
+            // jar:file:/.../markdown-review.jar!/pl/mdreview/render/CoreMarkdownDiffRenderer.class
+            val jar = File(URI(url.toString().removePrefix("jar:").substringBefore("!/")))
+            ZipFile(jar).use { zip ->
                 zip.entries().asSequence()
                     .filter { it.name.endsWith(".class") }
                     .associate { it.name.removeSuffix(".class") to zip.getInputStream(it).readBytes() }

@@ -19,7 +19,7 @@ class PluginAsciidoctorProviderTest : BasePlatformTestCase() {
     override fun tearDown() {
         try {
             AsciiDocSupport.uninstall()
-            CoreMarkdownDiffRenderer.uninstallAsciidoctorProvider()
+            CoreMarkdownDiffRenderer.uninstallAsciiDocSource()
         } finally {
             super.tearDown()
         }
@@ -30,7 +30,7 @@ class PluginAsciidoctorProviderTest : BasePlatformTestCase() {
         val provider = PluginAsciidoctorProvider()
         try {
             AsciiDocSupport.install(provider)
-            CoreMarkdownDiffRenderer.installAsciidoctorProvider(provider)
+            CoreMarkdownDiffRenderer.installAsciiDocSource(provider.blockSource())
             val result = CoreMarkdownDiffRenderer().render(
                 RenderRequest(
                     "= Title\n\nOld paragraph.\n",

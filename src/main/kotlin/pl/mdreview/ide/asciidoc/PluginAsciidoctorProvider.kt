@@ -4,6 +4,8 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.logger
 import org.asciidoctor.Asciidoctor
+import pl.mdreview.engine.BlockSource
+import pl.mdreview.engine.asciidoc.AsciiDocBlockSource
 import pl.mdreview.engine.asciidoc.AsciidoctorProvider
 import pl.mdreview.ide.AsciiDocSupport
 import pl.mdreview.render.CoreMarkdownDiffRenderer
@@ -28,6 +30,11 @@ class PluginAsciidoctorProvider : AsciidoctorProvider, AsciiDocSupport.Runtime, 
 
     /** Renders waiting for the first Asciidoctor start. */
     private val readyCallbacks = CopyOnWriteArrayList<() -> Unit>()
+
+    /** The AsciiDoc front end; creating it does not start Asciidoctor, the first [AsciiDocBlockSource.extract] does. */
+    private val blockSource: BlockSource by lazy { AsciiDocBlockSource(this) }
+
+    override fun blockSource(): BlockSource = blockSource
 
     override fun asciidoctor(): Asciidoctor = instance ?: synchronized(lock) {
         instance ?: create().also { instance = it }
@@ -63,7 +70,7 @@ class PluginAsciidoctorProvider : AsciidoctorProvider, AsciiDocSupport.Runtime, 
             } catch (t: Throwable) {
                 logger<PluginAsciidoctorProvider>().error("Could not start Asciidoctor", t)
                 AsciiDocSupport.uninstall()
-                CoreMarkdownDiffRenderer.uninstallAsciidoctorProvider()
+                CoreMarkdownDiffRenderer.uninstallAsciiDocSource()
             } finally {
                 synchronized(lock) { preparing = false }
                 val pending = readyCallbacks.toList()
@@ -81,7 +88,7 @@ class PluginAsciidoctorProvider : AsciidoctorProvider, AsciiDocSupport.Runtime, 
         val current = instance
         instance = null
         AsciiDocSupport.uninstall()
-        CoreMarkdownDiffRenderer.uninstallAsciidoctorProvider()
+        CoreMarkdownDiffRenderer.uninstallAsciiDocSource()
         if (current != null) {
             // Stop the Ruby runtime; the class loader stays reachable on JDK 21 (known limitation, ADR 0003).
             runCatching { current.shutdown() }

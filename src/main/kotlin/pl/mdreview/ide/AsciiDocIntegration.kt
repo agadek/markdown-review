@@ -3,7 +3,6 @@ package pl.mdreview.ide
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.ApplicationManager
-import pl.mdreview.engine.asciidoc.AsciidoctorProvider
 import pl.mdreview.render.CoreMarkdownDiffRenderer
 
 /**
@@ -11,7 +10,9 @@ import pl.mdreview.render.CoreMarkdownDiffRenderer
  *
  * The provider lives in `pl.mdreview.ide.asciidoc` and is declared in `markdown-review-withAsciiDoc.xml`; this
  * object reaches it by name, so the main plugin class loader never resolves AsciidoctorJ while the AsciiDoc plugin
- * is disabled (NFR-11).
+ * is disabled (NFR-11). The front end comes back as a plain [pl.mdreview.engine.BlockSource]: no class reachable from
+ * `plugin.xml` may name an AsciidoctorJ class, or the Plugin Verifier reports it whenever the AsciiDoc plugin cannot
+ * be resolved for an IDE build.
  */
 object AsciiDocIntegration {
 
@@ -44,13 +45,13 @@ object AsciiDocIntegration {
         }
         warnedAboutRestart = false
         AsciiDocSupport.install(runtime)
-        (runtime as? AsciidoctorProvider)?.let(CoreMarkdownDiffRenderer::installAsciidoctorProvider)
+        CoreMarkdownDiffRenderer.installAsciiDocSource(runtime.blockSource())
     }
 
     /** Called when the AsciiDoc plugin is disabled or unloaded; AsciiDoc diffs fall back to the text viewer. */
     fun disable() {
         AsciiDocSupport.uninstall()
-        CoreMarkdownDiffRenderer.uninstallAsciidoctorProvider()
+        CoreMarkdownDiffRenderer.uninstallAsciiDocSource()
     }
 
     /**

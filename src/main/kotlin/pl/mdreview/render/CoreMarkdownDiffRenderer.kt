@@ -16,20 +16,20 @@ import pl.mdreview.engine.DiffOptions
 import pl.mdreview.engine.DiffStatus
 import pl.mdreview.engine.MarkdownBlockSource
 import pl.mdreview.engine.SourceRange
-import pl.mdreview.engine.asciidoc.AsciiDocBlockSource
-import pl.mdreview.engine.asciidoc.AsciidoctorProvider
 
 /**
  * The core's implementation of [MarkdownDiffRenderer], registered in
  * `META-INF/services/pl.mdreview.api.MarkdownDiffRenderer`. Stateless and thread-safe.
  *
- * [asciidoctor] is optional: when the IDE supplies the provider of the installed AsciiDoc plugin, `ASCIIDOC`
- * requests get the AsciiDoc front end; without it they keep the raw-text fallback (NFR-11).
+ * [asciidocSource] is optional: when the IDE supplies the AsciiDoc front end of the installed AsciiDoc plugin,
+ * `ASCIIDOC` requests use it; without it they keep the raw-text fallback (NFR-11).
+ *
+ * This class must not name `AsciiDocBlockSource`, `AsciidoctorProvider` or any `org.asciidoctor` class. It is
+ * reachable from the main plugin descriptor, and the Plugin Verifier reports every AsciidoctorJ class reachable from
+ * there as missing when the optional AsciiDoc plugin cannot be resolved for an IDE build. The front end is created
+ * behind `markdown-review-withAsciiDoc.xml` and handed in as a plain [BlockSource].
  */
-class CoreMarkdownDiffRenderer(private val asciidoctor: AsciidoctorProvider? = null) : MarkdownDiffRenderer {
-
-    /** Created once; the provider returns the session's single thread-safe [org.asciidoctor.Asciidoctor]. */
-    private val asciidocSource: BlockSource? = asciidoctor?.let { AsciiDocBlockSource(it) }
+class CoreMarkdownDiffRenderer(private val asciidocSource: BlockSource? = null) : MarkdownDiffRenderer {
 
     override fun render(request: RenderRequest): RenderedDiff {
         // A format without a front end still gets a usable diff: raw text, compared paragraph by paragraph.
@@ -86,13 +86,13 @@ class CoreMarkdownDiffRenderer(private val asciidoctor: AsciidoctorProvider? = n
 
         /**
          * Installs the AsciiDoc front end for renderers created through [java.util.ServiceLoader]. Called by the
-         * IDE layer when the optional AsciiDoc plugin is enabled; [uninstallAsciidoctorProvider] when it unloads.
+         * IDE layer when the optional AsciiDoc plugin is enabled; [uninstallAsciiDocSource] when it unloads.
          */
-        fun installAsciidoctorProvider(provider: AsciidoctorProvider?) {
-            installedAsciidocSource = provider?.let { AsciiDocBlockSource(it) }
+        fun installAsciiDocSource(source: BlockSource?) {
+            installedAsciidocSource = source
         }
 
-        fun uninstallAsciidoctorProvider() {
+        fun uninstallAsciiDocSource() {
             installedAsciidocSource = null
         }
 

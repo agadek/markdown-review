@@ -1,5 +1,7 @@
 package pl.mdreview.ide
 
+import pl.mdreview.engine.BlockSource
+
 /**
  * Availability and startup of AsciiDoc rendering (NFR-11, ADR 0003).
  *
@@ -23,6 +25,13 @@ object AsciiDocSupport {
          * schedules its own render. Must be idempotent while a start is in progress.
          */
         fun prepare(onReady: () -> Unit)
+
+        /**
+         * The AsciiDoc front end the renderer parses with, or null when this runtime renders nothing itself (test
+         * fakes). Typed as a plain [BlockSource] so that code loaded from the main plugin descriptor never names an
+         * AsciidoctorJ class (see `CoreMarkdownDiffRenderer`).
+         */
+        fun blockSource(): BlockSource? = null
     }
 
     @Volatile

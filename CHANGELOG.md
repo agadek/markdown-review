@@ -6,6 +6,11 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
+### Fixed
+
+- **Marketplace verification with AsciiDoc:** the plugin no longer fails JetBrains Marketplace verification for an
+  IDE build where the AsciiDoc plugin is not available. AsciiDoc diffs work as before.
+
 ## [1.4.1] - 2026-11-10
 
 ### Added

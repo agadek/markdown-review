@@ -29,7 +29,7 @@ class AsciiDocEditRegionsTest {
 
     private val provider: AsciidoctorProvider = TestProvider
     private val source = AsciiDocBlockSource(provider)
-    private val renderer = CoreMarkdownDiffRenderer(provider)
+    private val renderer = CoreMarkdownDiffRenderer(source)
 
     private fun render(left: String, right: String) =
         renderer.render(

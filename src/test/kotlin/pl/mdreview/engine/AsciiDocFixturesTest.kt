@@ -496,7 +496,7 @@ class AsciiDocFixturesTest {
         assertEquals(6, byLabel.getValue("last note").right!!.source.startLine)
 
         for (mode in ViewMode.entries) {
-            val rendered = CoreMarkdownDiffRenderer(provider).render(
+            val rendered = CoreMarkdownDiffRenderer(source).render(
                 RenderRequest(
                     read("68-adoc-footnotes", "old.adoc"),
                     read("68-adoc-footnotes", "new.adoc"),
@@ -517,7 +517,7 @@ class AsciiDocFixturesTest {
 
     @Test
     fun `65 and 66 render the Markdown diagram and formula DOM contract`() {
-        val renderer = CoreMarkdownDiffRenderer(provider)
+        val renderer = CoreMarkdownDiffRenderer(source)
         for (mode in ViewMode.entries) {
             val mermaid = renderer.render(
                 RenderRequest(
@@ -573,7 +573,7 @@ class AsciiDocFixturesTest {
 
     @Test
     fun `65 mermaid rendering off through the renderer has no diagram elements`() {
-        val rendered = CoreMarkdownDiffRenderer(provider).render(
+        val rendered = CoreMarkdownDiffRenderer(source).render(
             RenderRequest(
                 read("65-adoc-mermaid", "old.adoc"),
                 read("65-adoc-mermaid", "new.adoc"),
@@ -595,7 +595,7 @@ class AsciiDocFixturesTest {
             ViewMode.SIDE_BY_SIDE,
             format = DocumentFormat.ASCIIDOC,
         )
-        val rendered = CoreMarkdownDiffRenderer(provider).render(request)
+        val rendered = CoreMarkdownDiffRenderer(source).render(request)
         assertEquals(
             diff("50-adoc-paragraph-edit").blocks.map { it.status.name },
             rendered.blocks.map { it.status.name },
@@ -606,7 +606,7 @@ class AsciiDocFixturesTest {
 
     @Test
     fun `every fixture renders with the AsciiDoc renderer`() {
-        val renderer = CoreMarkdownDiffRenderer(provider)
+        val renderer = CoreMarkdownDiffRenderer(source)
         val cases = (50..66).map { n ->
             File(javaClass.getResource("/fixtures")!!.toURI()).listFiles()!!.first { it.name.startsWith("$n-") }.name
         }

@@ -278,7 +278,7 @@ class BlockActionsTest : BasePlatformTestCase() {
         val provider = PluginAsciidoctorProvider()
         try {
             AsciiDocSupport.install(provider)
-            CoreMarkdownDiffRenderer.installAsciidoctorProvider(provider)
+            CoreMarkdownDiffRenderer.installAsciiDocSource(provider.blockSource())
             val leftText = "= Title\n\nOld paragraph text here.\n"
             val rightText = "= Title\n\nNew paragraph text here.\n"
             val right = adocContent(rightText)
@@ -304,7 +304,7 @@ class BlockActionsTest : BasePlatformTestCase() {
         val provider = PluginAsciidoctorProvider()
         try {
             AsciiDocSupport.install(provider)
-            CoreMarkdownDiffRenderer.installAsciidoctorProvider(provider)
+            CoreMarkdownDiffRenderer.installAsciiDocSource(provider.blockSource())
             val rendered = CoreMarkdownDiffRenderer().render(
                 pl.mdreview.api.RenderRequest(
                     "= Title\n\nOld text.\n",
@@ -325,7 +325,7 @@ class BlockActionsTest : BasePlatformTestCase() {
         val provider = PluginAsciidoctorProvider()
         try {
             AsciiDocSupport.install(provider)
-            CoreMarkdownDiffRenderer.installAsciidoctorProvider(provider)
+            CoreMarkdownDiffRenderer.installAsciiDocSource(provider.blockSource())
             val leftText = fixture("63-adoc-moved", "old.adoc")
             val right = adocContent(fixture("63-adoc-moved", "new.adoc"))
             open(adocContent(leftText), right)

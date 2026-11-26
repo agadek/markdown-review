@@ -4,6 +4,7 @@ import org.asciidoctor.Asciidoctor
 import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.ViewMode
+import pl.mdreview.engine.asciidoc.AsciiDocBlockSource
 import pl.mdreview.engine.asciidoc.AsciidoctorProvider
 import java.io.File
 import kotlin.test.Test
@@ -27,7 +28,7 @@ class RenderBenchmarkTest {
         override fun asciidoctor(): Asciidoctor = instance
     }
 
-    private val asciidocRenderer = CoreMarkdownDiffRenderer(asciidoctor)
+    private val asciidocRenderer = CoreMarkdownDiffRenderer(AsciiDocBlockSource(asciidoctor))
 
     private class Case(val lines: Int, val targetMs: Long, val runs: Int)
 

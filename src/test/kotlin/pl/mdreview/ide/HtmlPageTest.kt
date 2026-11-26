@@ -7,6 +7,7 @@ import org.asciidoctor.Asciidoctor
 import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.ViewMode
+import pl.mdreview.engine.asciidoc.AsciiDocBlockSource
 import pl.mdreview.engine.asciidoc.AsciidoctorProvider
 import pl.mdreview.render.CoreMarkdownDiffRenderer
 import java.awt.Color
@@ -106,7 +107,7 @@ class HtmlPageTest : BasePlatformTestCase() {
         val provider = object : AsciidoctorProvider {
             override fun asciidoctor(): Asciidoctor = adocInstance
         }
-        val diff = CoreMarkdownDiffRenderer(provider).render(
+        val diff = CoreMarkdownDiffRenderer(AsciiDocBlockSource(provider)).render(
             RenderRequest(left, right, ViewMode.SIDE_BY_SIDE, format = DocumentFormat.ASCIIDOC),
         )
         return HtmlPage.build(diff, "void 0", 0, renderMath = renderMath)

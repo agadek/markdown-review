@@ -134,6 +134,16 @@ registers `PluginAsciidoctorProvider` as an application service plus the startup
 `dispose()`. The plugin zip stays at 2.2 MB with no AsciidoctorJ or Ruby classes, and `verifyPlugin` reports no
 AsciiDoc-related problem. The known class-loader retention on dynamic unload remains as recorded above.
 
+**Plugin Verifier reachability (1.4.2).** JetBrains Marketplace verified 1.4.1 against IU-263.8311.30 without being
+able to resolve the AsciiDoc plugin and reported `org.asciidoctor` as a missing package. When an optional dependency
+is missing, the Plugin Verifier ignores only the classes reachable from the optional descriptor alone, and
+`CoreMarkdownDiffRenderer`, which `plugin.xml` reaches, constructed `AsciiDocBlockSource`. It was not a runtime
+risk, because that code ran only after the optional descriptor had installed a provider, but it failed
+verification. Now `PluginAsciidoctorProvider` creates the `AsciiDocBlockSource` and hands it over as a plain
+`BlockSource` through `AsciiDocSupport.Runtime.blockSource()`, so `AsciiDocBlockSource`, `AsciidoctorProvider` and
+every `org.asciidoctor` class are reachable from `markdown-review-withAsciiDoc.xml` only.
+`AsciidoctorReachabilityTest` fails the build if a class outside those names AsciidoctorJ again.
+
 ## Consequences
 
 - Markdown Review's download does not grow (NFR-14), and Markdown users load nothing new.

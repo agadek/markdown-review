@@ -5,6 +5,7 @@ import pl.mdreview.api.BlockStatus
 import pl.mdreview.api.DocumentFormat
 import pl.mdreview.api.RenderRequest
 import pl.mdreview.api.ViewMode
+import pl.mdreview.engine.asciidoc.AsciiDocBlockSource
 import pl.mdreview.engine.asciidoc.AsciidoctorProvider
 import pl.mdreview.render.CoreMarkdownDiffRenderer
 import java.io.File
@@ -24,7 +25,7 @@ class AsciiDocRenderIntegrationTest {
         override fun asciidoctor(): Asciidoctor = instance
     }
 
-    private val renderer = CoreMarkdownDiffRenderer(provider)
+    private val renderer = CoreMarkdownDiffRenderer(AsciiDocBlockSource(provider))
 
     @AfterTest
     fun stopAsciidoctor() {

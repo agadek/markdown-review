@@ -6,6 +6,8 @@ change notes on JetBrains Marketplace, so write each entry for the plugin's user
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-11-26
+
 ### Fixed
 
 - **Marketplace verification with AsciiDoc:** the plugin no longer fails JetBrains Marketplace verification for an
